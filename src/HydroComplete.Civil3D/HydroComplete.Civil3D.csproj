@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The Civil 3D add-in. Targets net8.0-windows because AutoCAD / Civil 3D
+    2025 and 2026 run on .NET 8. To build against a different release, override
+    AcadDir / C3dDir on the command line, e.g.
+      dotnet build -p:AcadDir="C:\Program Files\Autodesk\AutoCAD 2025\"
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <PlatformTarget>x64</PlatformTarget>
+    <!-- Ribbon command handlers implement System.Windows.Input.ICommand (WPF). -->
+    <UseWPF>true</UseWPF>
+    <AssemblyName>HydroComplete.Civil3D</AssemblyName>
+    <RootNamespace>HydroComplete.Civil3D</RootNamespace>
+    <Version>0.1.0</Version>
+    <!-- AutoCAD loads the DLL into its own process; never copy the host
+         assemblies, and don't try to produce a runnable host. -->
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <!-- Install locations for the host assemblies; override per Civil 3D version. -->
+  <PropertyGroup>
+    <AcadDir Condition="'$(AcadDir)' == ''">C:\Program Files\Autodesk\AutoCAD 2026\</AcadDir>
+    <C3dDir Condition="'$(C3dDir)' == ''">$(AcadDir)C3D\</C3dDir>
+    <AcaDir Condition="'$(AcaDir)' == ''">$(AcadDir)ACA\</AcaDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Core AutoCAD managed API. Private=false: these live in the host, not our output. -->
+    <Reference Include="AcMgd">
+      <HintPath>$(AcadDir)AcMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AcCoreMgd">
+      <HintPath>$(AcadDir)AcCoreMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AcDbMgd">
+      <HintPath>$(AcadDir)AcDbMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- Ribbon / UI (Autodesk.Windows). -->
+    <Reference Include="AdWindows">
+      <HintPath>$(AcadDir)AdWindows.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- Civil 3D managed API (pipe networks, catchments, surfaces). -->
+    <Reference Include="AeccDbMgd">
+      <HintPath>$(C3dDir)AeccDbMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- AEC base: defines Entity, the base class of Civil 3D objects. -->
+    <Reference Include="AecBaseMgd">
+      <HintPath>$(AcaDir)AecBaseMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Our portable engine ships alongside the plugin (Private=true is the default). -->
+    <ProjectReference Include="..\HydroComplete.Engine\HydroComplete.Engine.csproj" />
+  </ItemGroup>
+
+</Project>

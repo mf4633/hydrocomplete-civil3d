@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Pure, dependency-free hydraulics/hydrology engine.
+
+    Targets netstandard2.0 deliberately: this is the lowest common denominator
+    that loads into every Civil 3D runtime we care about —
+      Civil 3D 2023 and older  (.NET Framework 4.8)
+      Civil 3D 2024            (.NET 7)
+      Civil 3D 2025 / 2026     (.NET 8)
+    so the same compiled engine ships against any host version without a rebuild.
+    No Autodesk references live here on purpose — it builds and unit-tests on a
+    machine with no CAD installed.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Public types are self-describing; don't fail/clutter on missing XML on every member. -->
+    <NoWarn>CS1591</NoWarn>
+    <AssemblyName>HydroComplete.Engine</AssemblyName>
+    <RootNamespace>HydroComplete.Engine</RootNamespace>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+</Project>

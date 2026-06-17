@@ -1,0 +1,72 @@
+using System.Collections.Generic;
+
+namespace HydroComplete.Engine
+{
+    /// <summary>
+    /// One line of a calculation trace: the quantity, its value, units, and the
+    /// expression that produced it. The plugin surfaces these so a reviewer can
+    /// follow every number — the "formula transparency" promise.
+    /// </summary>
+    public sealed class CalcStep
+    {
+        public CalcStep(string label, double value, string units, string formula)
+        {
+            Label = label;
+            Value = value;
+            Units = units;
+            Formula = formula;
+        }
+
+        public string Label { get; }
+        public double Value { get; }
+        public string Units { get; }
+        public string Formula { get; }
+
+        public override string ToString() => $"{Label} = {Value:0.####} {Units}   [{Formula}]";
+    }
+
+    /// <summary>Common result shape: a primary value plus its full calc trace.</summary>
+    public class TracedResult
+    {
+        public TracedResult()
+        {
+            Steps = new List<CalcStep>();
+        }
+
+        public List<CalcStep> Steps { get; }
+    }
+
+    /// <summary>A single drainage area contributing runoff (Rational method input).</summary>
+    public sealed class Catchment
+    {
+        /// <summary>Optional label (e.g. the Civil 3D catchment name).</summary>
+        public string Name { get; set; } = "";
+
+        /// <summary>Drainage area, acres.</summary>
+        public double AreaAcres { get; set; }
+
+        /// <summary>Runoff coefficient C (dimensionless, 0..1).</summary>
+        public double RunoffC { get; set; }
+
+        /// <summary>Time of concentration, minutes (drives the design intensity).</summary>
+        public double TcMinutes { get; set; }
+    }
+
+    /// <summary>A circular gravity pipe segment for Manning capacity / normal-depth checks.</summary>
+    public sealed class PipeSegment
+    {
+        public string Name { get; set; } = "";
+
+        /// <summary>Inside diameter, feet.</summary>
+        public double DiameterFt { get; set; }
+
+        /// <summary>Slope, ft/ft (rise over run, positive downstream).</summary>
+        public double Slope { get; set; }
+
+        /// <summary>Manning's roughness n (dimensionless).</summary>
+        public double ManningN { get; set; } = 0.013;
+
+        /// <summary>Design (peak) flow the pipe must carry, cfs. Optional.</summary>
+        public double DesignFlowCfs { get; set; }
+    }
+}

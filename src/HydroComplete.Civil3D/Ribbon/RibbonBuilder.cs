@@ -1,0 +1,98 @@
+using System;
+using System.Windows.Input;
+using Autodesk.Windows;
+using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
+
+namespace HydroComplete.Civil3D.Ribbon
+{
+    /// <summary>
+    /// Builds the "HydroComplete" ribbon tab. The ribbon control may not exist
+    /// when the plugin loads, so this defers to ComponentManager.ItemInitialized
+    /// and builds as soon as the ribbon is available.
+    /// </summary>
+    internal static class RibbonBuilder
+    {
+        private const string TabId = "HYDROCOMPLETE_TAB";
+        private static RibbonTab? _tab;
+
+        public static void TryAddRibbon()
+        {
+            RibbonControl ribbon = ComponentManager.Ribbon;
+            if (ribbon == null)
+            {
+                ComponentManager.ItemInitialized += OnItemInitialized;
+                return;
+            }
+            Build(ribbon);
+        }
+
+        private static void OnItemInitialized(object? sender, RibbonItemEventArgs e)
+        {
+            RibbonControl ribbon = ComponentManager.Ribbon;
+            if (ribbon == null) return;
+            ComponentManager.ItemInitialized -= OnItemInitialized;
+            Build(ribbon);
+        }
+
+        private static void Build(RibbonControl ribbon)
+        {
+            if (_tab != null || ribbon.FindTab(TabId) != null) return;
+
+            _tab = new RibbonTab { Title = "HydroComplete", Id = TabId };
+
+            var source = new RibbonPanelSource { Title = "Analysis" };
+            var panel = new RibbonPanel { Source = source };
+            _tab.Panels.Add(panel);
+
+            source.Items.Add(MakeButton("Pipe\nCapacity", "HC_PIPES", "Manning capacity of every pipe in the drawing's pipe networks."));
+            source.Items.Add(MakeButton("Write\nCapacity", "HC_PIPES_WRITE", "Write Qfull and Vfull to each pipe's Description field."));
+            source.Items.Add(MakeButton("Rational\nQ", "HC_RATIONAL", "Composite Rational-method peak flow from catchments."));
+            source.Items.Add(MakeButton("About", "HC_ABOUT", "List HydroComplete commands."));
+
+            ribbon.Tabs.Add(_tab);
+        }
+
+        public static void RemoveRibbon()
+        {
+            try
+            {
+                RibbonControl ribbon = ComponentManager.Ribbon;
+                if (ribbon != null && _tab != null) ribbon.Tabs.Remove(_tab);
+            }
+            catch { }
+            finally { _tab = null; }
+        }
+
+        private static RibbonButton MakeButton(string text, string command, string tooltip)
+        {
+            return new RibbonButton
+            {
+                Text = text,
+                ShowText = true,
+                ShowImage = false,
+                Size = RibbonItemSize.Large,
+                CommandParameter = command + " ",
+                CommandHandler = CommandRelay.Instance,
+                ToolTip = tooltip,
+            };
+        }
+
+        /// <summary>Relays a ribbon click to the command line via SendStringToExecute.</summary>
+        private sealed class CommandRelay : ICommand
+        {
+            public static readonly CommandRelay Instance = new CommandRelay();
+
+            public event EventHandler? CanExecuteChanged;
+
+            public bool CanExecute(object? parameter) => true;
+
+            public void Execute(object? parameter)
+            {
+                var doc = AcadApp.DocumentManager.MdiActiveDocument;
+                if (doc == null) return;
+                if (parameter is string cmd && !string.IsNullOrEmpty(cmd))
+                    doc.SendStringToExecute(cmd, true, false, true);
+            }
+        }
+    }
+}
