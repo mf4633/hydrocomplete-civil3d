@@ -72,12 +72,18 @@ dotnet test          # 14/14 passing
 ## Building the plugin
 
 Requires the **.NET 8 SDK** and an installed **Civil 3D** (for the host API DLLs).
-Defaults target Civil 3D 2026; override the install path for other releases:
+The auto-load bundle targets **Civil 3D 2025 (R25.0)** and **2026 (R25.1)** with the
+same `net8.0-windows` build output. Defaults reference Civil 3D 2026; override
+`AcadDir` when compiling against 2025:
 
 ```
 dotnet build src/HydroComplete.Civil3D -c Release
 dotnet build src/HydroComplete.Civil3D -c Release -p:AcadDir="C:\Program Files\Autodesk\AutoCAD 2025\"
 ```
+
+`PackageContents.xml` lists one `ComponentEntry` per series (R25.0 and R25.1), each
+pointing at `./Contents/*.dll` — no per-version subfolders required while both hosts
+run .NET 8 and share a compatible API.
 
 Host assemblies (`AcMgd`, `AcCoreMgd`, `AcDbMgd`, `AdWindows`, `AeccDbMgd`,
 `AecBaseMgd`) are referenced with `Private=false` — they are never copied; the
@@ -85,15 +91,15 @@ plugin binds to them inside the running AutoCAD process.
 
 ## Loading in Civil 3D (no NETLOAD)
 
-Auto-load is a **one-time install**, then every Civil 3D 2026 startup loads the
-plugin automatically.
+Auto-load is a **one-time install**, then every **Civil 3D 2025 or 2026** startup
+loads the plugin automatically.
 
 1. **Quit Civil 3D completely** (Task Manager: no `acad.exe` still running).
 2. In PowerShell:
    ```
    powershell -File C:\Users\michael.flynn\dev\hydrocomplete-civil3d\install.ps1
    ```
-3. **Launch Civil 3D 2026** from the Start menu (the full desktop app — not
+3. **Launch Civil 3D 2025 or 2026** from the Start menu (the full desktop app — not
    `accoreconsole`, not plain AutoCAD).
 4. Confirm the command line shows:
    `HydroComplete for Civil 3D 0.3.2 loaded. Type HC_ABOUT for commands.`

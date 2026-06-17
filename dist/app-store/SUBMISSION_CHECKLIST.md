@@ -34,6 +34,19 @@ HydroComplete.bundle/
     └── PackageIcon.png            ← 96×96 bundle icon (App Store)
 ```
 
+### Supported Civil 3D versions
+
+| Product | Series | Runtime | Bundle layout |
+|---|---|---|---|
+| **Civil 3D 2025** | R25.0 | .NET 8 (`net8.0-windows`) | `./Contents/*.dll` (shared) |
+| **Civil 3D 2026** | R25.1 | .NET 8 (`net8.0-windows`) | `./Contents/*.dll` (shared) |
+
+One `RuntimeRequirements` + `ComponentEntry` pair per series; both point at the same
+`Contents/` folder. Separate per-version subfolders are **not** required while both
+hosts use .NET 8 and the API stays compatible. If a future Civil 3D release breaks
+binary compatibility, add version-specific DLL paths (e.g. `./Contents/R25.2/`) per
+Autodesk’s multi-target bundle pattern.
+
 ### `PackageContents.xml` requirements
 
 | Item | Status | Notes |
@@ -43,7 +56,7 @@ HydroComplete.bundle/
 | `Name` / `Description` | ✅ Present | Mirror `LISTING.md` copy |
 | `ProductCode` (GUID) | ✅ `{8d07b4c8-06cb-497d-832a-dcb5b095d9fa}` | Keep stable across versions |
 | `CompanyDetails` (Name, Url, Email) | ✅ Present | |
-| `RuntimeRequirements` OS/Platform/Series | ✅ `Win64` / `Civil3D` / `R25.1` | Single-version scope OK for v1 |
+| `RuntimeRequirements` OS/Platform/Series | ✅ `Win64` / `Civil3D` / **R25.0 + R25.1** | Two `ComponentEntry` blocks; same `Contents/*.dll` (both .NET 8) |
 | `ComponentEntry` `ModuleName` path | ✅ `./Contents/HydroComplete.Civil3D.dll` | File must exist in zip |
 | `LoadOnAutoCADStartup` | ✅ `True` | |
 | `Commands` block (Local + Global) | ✅ All 7 `HC_*` commands listed | |
@@ -64,7 +77,8 @@ HydroComplete.bundle/
 powershell -File verify-install.ps1   # after install.ps1 on a test machine
 ```
 
-- [ ] Civil 3D 2026 starts with banner: `HydroComplete for Civil 3D 0.3.0 loaded`
+- [ ] Civil 3D **2025 (R25.0)** and **2026 (R25.1)** each start with banner: `HydroComplete for Civil 3D 0.3.1 loaded`
+- [ ] `verify-install.ps1` reports `Series: R25.0 OK` and `Series: R25.1 OK`
 - [ ] `HC_ABOUT` lists all commands
 - [ ] No duplicate bundle folders under `%APPDATA%\Autodesk\ApplicationPlugins\`
 
@@ -114,7 +128,7 @@ Copy from `LISTING.md`:
 - [ ] **Short description** (80 chars)
 - [ ] **Long description** (full markdown/HTML as allowed)
 - [ ] **Category:** Civil Engineering / Hydraulics / Productivity (pick best fit in portal)
-- [ ] **Supported product:** Civil 3D 2026
+- [ ] **Supported products:** Civil 3D 2025 (R25.0), Civil 3D 2026 (R25.1)
 - [ ] **Version number:** 0.3.0
 - [ ] **Keywords** — paste from `LISTING.md`
 - [ ] **Pricing** — set when model finalized (TBD / freemium per `LISTING.md`)

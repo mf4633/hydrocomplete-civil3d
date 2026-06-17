@@ -16,6 +16,30 @@
                   Email="support@hydrocomplete.com" />
 
   <Components>
+    <!-- Civil 3D 2025 (R25.0) — same net8.0-windows DLLs as 2026 -->
+    <RuntimeRequirements OS="Win64" Platform="Civil3D" SeriesMin="R25.0" SeriesMax="R25.0" />
+    <ComponentEntry AppName="HYDROCOMPLETE"
+                    AppDescription="HydroComplete stormwater analysis"
+                    AppType=".NET"
+                    ModuleName="./Contents/HydroComplete.Civil3D.dll"
+                    LoadOnAutoCADStartup="True"
+                    LoadOnRequest="True">
+      <Commands GroupName="HYDROCOMPLETE">
+        <Command Local="HC_ABOUT" Global="HC_ABOUT" />
+        <Command Local="HC_PIPES" Global="HC_PIPES" />
+        <Command Local="HC_PIPES_WRITE" Global="HC_PIPES_WRITE" />
+        <Command Local="HC_RATIONAL" Global="HC_RATIONAL" />
+        <Command Local="HC_HGL" Global="HC_HGL" />
+        <Command Local="HC_REPORT" Global="HC_REPORT" />
+        <Command Local="HC_REPORT_PDF" Global="HC_REPORT_PDF" />
+        <Command Local="HC_ATLAS14" Global="HC_ATLAS14" />
+        <Command Local="HC_LICENSE" Global="HC_LICENSE" />
+      </Commands>
+      <AssemblyMappings>
+        <AssemblyMapping Name="HydroComplete.Engine" Path="./Contents/HydroComplete.Engine.dll" />
+      </AssemblyMappings>
+    </ComponentEntry>
+
     <!-- Civil 3D 2026 (R25.1) -->
     <RuntimeRequirements OS="Win64" Platform="Civil3D" SeriesMin="R25.1" SeriesMax="R25.1" />
     <ComponentEntry AppName="HYDROCOMPLETE"

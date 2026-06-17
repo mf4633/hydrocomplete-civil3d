@@ -10,6 +10,14 @@ if (-not (Test-Path $manifest)) {
     exit 1
 }
 Write-Host "Manifest: OK"
+$manifestText = Get-Content $manifest -Raw
+foreach ($series in @('R25.0', 'R25.1')) {
+    if ($manifestText -notmatch "SeriesMin=`"$series`"") {
+        Write-Host "MANIFEST: missing ComponentEntry for $series (Civil 3D 2025/2026) - reinstall from dist/HydroComplete.bundle"
+        exit 1
+    }
+    Write-Host "Series: $series OK"
+}
 if (-not (Test-Path $installed)) {
     Write-Host "STATUS: DLL MISSING - run install.ps1"
     exit 1
@@ -23,5 +31,5 @@ if (Test-Path $built) {
 }
 Select-String -Path $manifest -Pattern 'LoadOnAutoCADStartup|Platform|AppVersion' | ForEach-Object { Write-Host $_.Line.Trim() }
 Write-Host ""
-Write-Host "Launch Civil 3D 2026 full app (not core console)."
+Write-Host "Launch Civil 3D 2025 or 2026 full app (not core console)."
 Write-Host "Startup banner: HydroComplete for Civil 3D 0.3.2 loaded"
