@@ -1,5 +1,6 @@
 bin/
 obj/
 dist/HydroComplete.bundle/Contents/*.dll
+dist/HydroComplete-*.zip
 *.user
 .vs/
