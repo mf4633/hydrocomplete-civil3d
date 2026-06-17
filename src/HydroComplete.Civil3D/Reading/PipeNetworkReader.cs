@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Geometry;
 using Autodesk.Civil.ApplicationServices;
 using Autodesk.Civil.DatabaseServices;
 using HydroComplete.Engine;
@@ -14,6 +15,25 @@ namespace HydroComplete.Civil3D.Reading
         public string NetworkName { get; set; } = "";
         public string PipeName { get; set; } = "";
         public PipeSegment Segment { get; set; } = new PipeSegment();
+        public double LengthFt { get; set; }
+        public double StartInvertFt { get; set; }
+        public double EndInvertFt { get; set; }
+        public ObjectId StartStructureId { get; set; }
+        public ObjectId EndStructureId { get; set; }
+        public string StartStructureName { get; set; } = "";
+        public string EndStructureName { get; set; } = "";
+
+        /// <summary>Upstream end invert (higher elevation for gravity flow).</summary>
+        public double UpstreamInvertFt { get; set; }
+
+        /// <summary>Downstream end invert (lower elevation for gravity flow).</summary>
+        public double DownstreamInvertFt { get; set; }
+
+        /// <summary>Structure at the upstream end of flow.</summary>
+        public ObjectId UpstreamStructureId { get; set; }
+
+        /// <summary>Structure at the downstream end of flow.</summary>
+        public ObjectId DownstreamStructureId { get; set; }
     }
 
     /// <summary>
@@ -40,22 +60,42 @@ namespace HydroComplete.Civil3D.Reading
                 {
                     if (!(tr.GetObject(nid, OpenMode.ForRead) is Network net)) continue;
                     string netName = net.Name ?? "";
+                    var structureNames = BuildStructureNameLookup(net, tr);
 
                     foreach (ObjectId pid in net.GetPipeIds())
                     {
                         if (!(tr.GetObject(pid, OpenMode.ForRead) is Pipe pipe)) continue;
+
+                        double startInvert = InvertAt(pipe.StartPoint, pipe.InnerDiameterOrWidth);
+                        double endInvert = InvertAt(pipe.EndPoint, pipe.InnerDiameterOrWidth);
+                        bool startIsUpstream = startInvert >= endInvert;
+                        double lengthFt = pipe.Length2DCenterToCenter;
 
                         pipes.Add(new ReadPipe
                         {
                             PipeId = pid,
                             NetworkName = netName,
                             PipeName = pipe.Name ?? "",
+                            LengthFt = lengthFt,
+                            StartInvertFt = startInvert,
+                            EndInvertFt = endInvert,
+                            StartStructureId = pipe.StartStructureId,
+                            EndStructureId = pipe.EndStructureId,
+                            StartStructureName = ResolveStructureName(pipe.StartStructureId, structureNames),
+                            EndStructureName = ResolveStructureName(pipe.EndStructureId, structureNames),
+                            UpstreamInvertFt = startIsUpstream ? startInvert : endInvert,
+                            DownstreamInvertFt = startIsUpstream ? endInvert : startInvert,
+                            UpstreamStructureId = startIsUpstream ? pipe.StartStructureId : pipe.EndStructureId,
+                            DownstreamStructureId = startIsUpstream ? pipe.EndStructureId : pipe.StartStructureId,
                             Segment = new PipeSegment
                             {
                                 Name = pipe.Name ?? "",
                                 DiameterFt = pipe.InnerDiameterOrWidth,
                                 Slope = Math.Abs(pipe.Slope),
                                 ManningN = DefaultManningN,
+                                LengthFt = lengthFt,
+                                StartInvertFt = startInvert,
+                                EndInvertFt = endInvert,
                             },
                         });
                     }
@@ -64,6 +104,34 @@ namespace HydroComplete.Civil3D.Reading
             }
 
             return pipes;
+        }
+
+        /// <summary>
+        /// Civil 3D 2026 exposes pipe-end elevations via <see cref="Pipe.StartPoint"/> /
+        /// <see cref="Pipe.EndPoint"/> (Z); there is no StartInvert/EndInvert property.
+        /// For circular pipes we subtract half the inner diameter to obtain invert.
+        /// </summary>
+        private static double InvertAt(Point3d endPoint, double innerDiameterFt)
+        {
+            double radius = innerDiameterFt > 0 ? innerDiameterFt / 2.0 : 0.0;
+            return endPoint.Z - radius;
+        }
+
+        private static Dictionary<ObjectId, string> BuildStructureNameLookup(Network net, Transaction tr)
+        {
+            var names = new Dictionary<ObjectId, string>();
+            foreach (ObjectId sid in net.GetStructureIds())
+            {
+                if (!(tr.GetObject(sid, OpenMode.ForRead) is Structure structure)) continue;
+                names[sid] = structure.Name ?? "";
+            }
+            return names;
+        }
+
+        private static string ResolveStructureName(ObjectId structureId, Dictionary<ObjectId, string> names)
+        {
+            if (structureId.IsNull) return "";
+            return names.TryGetValue(structureId, out string? name) ? name : "";
         }
     }
 }

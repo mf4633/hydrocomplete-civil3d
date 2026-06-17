@@ -68,6 +68,15 @@ namespace HydroComplete.Engine
 
         /// <summary>Design (peak) flow the pipe must carry, cfs. Optional.</summary>
         public double DesignFlowCfs { get; set; }
+
+        /// <summary>Pipe length, ft (plan or center-to-center per source drawing).</summary>
+        public double LengthFt { get; set; }
+
+        /// <summary>Invert elevation at the upstream end, ft.</summary>
+        public double StartInvertFt { get; set; }
+
+        /// <summary>Invert elevation at the downstream end, ft.</summary>
+        public double EndInvertFt { get; set; }
     }
 
     /// <summary>A single reach in a steady HGL network profile.</summary>
