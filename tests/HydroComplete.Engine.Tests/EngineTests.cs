@@ -178,6 +178,29 @@ namespace HydroComplete.Engine.Tests
         }
 
         [Fact]
+        public void ResolveForDrawing_CharlotteCoords_ReturnsCharlotte()
+        {
+            var p = Atlas14Presets.ResolveForDrawing(35.23, -80.84);
+            Assert.NotNull(p);
+            Assert.Equal("charlotte-nc", p!.Key);
+        }
+
+        [Fact]
+        public void ResolveForDrawing_NullCoords_ReturnsNull()
+        {
+            Assert.Null(Atlas14Presets.ResolveForDrawing(null, -80.84));
+            Assert.Null(Atlas14Presets.ResolveForDrawing(35.23, null));
+            Assert.Null(Atlas14Presets.ResolveForDrawing(null, null));
+        }
+
+        [Fact]
+        public void ResolveForDrawing_InvalidCoords_ReturnsNull()
+        {
+            Assert.Null(Atlas14Presets.ResolveForDrawing(95.0, -80.84));
+            Assert.Null(Atlas14Presets.ResolveForDrawing(35.23, -200.0));
+        }
+
+        [Fact]
         public void PeakFromCatchments_UsesSystemTc()
         {
             var catchments = new List<Catchment>

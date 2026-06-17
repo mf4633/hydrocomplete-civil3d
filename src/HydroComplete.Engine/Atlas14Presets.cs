@@ -71,6 +71,20 @@ namespace HydroComplete.Engine
                 string.Equals(p.Key, key.Trim(), StringComparison.OrdinalIgnoreCase));
         }
 
+        /// <summary>
+        /// Nearest Atlas 14 preset for optional drawing coordinates; null when geo is unavailable.
+        /// </summary>
+        public static Preset? ResolveForDrawing(double? lat, double? lon)
+        {
+            if (!lat.HasValue || !lon.HasValue) return null;
+            double la = lat.Value;
+            double lo = lon.Value;
+            if (double.IsNaN(la) || double.IsNaN(lo) || double.IsInfinity(la) || double.IsInfinity(lo))
+                return null;
+            if (la < -90.0 || la > 90.0 || lo < -180.0 || lo > 180.0) return null;
+            return Nearest(la, lo);
+        }
+
         /// <summary>Nearest preset by great-circle distance (degrees, adequate for city pick).</summary>
         public static Preset Nearest(double lat, double lon)
         {

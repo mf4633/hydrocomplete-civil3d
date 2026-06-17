@@ -325,7 +325,7 @@ namespace HydroComplete.Civil3D.Commands
                 return;
             }
 
-            Atlas14Presets.Preset? preset = IdfPrompts.PromptPreset(ed);
+            Atlas14Presets.Preset? preset = IdfPrompts.PromptPreset(ed, doc.Database);
             Rational.PeakFlowResult q;
             double systemTc = 0.0;
             foreach (var cm in catchments) systemTc = Math.Max(systemTc, cm.TcMinutes);
@@ -368,7 +368,7 @@ namespace HydroComplete.Civil3D.Commands
             var catchments = CatchmentReader.ReadAll(doc.Database, civilDoc);
             if (catchments.Count > 0 && PromptYesNo(ed, "\nUse Rational Q from catchments + Atlas 14 IDF", defaultYes: true))
             {
-                Atlas14Presets.Preset? preset = IdfPrompts.PromptPreset(ed);
+                Atlas14Presets.Preset? preset = IdfPrompts.PromptPreset(ed, doc.Database);
                 if (preset == null)
                 {
                     IdfCurve idf = IdfPrompts.PromptCustomIdfCurve(ed);

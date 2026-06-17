@@ -5,7 +5,7 @@ drawing** — read pipe networks and catchments, compute on public-domain method
 and show every formula. This is the desktop companion behind
 [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d).
 
-Status: **v0.3.0** — see [User validation](#user-validation) below.
+Status: **v0.3.1** — see [User validation](#user-validation) below.
 
 **Autodesk App Store:** Listing copy, submission checklist, and screenshot shot list live in [`dist/app-store/`](dist/app-store/) (`LISTING.md`, `SUBMISSION_CHECKLIST.md`, `SCREENSHOTS.md`).
 
@@ -33,6 +33,7 @@ not yet re-tested after the listed fix.
 | `HC_ATLAS14` (IDF preset list) | *pending* | v0.3.0 — 18 embedded NOAA Atlas 14 city curves |
 | `HC_RATIONAL` + Atlas 14 presets | *pending* | v0.3.0 — preset key instead of manual a/b/c |
 | `HC_HGL` + Rational design Q | *pending* | v0.3.0 — optional catchment-driven Q when catchments exist |
+| Atlas 14 auto from drawing geo | *pending* | v0.3.1 — `GEOGRAPHICLOCATION` → nearest preset; Enter accepts `auto` |
 
 ## Layout
 
@@ -95,7 +96,7 @@ plugin automatically.
 3. **Launch Civil 3D 2026** from the Start menu (the full desktop app — not
    `accoreconsole`, not plain AutoCAD).
 4. Confirm the command line shows:
-   `HydroComplete for Civil 3D 0.3.0 loaded. Type HC_ABOUT for commands.`
+   `HydroComplete for Civil 3D 0.3.1 loaded. Type HC_ABOUT for commands.`
 
 Check install any time:
 ```
@@ -122,6 +123,16 @@ before the one-time install above.
 | `HC_RATIONAL` | Rational peak Q from catchments + NOAA Atlas 14 IDF preset (or custom a/b/c) |
 | `HC_ATLAS14` | List embedded Atlas 14 IDF presets (18 US cities, 10-yr) |
 
+**Atlas 14 geolocation (v0.3.1):** When the drawing has geo-reference data
+(`GEOGRAPHICLOCATION` / `Database.GeoDataObject`), `HC_RATIONAL` and the
+Rational Q path in `HC_HGL` default the preset prompt to **auto** and pick the
+nearest embedded city. The reader uses `Database.GeoDataObject` →
+`GeoLocationData.ReferencePoint` (lon in X, lat in Y), optional marker properties
+via reflection (`GeoMarkerPosition` / `GeoPosition` — neither is on AcDbMgd 2026;
+`DesignPoint` + `TransformToLonLatAlt` is the fallback). Drawings without geo
+still default to `charlotte-nc`. Not unit-tested in-process (requires Civil 3D);
+engine `ResolveForDrawing` is tested.
+
 The ribbon tab **HydroComplete › Analysis** exposes the same commands.
 
 ## Roadmap
@@ -129,7 +140,7 @@ The ribbon tab **HydroComplete › Analysis** exposes the same commands.
 1. **Write-back (v0.1 done)** — MText labels on `HC-CAPACITY` validated; HGL labels on `HC-HGL` in v0.2 (pending validation).
 2. **HGL backwater (v0.3 partial)** — HEC-22 junction/exit minor losses in steady profile; full momentum backwater next.
 3. **Report export** — HTML in v0.2; formula-transparent PDF mirroring the web app next.
-4. **NOAA Atlas 14 (v0.3 partial)** — 18 embedded city presets; auto-fetch by drawing geolocation next.
+4. **NOAA Atlas 14 (v0.3.1 partial)** — 18 embedded city presets; auto-select nearest from drawing geolocation.
 5. **Account/auth handoff** — gate Pro features against a hydrocomplete.com login.
 
 Civil 3D, AutoCAD, and Storm and Sanitary Analysis are trademarks of Autodesk,
