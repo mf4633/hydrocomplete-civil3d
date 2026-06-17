@@ -140,6 +140,58 @@ namespace HydroComplete.Engine.Tests
         }
     }
 
+    public class Hec22Tests
+    {
+        [Fact]
+        public void MinorHeadLoss_DefaultManholeK_IsKTimesVh()
+        {
+            double vh = Hec22.VelocityHeadFt(5.0);
+            var r = Hec22.MinorHeadLoss(Hec22.DefaultManholeK, vh);
+            Assert.Equal(Hec22.DefaultManholeK * vh, r.HeadLossFt, 6);
+            Assert.NotEmpty(r.Steps);
+        }
+
+        [Fact]
+        public void VelocityHeadFromFlow_MatchesManual()
+        {
+            // Q=10 cfs, A=3 ft² -> V=3.333 fps -> Vh=0.1727 ft
+            double vh = Hec22.VelocityHeadFromFlow(10.0, 3.0);
+            Assert.Equal(0.173, vh, 2);
+        }
+    }
+
+    public class Atlas14PresetsTests
+    {
+        [Fact]
+        public void Find_Charlotte_ReturnsPreset()
+        {
+            var p = Atlas14Presets.Find("charlotte-nc");
+            Assert.NotNull(p);
+            Assert.Equal("Charlotte, NC", p!.DisplayName);
+        }
+
+        [Fact]
+        public void Nearest_CharlotteCoords_PicksCharlotte()
+        {
+            var p = Atlas14Presets.Nearest(35.23, -80.84);
+            Assert.Equal("charlotte-nc", p.Key);
+        }
+
+        [Fact]
+        public void PeakFromCatchments_UsesSystemTc()
+        {
+            var catchments = new List<Catchment>
+            {
+                new Catchment { Name = "A", RunoffC = 0.85, AreaAcres = 2.0, TcMinutes = 12.0 },
+                new Catchment { Name = "B", RunoffC = 0.55, AreaAcres = 1.0, TcMinutes = 8.0 },
+            };
+            var preset = Atlas14Presets.Find("charlotte-nc");
+            var r = Atlas14Presets.PeakFromCatchments(catchments, preset!);
+            Assert.True(r.PeakFlowCfs > 0);
+            Assert.True(r.IntensityInHr > 0);
+        }
+    }
+
     public class HglTests
     {
         // Trap Q=17.656 cfs, n=0.013, A=3 ft², R=0.6708 ft, L=100 ft -> hf ~0.500 ft (hglStep0_2).
@@ -182,6 +234,31 @@ namespace HydroComplete.Engine.Tests
             Assert.True(profile[0].HglFt > profile[1].HglFt);
             Assert.True(profile[0].HfFt > 0);
             Assert.NotEmpty(profile[0].Steps);
+        }
+
+        [Fact]
+        public void SteadyNetworkHglProfile_WithJunctionLosses_DropsMoreThanFrictionOnly()
+        {
+            var reaches = new List<NetworkReach>
+            {
+                new NetworkReach
+                {
+                    Name = "R1",
+                    LengthFt = 100.0,
+                    ManningN = 0.013,
+                    AreaFt2 = 3.0,
+                    HydRadiusFt = 0.6708,
+                    FlowCfs = 17.656,
+                    JunctionLossK = Hec22.DefaultManholeK,
+                },
+            };
+
+            var plain = Hgl.SteadyNetworkHglProfile(reaches, startHglFt: 10.0);
+            var options = new HglProfileOptions { IncludeJunctionLosses = true };
+            var withLoss = Hgl.SteadyNetworkHglProfile(reaches, startHglFt: 10.0, options);
+
+            Assert.True(withLoss[0].HglFt < plain[0].HglFt);
+            Assert.True(withLoss[0].HmFt > 0);
         }
     }
 }

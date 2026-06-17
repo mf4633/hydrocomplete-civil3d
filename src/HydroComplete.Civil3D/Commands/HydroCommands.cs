@@ -27,14 +27,21 @@ namespace HydroComplete.Civil3D.Commands
         public void About()
         {
             Editor ed = Active().Editor;
-            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.2.0 ===");
+            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.3.0 ===");
             ed.WriteMessage("\n  HC_PIPES       Manning capacity of every pipe-network pipe");
             ed.WriteMessage("\n  HC_PIPES_WRITE Label Qfull/Vfull on layer HC-CAPACITY");
-            ed.WriteMessage("\n  HC_HGL         Steady HGL profile + labels on layer HC-HGL");
+            ed.WriteMessage("\n  HC_HGL         Steady HGL + HEC-22 junction losses + HC-HGL labels");
             ed.WriteMessage("\n  HC_REPORT      Export formula-transparent HTML Manning report");
-            ed.WriteMessage("\n  HC_RATIONAL    Composite Rational-method peak flow from catchments");
+            ed.WriteMessage("\n  HC_RATIONAL    Rational Q from catchments + NOAA Atlas 14 IDF presets");
+            ed.WriteMessage("\n  HC_ATLAS14     List embedded Atlas 14 IDF presets by city");
             ed.WriteMessage("\n  HC_ABOUT       This list");
-            ed.WriteMessage("\n  Engine: Rational, SCS Tc, Manning, IDF — public-domain, fully shown.\n");
+            ed.WriteMessage("\n  Engine: Rational, SCS Tc, Manning, IDF, HEC-22 — public-domain, fully shown.\n");
+        }
+
+        [CommandMethod("HC_ATLAS14")]
+        public void Atlas14List()
+        {
+            IdfPrompts.WriteAtlas14List(Active().Editor);
         }
 
         [CommandMethod("HC_PIPES")]
@@ -122,23 +129,31 @@ namespace HydroComplete.Civil3D.Commands
                 return;
             }
 
-            double designQ = PromptDouble(ed, "\nUniform design flow Q (cfs)", 10.0);
+            double designQ = PromptDesignFlow(ed, doc, civilDoc);
+            bool useMinorLosses = PromptYesNo(ed, "\nInclude HEC-22 junction/exit losses", defaultYes: true);
+
+            var hglOptions = new HglProfileOptions
+            {
+                IncludeJunctionLosses = useMinorLosses,
+                IncludeExitLoss = useMinorLosses,
+            };
+
             var networks = NetworkTopology.BuildOrderedNetworks(pipes);
             var allMidHgl = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
 
-            ed.WriteMessage($"\n--- HydroComplete: steady HGL (Q={designQ:0.0} cfs) ---");
-            ed.WriteMessage("\nNetwork                 Pipe              HGL_US(ft)  HGL_DS(ft)  HGL_mid(ft)");
+            string lossNote = useMinorLosses ? " + HEC-22" : "";
+            ed.WriteMessage($"\n--- HydroComplete: steady HGL{lossNote} (Q={designQ:0.0} cfs) ---");
+            ed.WriteMessage("\nNetwork                 Pipe              HGL_US(ft)  HGL_DS(ft)  HGL_mid(ft)  h_m(ft)");
 
             foreach (var net in networks)
             {
                 if (net.OrderedPipes.Count == 0) continue;
 
-                var reaches = net.OrderedPipes
-                    .Select(rp => NetworkTopology.ToReach(rp, designQ))
-                    .ToList();
+                var reaches = NetworkTopology.BuildReaches(
+                    net.OrderedPipes, designQ, useMinorLosses);
 
                 double startHgl = net.MaxUpstreamInvertFt + 1.0;
-                var profile = Hgl.SteadyNetworkHglProfile(reaches, startHgl);
+                var profile = Hgl.SteadyNetworkHglProfile(reaches, startHgl, hglOptions);
                 double hglUs = startHgl;
 
                 for (int i = 0; i < net.OrderedPipes.Count && i < profile.Count; i++)
@@ -152,10 +167,10 @@ namespace HydroComplete.Civil3D.Commands
                     allMidHgl[reachName] = hglMid;
 
                     ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
-                        "\n{0,-22} {1,-16} {2,10:0.00}  {3,10:0.00}  {4,10:0.00}",
+                        "\n{0,-22} {1,-16} {2,10:0.00}  {3,10:0.00}  {4,10:0.00}  {5,8:0.00}",
                         Trim(net.NetworkName, 22),
                         Trim(rp.PipeName, 16),
-                        hglUs, hglDs, hglMid));
+                        hglUs, hglDs, hglMid, point.HmFt));
 
                     hglUs = hglDs;
                 }
@@ -220,19 +235,22 @@ namespace HydroComplete.Civil3D.Commands
                 return;
             }
 
-            // IDF coefficients i = a/(t+b)^c. Defaults are placeholders — replace
-            // with NOAA Atlas 14 values for the project site and return period.
-            double a = PromptDouble(ed, "\nIDF coefficient a", 120.0);
-            double b = PromptDouble(ed, "IDF coefficient b", 12.0);
-            double c = PromptDouble(ed, "IDF coefficient c", 0.85);
-            var idf = new IdfCurve(a, b, c);
-
-            // System Tc governs the design intensity: use the longest catchment Tc.
+            Atlas14Presets.Preset? preset = IdfPrompts.PromptPreset(ed);
+            Rational.PeakFlowResult q;
             double systemTc = 0.0;
             foreach (var cm in catchments) systemTc = Math.Max(systemTc, cm.TcMinutes);
 
-            var intensity = idf.Intensity(systemTc);
-            var q = Rational.Peak(catchments, intensity.IntensityInHr);
+            if (preset != null)
+            {
+                q = Atlas14Presets.PeakFromCatchments(catchments, preset);
+                ed.WriteMessage($"\n  IDF preset: {preset.DisplayName} ({preset.Key}, {preset.ReturnPeriodYears}-yr)\n");
+            }
+            else
+            {
+                IdfCurve idf = IdfPrompts.PromptCustomIdfCurve(ed);
+                var intensity = idf.Intensity(systemTc);
+                q = Rational.Peak(catchments, intensity.IntensityInHr);
+            }
 
             ed.WriteMessage($"\n--- HydroComplete: Rational method ({catchments.Count} catchments) ---");
             foreach (var cm in catchments)
@@ -241,7 +259,7 @@ namespace HydroComplete.Civil3D.Commands
                     Trim(cm.Name, 20), cm.AreaAcres, cm.RunoffC, cm.TcMinutes));
 
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
-                "\n  System Tc = {0:0.0} min  ->  i = {1:0.000} in/hr", systemTc, intensity.IntensityInHr));
+                "\n  System Tc = {0:0.0} min  ->  i = {1:0.000} in/hr", systemTc, q.IntensityInHr));
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
                 "\n  Composite C = {0:0.000}   Total area = {1:0.000} ac", q.CompositeC, q.TotalAreaAcres));
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
@@ -255,6 +273,37 @@ namespace HydroComplete.Civil3D.Commands
             return doc;
         }
 
+        private static double PromptDesignFlow(Editor ed, Document doc, CivilDocument civilDoc)
+        {
+            var catchments = CatchmentReader.ReadAll(doc.Database, civilDoc);
+            if (catchments.Count > 0 && PromptYesNo(ed, "\nUse Rational Q from catchments + Atlas 14 IDF", defaultYes: true))
+            {
+                Atlas14Presets.Preset? preset = IdfPrompts.PromptPreset(ed);
+                if (preset == null)
+                {
+                    IdfCurve idf = IdfPrompts.PromptCustomIdfCurve(ed);
+                    double systemTc = 0.0;
+                    foreach (var cm in catchments) systemTc = Math.Max(systemTc, cm.TcMinutes);
+                    var intensity = idf.Intensity(systemTc);
+                    var q = Rational.Peak(catchments, intensity.IntensityInHr);
+                    ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                        "\n  Rational design Q = {0:0.00} cfs ({1} catchments, Tc={2:0.0} min)\n",
+                        q.PeakFlowCfs, catchments.Count, systemTc));
+                    return q.PeakFlowCfs;
+                }
+
+                var peak = Atlas14Presets.PeakFromCatchments(catchments, preset);
+                double tc = 0.0;
+                foreach (var cm in catchments) tc = Math.Max(tc, cm.TcMinutes);
+                ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                    "\n  Rational design Q = {0:0.00} cfs ({1}, {2} catchments, Tc={3:0.0} min)\n",
+                    peak.PeakFlowCfs, preset.DisplayName, catchments.Count, tc));
+                return peak.PeakFlowCfs;
+            }
+
+            return PromptDouble(ed, "\nUniform design flow Q (cfs)", 10.0);
+        }
+
         private static double PromptDouble(Editor ed, string message, double dflt)
         {
             var opts = new PromptDoubleOptions(message)
@@ -266,6 +315,20 @@ namespace HydroComplete.Civil3D.Commands
             };
             PromptDoubleResult res = ed.GetDouble(opts);
             return res.Status == PromptStatus.OK ? res.Value : dflt;
+        }
+
+        private static bool PromptYesNo(Editor ed, string message, bool defaultYes)
+        {
+            var opts = new PromptKeywordOptions(message)
+            {
+                AllowNone = true,
+            };
+            opts.Keywords.Add("Yes");
+            opts.Keywords.Add("No");
+            opts.Keywords.Default = defaultYes ? "Yes" : "No";
+            PromptResult res = ed.GetKeywords(opts);
+            if (res.Status != PromptStatus.OK) return defaultYes;
+            return string.Equals(res.StringResult, "Yes", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string Trim(string s, int max)

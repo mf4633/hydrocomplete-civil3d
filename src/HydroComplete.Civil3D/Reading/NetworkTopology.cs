@@ -130,12 +130,32 @@ namespace HydroComplete.Civil3D.Reading
         /// hydraulic radius (R = D/4) with a uniform design flow.
         /// </summary>
         public static List<NetworkReach> BuildReaches(IReadOnlyList<ReadPipe> pipes, double designFlowCfs)
+            => BuildReaches(pipes, designFlowCfs, includeJunctionLosses: false);
+
+        /// <summary>
+        /// Builds HGL reaches with optional HEC-22 junction K at internal manholes.
+        /// </summary>
+        public static List<NetworkReach> BuildReaches(
+            IReadOnlyList<ReadPipe> pipes, double designFlowCfs, bool includeJunctionLosses)
         {
             if (pipes == null) throw new ArgumentNullException(nameof(pipes));
 
             var reaches = new List<NetworkReach>(pipes.Count);
-            foreach (ReadPipe rp in pipes)
-                reaches.Add(ToReach(rp, designFlowCfs));
+            for (int i = 0; i < pipes.Count; i++)
+            {
+                ReadPipe rp = pipes[i];
+                NetworkReach reach = ToReach(rp, designFlowCfs);
+
+                if (includeJunctionLosses && i < pipes.Count - 1)
+                {
+                    ReadPipe next = pipes[i + 1];
+                    if (rp.DownstreamStructureId == next.UpstreamStructureId)
+                        reach.JunctionLossK = Hec22.DefaultManholeK;
+                }
+
+                reaches.Add(reach);
+            }
+
             return reaches;
         }
 

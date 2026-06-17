@@ -68,12 +68,20 @@ namespace HydroComplete.Engine
 
         /// <summary>
         /// Steady (uniform-flow per reach) HGL/EGL profile stepping downstream from
-        /// <paramref name="startHglFt"/>.
+        /// <paramref name="startHglFt"/>. No HEC-22 minor losses (v0.2 behavior).
         /// </summary>
         public static List<HglProfilePoint> SteadyNetworkHglProfile(
             IReadOnlyList<NetworkReach> reaches, double startHglFt)
+            => SteadyNetworkHglProfile(reaches, startHglFt, null);
+
+        /// <summary>
+        /// Steady HGL/EGL profile with optional HEC-22 junction, entrance, and exit losses.
+        /// </summary>
+        public static List<HglProfilePoint> SteadyNetworkHglProfile(
+            IReadOnlyList<NetworkReach> reaches, double startHglFt, HglProfileOptions? options)
         {
             if (reaches == null) throw new ArgumentNullException(nameof(reaches));
+            options ??= new HglProfileOptions();
 
             var profile = new List<HglProfilePoint>();
             if (reaches.Count == 0)
@@ -93,8 +101,6 @@ namespace HydroComplete.Engine
                 double areaFt2 = reach.AreaFt2;
                 double hydRadiusFt = reach.HydRadiusFt;
                 double flowCfs = reach.FlowCfs;
-                double velHeadUpFt = reach.VelHeadUpFt;
-                double velHeadDownFt = reach.VelHeadDownFt;
 
                 if (lengthFt <= 0) throw new ArgumentOutOfRangeException(nameof(reaches), "Length must be > 0.");
                 if (n <= 0) throw new ArgumentOutOfRangeException(nameof(reaches), "Manning n must be > 0.");
@@ -102,12 +108,50 @@ namespace HydroComplete.Engine
                 if (hydRadiusFt <= 0) throw new ArgumentOutOfRangeException(nameof(reaches), "Hydraulic radius must be > 0.");
                 if (flowCfs < 0) throw new ArgumentOutOfRangeException(nameof(reaches), "Flow must be >= 0.");
 
+                double velHeadDownFt = reach.VelHeadDownFt;
+                if (velHeadDownFt <= 0 && flowCfs > 0)
+                    velHeadDownFt = Hec22.VelocityHeadFromFlow(flowCfs, areaFt2);
+
+                double velHeadUpFt = reach.VelHeadUpFt;
+                if (velHeadUpFt <= 0 && flowCfs > 0)
+                    velHeadUpFt = velHeadDownFt;
+
+                double hmTotal = 0.0;
+
+                if (options.IncludeEntranceLoss && idx == 0)
+                {
+                    double kEnt = reach.EntranceLossK > 0 ? reach.EntranceLossK : options.EntranceLossK;
+                    var hEnt = Hec22.MinorHeadLoss(kEnt, velHeadUpFt);
+                    hmTotal += hEnt.HeadLossFt;
+                    hglFt -= hEnt.HeadLossFt;
+                    eglFt -= hEnt.HeadLossFt;
+                }
+
                 var friction = ManningFrictionHeadLoss(flowCfs, n, areaFt2, hydRadiusFt, lengthFt);
                 var eglStep = EnergyGradeLineStep(
                     flowCfs, n, areaFt2, hydRadiusFt, lengthFt, velHeadUpFt, velHeadDownFt);
 
                 hglFt -= friction.HfFt;
                 eglFt -= eglStep.DeltaEglFt;
+
+                if (options.IncludeJunctionLosses && reach.JunctionLossK > 0)
+                {
+                    var hJunc = Hec22.MinorHeadLoss(reach.JunctionLossK, velHeadDownFt);
+                    hmTotal += hJunc.HeadLossFt;
+                    hglFt -= hJunc.HeadLossFt;
+                    eglFt -= hJunc.HeadLossFt;
+                }
+
+                bool isOutfall = idx == reaches.Count - 1;
+                if (options.IncludeExitLoss && isOutfall)
+                {
+                    double kExit = reach.ExitLossK > 0 ? reach.ExitLossK : options.ExitLossK;
+                    var hExit = Hec22.MinorHeadLoss(kExit, velHeadDownFt);
+                    hmTotal += hExit.HeadLossFt;
+                    hglFt -= hExit.HeadLossFt;
+                    eglFt -= hExit.HeadLossFt;
+                }
+
                 cumLengthFt += lengthFt;
 
                 var point = new HglProfilePoint
@@ -118,6 +162,8 @@ namespace HydroComplete.Engine
                     EglFt = eglFt,
                     HfFt = friction.HfFt,
                     DeltaEglFt = eglStep.DeltaEglFt,
+                    HmFt = hmTotal,
+                    VelocityHeadFt = velHeadDownFt,
                 };
 
                 if (!string.IsNullOrEmpty(reach.Name))
@@ -131,8 +177,10 @@ namespace HydroComplete.Engine
                         continue;
                     point.Steps.Add(step);
                 }
-                point.Steps.Add(new CalcStep("HGL", hglFt, "ft", "HGL_up - h_f"));
-                point.Steps.Add(new CalcStep("EGL", eglFt, "ft", "EGL_up - ΔEGL"));
+                if (hmTotal > 0)
+                    point.Steps.Add(new CalcStep("h_m", hmTotal, "ft", "HEC-22 minor losses"));
+                point.Steps.Add(new CalcStep("HGL", hglFt, "ft", "HGL_up - h_f - h_m"));
+                point.Steps.Add(new CalcStep("EGL", eglFt, "ft", "EGL_up - ΔEGL - h_m"));
 
                 profile.Add(point);
             }

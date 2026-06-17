@@ -104,6 +104,35 @@ namespace HydroComplete.Engine
 
         /// <summary>Downstream velocity head, ft (V²/2g).</summary>
         public double VelHeadDownFt { get; set; }
+
+        /// <summary>
+        /// Junction/minor loss K at the downstream structure (HEC-22 h_m = K*Vh).
+        /// Zero skips minor loss at this node.
+        /// </summary>
+        public double JunctionLossK { get; set; }
+
+        /// <summary>Entrance loss K at the upstream end of this reach (0 = none).</summary>
+        public double EntranceLossK { get; set; }
+
+        /// <summary>Exit loss K at the downstream end (1.0 = full velocity-head dissipation).</summary>
+        public double ExitLossK { get; set; }
+    }
+
+    /// <summary>Options for steady HGL profile stepping.</summary>
+    public sealed class HglProfileOptions
+    {
+        /// <summary>Apply HEC-22 junction losses at internal manholes.</summary>
+        public bool IncludeJunctionLosses { get; set; }
+
+        /// <summary>Apply entrance loss at the headwater pipe (K*Vh).</summary>
+        public bool IncludeEntranceLoss { get; set; }
+
+        /// <summary>Apply exit loss at the outfall pipe (typically K=1).</summary>
+        public bool IncludeExitLoss { get; set; }
+
+        public double ManholeLossK { get; set; } = Hec22.DefaultManholeK;
+        public double EntranceLossK { get; set; } = Hec22.DefaultEntranceK;
+        public double ExitLossK { get; set; } = Hec22.DefaultExitK;
     }
 
     /// <summary>One point on a steady network HGL/EGL profile (downstream end of a reach).</summary>
@@ -125,5 +154,11 @@ namespace HydroComplete.Engine
 
         /// <summary>Energy grade line drop over this reach, ft.</summary>
         public double DeltaEglFt { get; set; }
+
+        /// <summary>Sum of minor (junction/entrance/exit) losses over this reach, ft.</summary>
+        public double HmFt { get; set; }
+
+        /// <summary>Velocity head at the downstream end of this reach, ft.</summary>
+        public double VelocityHeadFt { get; set; }
     }
 }
