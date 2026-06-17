@@ -4,7 +4,9 @@ Step-by-step checklist for publishing **HydroComplete for Civil 3D** via the
 [Autodesk Developer Network Publisher](https://apps.autodesk.com/en/Publisher/Home).
 
 **Bundle source:** `dist/HydroComplete.bundle/`  
-**Build command:** `./package.sh Release` (or `dotnet build` + copy per `package.sh`)
+**CI:** `.\scripts\ci.ps1` (test + build + manifest check)  
+**Release zip:** `.\scripts\release.ps1` → `dist/HydroComplete-{version}.zip` + SHA256  
+**Manual build:** `./package.sh Release` (or `dotnet build` + copy per `package.sh`)
 
 ---
 
@@ -138,8 +140,28 @@ Copy from `LISTING.md`:
 
 ## 6. Upload Package
 
-- [ ] Zip **`HydroComplete.bundle`** folder (not its parent) — the zip root must contain `PackageContents.xml`
-- [ ] Upload via Publisher → New/Update App → Attach bundle
+### 6a. Create release zip
+
+From the repo root (PowerShell):
+
+```powershell
+.\scripts\release.ps1
+```
+
+This builds Release, refreshes `dist/HydroComplete.bundle/Contents/*.dll`, and writes
+`dist/HydroComplete-{version}.zip` (version from `HydroComplete.Civil3D.csproj` unless
+`-Version` is passed). Record the printed **SHA256** for your release notes / audit trail.
+
+Optional: run full CI before packaging:
+
+```powershell
+.\scripts\ci.ps1
+```
+
+### 6b. Upload
+
+- [ ] Confirm zip root contains `PackageContents.xml` and `Contents/` (see `scripts/README.md`)
+- [ ] Upload `dist/HydroComplete-{version}.zip` via Publisher → New/Update App → Attach bundle
 - [ ] Pass automated manifest validation (fix Icon/HelpFile if rejected)
 - [ ] Submit for Autodesk review
 
@@ -162,5 +184,7 @@ Copy from `LISTING.md`:
 | Support email | support@hydrocomplete.com |
 | Product page | https://hydrocomplete.com/civil3d |
 | Bundle manifest | `dist/HydroComplete.bundle/PackageContents.xml` |
+| CI script | `scripts/ci.ps1` |
+| Release zip script | `scripts/release.ps1` |
 | Screenshot guide | `dist/app-store/SCREENSHOTS.md` |
 | Listing copy | `dist/app-store/LISTING.md` |
