@@ -31,7 +31,7 @@ namespace HydroComplete.Civil3D.Commands
             ed.WriteMessage("\n  HC_PIPES       Manning capacity of every pipe-network pipe");
             ed.WriteMessage("\n  HC_PIPES_WRITE Label Qfull/Vfull on layer HC-CAPACITY");
             ed.WriteMessage("\n  HC_HGL         Steady HGL + HEC-22 junction losses + HC-HGL labels");
-            ed.WriteMessage("\n  HC_REPORT      Export formula-transparent HTML Manning report");
+            ed.WriteMessage("\n  HC_REPORT      Export formula-transparent HTML Manning + HGL report");
             ed.WriteMessage("\n  HC_RATIONAL    Rational Q from catchments + NOAA Atlas 14 IDF presets");
             ed.WriteMessage("\n  HC_ATLAS14     List embedded Atlas 14 IDF presets by city");
             ed.WriteMessage("\n  HC_ABOUT       This list");
@@ -199,6 +199,9 @@ namespace HydroComplete.Civil3D.Commands
                 return;
             }
 
+            double designQ = PromptDesignFlow(ed, doc, civilDoc);
+            bool useMinorLosses = PromptYesNo(ed, "\nInclude HEC-22 junction/exit losses in HGL section", defaultYes: true);
+
             var capacities = new Dictionary<ObjectId, Manning.CapacityResult>();
             foreach (var rp in pipes)
             {
@@ -212,13 +215,70 @@ namespace HydroComplete.Civil3D.Commands
                 }
             }
 
+            HglReportData hglData = BuildHglReportData(pipes, designQ, useMinorLosses);
+
             string drawingName = Path.GetFileNameWithoutExtension(doc.Name);
             if (string.IsNullOrWhiteSpace(drawingName))
                 drawingName = "untitled";
 
-            string reportPath = HtmlReportWriter.Write(drawingName, pipes, capacities);
+            string reportPath = HtmlReportWriter.Write(drawingName, pipes, capacities, hglData);
             ed.WriteMessage($"\n--- HydroComplete: HTML report written ---");
-            ed.WriteMessage($"\n  {reportPath}\n");
+            ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                "\n  Manning capacity + steady HGL (Q={0:0.0} cfs) -> {1}\n", designQ, reportPath));
+        }
+
+        private static HglReportData BuildHglReportData(
+            IReadOnlyList<ReadPipe> pipes, double designQ, bool useMinorLosses)
+        {
+            var hglOptions = new HglProfileOptions
+            {
+                IncludeJunctionLosses = useMinorLosses,
+                IncludeExitLoss = useMinorLosses,
+            };
+
+            var report = new HglReportData
+            {
+                DesignFlowCfs = designQ,
+                IncludeMinorLosses = useMinorLosses,
+            };
+
+            foreach (var net in NetworkTopology.BuildOrderedNetworks(pipes))
+            {
+                if (net.OrderedPipes.Count == 0) continue;
+
+                var reaches = NetworkTopology.BuildReaches(
+                    net.OrderedPipes, designQ, useMinorLosses);
+
+                double startHgl = net.MaxUpstreamInvertFt + 1.0;
+                var profile = Hgl.SteadyNetworkHglProfile(reaches, startHgl, hglOptions);
+
+                var netReport = new HglNetworkReport
+                {
+                    NetworkName = net.NetworkName,
+                    StartHglFt = startHgl,
+                };
+
+                double hglUs = startHgl;
+                for (int i = 0; i < net.OrderedPipes.Count && i < profile.Count; i++)
+                {
+                    ReadPipe rp = net.OrderedPipes[i];
+                    HglProfilePoint point = profile[i];
+
+                    netReport.Rows.Add(new HglPipeReportRow
+                    {
+                        PipeName = rp.PipeName,
+                        HglUsFt = hglUs,
+                        HglDsFt = point.HglFt,
+                        Point = point,
+                    });
+
+                    hglUs = point.HglFt;
+                }
+
+                report.Networks.Add(netReport);
+            }
+
+            return report;
         }
 
         [CommandMethod("HC_RATIONAL")]

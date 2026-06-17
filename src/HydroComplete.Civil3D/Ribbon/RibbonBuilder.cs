@@ -47,7 +47,7 @@ namespace HydroComplete.Civil3D.Ribbon
             source.Items.Add(MakeButton("Pipe\nCapacity", "HC_PIPES", "Manning capacity of every pipe in the drawing's pipe networks."));
             source.Items.Add(MakeButton("Write\nCapacity", "HC_PIPES_WRITE", "Label Qfull and Vfull on layer HC-CAPACITY."));
             source.Items.Add(MakeButton("HGL\nProfile", "HC_HGL", "Steady HGL profile and labels on layer HC-HGL."));
-            source.Items.Add(MakeButton("HTML\nReport", "HC_REPORT", "Export formula-transparent Manning HTML report."));
+            source.Items.Add(MakeButton("HTML\nReport", "HC_REPORT", "Export formula-transparent Manning + HGL HTML report."));
             source.Items.Add(MakeButton("Rational\nQ", "HC_RATIONAL", "Rational peak flow from catchments + Atlas 14 IDF."));
             source.Items.Add(MakeButton("Atlas 14\nIDF", "HC_ATLAS14", "List NOAA Atlas 14 IDF presets by city."));
             source.Items.Add(MakeButton("About", "HC_ABOUT", "List HydroComplete commands."));
