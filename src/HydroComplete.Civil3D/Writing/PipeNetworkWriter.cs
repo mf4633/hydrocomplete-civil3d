@@ -46,27 +46,39 @@ namespace HydroComplete.Civil3D.Writing
                         continue;
                     }
 
+                    if (!(tr.GetObject(rp.PipeId, OpenMode.ForWrite) is Pipe pipe))
+                    {
+                        result.Skipped++;
+                        continue;
+                    }
+
+                    string summary = string.Format(CultureInfo.InvariantCulture,
+                        "HC Qfull={0:0.0} cfs, Vfull={1:0.1f} fps, n={2:0.3f}",
+                        cap.FullFlowCfs, cap.FullVelocityFps, rp.Segment.ManningN);
+
+                    bool wrote = false;
                     try
                     {
-                        if (!(tr.GetObject(rp.PipeId, OpenMode.ForWrite) is Pipe pipe))
-                        {
-                            result.Skipped++;
-                            continue;
-                        }
-
-                        string summary = string.Format(CultureInfo.InvariantCulture,
-                            "HC Qfull={0:0.0} cfs, Vfull={1:0.1f} fps, n={2:0.3f}",
-                            cap.FullFlowCfs, cap.FullVelocityFps, rp.Segment.ManningN);
-
                         pipe.Description = summary;
-                        WriteXData(pipe, cap.FullFlowCfs, cap.FullVelocityFps);
-                        result.Updated++;
+                        wrote = true;
                     }
                     catch (System.Exception ex)
                     {
-                        result.Skipped++;
-                        result.Errors.Add($"{rp.PipeName}: {ex.Message}");
+                        result.Errors.Add($"{rp.PipeName} Description: {ex.Message}");
                     }
+
+                    try
+                    {
+                        WriteXData(pipe, cap.FullFlowCfs, cap.FullVelocityFps);
+                        wrote = true;
+                    }
+                    catch (System.Exception ex)
+                    {
+                        result.Errors.Add($"{rp.PipeName} XData: {ex.Message}");
+                    }
+
+                    if (wrote) result.Updated++;
+                    else result.Skipped++;
                 }
 
                 tr.Commit();
@@ -93,12 +105,14 @@ namespace HydroComplete.Civil3D.Writing
 
         private static void WriteXData(Pipe pipe, double qFullCfs, double vFullFps)
         {
-            var rb = new ResultBuffer(
-                new TypedValue(1000, "QFULL"),
-                new TypedValue(1040, qFullCfs),
-                new TypedValue(1000, "VFULL"),
-                new TypedValue(1040, vFullFps));
-            pipe.XData = rb;
+            // XData must begin with the registered application name (1001) or AutoCAD
+            // raises eBadDxfSequence.
+            pipe.XData = new ResultBuffer(
+                new TypedValue((int)DxfCode.ExtendedDataRegAppName, XDataAppName),
+                new TypedValue((int)DxfCode.ExtendedDataAsciiString, "QFULL"),
+                new TypedValue((int)DxfCode.ExtendedDataReal, qFullCfs),
+                new TypedValue((int)DxfCode.ExtendedDataAsciiString, "VFULL"),
+                new TypedValue((int)DxfCode.ExtendedDataReal, vFullFps));
         }
     }
 }
