@@ -23,7 +23,8 @@ namespace HydroComplete.Civil3D.Writing
             string drawingName,
             IReadOnlyList<ReadPipe> pipes,
             IReadOnlyDictionary<ObjectId, Manning.CapacityResult> capacities,
-            HglReportData? hglData = null)
+            HglReportData? hglData = null,
+            CapacityReportData? capacityData = null)
         {
             string path = ReportWriterCommon.BuildReportPath(drawingName, "pdf");
             string generated = DateTime.Now.ToString("f", CultureInfo.CurrentCulture);
@@ -66,6 +67,9 @@ namespace HydroComplete.Civil3D.Writing
                 y += 4;
             }
 
+            if (capacityData != null && capacityData.Rows.Count > 0)
+                y = AppendCapacitySection(gfx, ref page, ref gfx, document, y, capacityData);
+
             if (hglData != null && hglData.Networks.Count > 0)
                 y = AppendHglSection(gfx, ref page, ref gfx, document, y, hglData);
 
@@ -74,6 +78,46 @@ namespace HydroComplete.Civil3D.Writing
 
             document.Save(path);
             return path;
+        }
+
+        private static double AppendCapacitySection(
+            XGraphics gfx,
+            ref PdfPage page,
+            ref XGraphics activeGfx,
+            PdfDocument document,
+            double y,
+            CapacityReportData capacityData)
+        {
+            y += 8;
+            y = DrawSectionHeading(activeGfx, ref page, ref activeGfx, document, y, "Design Capacity Check");
+            y = DrawBodyText(activeGfx, ref page, ref activeGfx, document, y,
+                string.Format(CultureInfo.InvariantCulture,
+                    "Method: Manning normal depth at uniform design Q = {0:0.00} cfs. " +
+                    "Surcharge when Q exceeds peak open-channel capacity.",
+                    capacityData.DesignFlowCfs));
+
+            string[] headers = { "Network / Pipe", "Q_full", "Q_des", "Q_des/Q", "d/D", "SURCH" };
+            double[] colWidths = { 180, 58, 58, 58, 50, 42 };
+            double rowHeight = 18;
+            y = DrawTableHeader(activeGfx, ref page, ref activeGfx, document, y, headers, colWidths, rowHeight);
+
+            foreach (CapacityPipeRow row in capacityData.Rows)
+            {
+                ReadPipe rp = row.Pipe;
+                string[] cells =
+                {
+                    ReportWriterCommon.Trim(rp.NetworkName + "/" + rp.PipeName, 36),
+                    row.QFullCfs.ToString("0.0", CultureInfo.InvariantCulture),
+                    row.DesignFlowCfs.ToString("0.0", CultureInfo.InvariantCulture),
+                    row.FlowRatio.ToString("0.00", CultureInfo.InvariantCulture),
+                    row.RelativeDepth.ToString("0.00", CultureInfo.InvariantCulture),
+                    row.Surcharged ? "*" : "",
+                };
+                y = EnsureSpace(document, ref page, ref activeGfx, y, rowHeight + 4);
+                y = DrawTableRow(activeGfx, y, cells, colWidths, rowHeight, row.Surcharged);
+            }
+
+            return y;
         }
 
         private static double AppendHglSection(
@@ -90,7 +134,7 @@ namespace HydroComplete.Civil3D.Writing
             string lossNote = hglData.IncludeMinorLosses ? " with HEC-22 junction/exit losses" : "";
             y = DrawBodyText(activeGfx, ref page, ref activeGfx, document, y,
                 string.Format(CultureInfo.InvariantCulture,
-                    "Method: steady uniform-flow stepping downstream from headwater HGL{0}. Design Q = {1:0.00} cfs.",
+                    "Method: steady uniform-flow stepping downstream from headwater HGL using Manning normal depth per reach{0}. Design Q = {1:0.00} cfs.",
                     lossNote, hglData.DesignFlowCfs));
 
             foreach (HglNetworkReport net in hglData.Networks)
@@ -104,16 +148,21 @@ namespace HydroComplete.Civil3D.Writing
                         "Start HGL = {0:0.00} ft (max upstream invert + 1.0 ft freeboard).",
                         net.StartHglFt));
 
-                string[] headers = { "Pipe", "hf (ft)", "hm (ft)", "HGL_US (ft)", "HGL_DS (ft)", "SURCH" };
-                double[] colWidths = { 150, 58, 58, 82, 82, 42 };
+                string[] headers = { "Pipe", "d/D", "hf (ft)", "hm (ft)", "HGL_US (ft)", "HGL_DS (ft)", "SURCH" };
+                double[] colWidths = { 130, 42, 52, 52, 76, 76, 38 };
                 double rowHeight = 18;
                 y = DrawTableHeader(activeGfx, ref page, ref activeGfx, document, y, headers, colWidths, rowHeight);
 
                 foreach (HglPipeReportRow row in net.Rows)
                 {
+                    string dOverD = row.FlowSurcharged
+                        ? "SURCH"
+                        : row.RelativeDepth.ToString("0.00", CultureInfo.InvariantCulture);
+
                     string[] cells =
                     {
-                        ReportWriterCommon.Trim(row.PipeName, 32),
+                        ReportWriterCommon.Trim(row.PipeName, 28),
+                        dOverD,
                         row.Point.HfFt.ToString("0.00", CultureInfo.InvariantCulture),
                         row.Point.HmFt.ToString("0.00", CultureInfo.InvariantCulture),
                         row.HglUsFt.ToString("0.00", CultureInfo.InvariantCulture),

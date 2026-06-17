@@ -32,6 +32,12 @@ namespace HydroComplete.Civil3D.Writing
 
         /// <summary>True when HGL exceeds pipe crown at US or DS end.</summary>
         public bool IsSurcharged { get; set; }
+
+        /// <summary>Normal-depth relative depth d/D at design Q.</summary>
+        public double RelativeDepth { get; set; }
+
+        /// <summary>True when design Q exceeds peak open-channel capacity.</summary>
+        public bool FlowSurcharged { get; set; }
     }
 
     /// <summary>Design-flow and per-network HGL results for HTML export.</summary>

@@ -18,7 +18,8 @@ namespace HydroComplete.Civil3D.Writing
             string drawingName,
             IReadOnlyList<ReadPipe> pipes,
             IReadOnlyDictionary<ObjectId, Manning.CapacityResult> capacities,
-            HglReportData? hglData = null)
+            HglReportData? hglData = null,
+            CapacityReportData? capacityData = null)
         {
             string path = ReportWriterCommon.BuildReportPath(drawingName, "html");
 
@@ -42,6 +43,9 @@ namespace HydroComplete.Civil3D.Writing
                 ReportWriterCommon.EscapeHtml(DateTime.Now.ToString("f", CultureInfo.CurrentCulture))));
 
             AppendManningSection(sb, pipes, capacities);
+
+            if (capacityData != null && capacityData.Rows.Count > 0)
+                AppendCapacitySection(sb, capacityData);
 
             if (hglData != null && hglData.Networks.Count > 0)
                 AppendHglSection(sb, hglData);
@@ -101,14 +105,44 @@ namespace HydroComplete.Civil3D.Writing
             }
         }
 
+        private static void AppendCapacitySection(StringBuilder sb, CapacityReportData capacityData)
+        {
+            sb.AppendLine("<h2>Design Capacity Check</h2>");
+            sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "<p>Method: Manning normal depth at uniform design Q = <strong>{0:0.00} cfs</strong>. " +
+                "Surcharge when Q exceeds peak open-channel capacity (d/D &rarr; 1.0).</p>",
+                capacityData.DesignFlowCfs));
+
+            sb.AppendLine("<table><thead><tr>");
+            sb.AppendLine("<th>Network / Pipe</th><th>Q<sub>full</sub> (cfs)</th><th>Q<sub>des</sub> (cfs)</th>");
+            sb.AppendLine("<th>Q<sub>des</sub>/Q<sub>full</sub></th><th>d/D</th><th>SURCH</th>");
+            sb.AppendLine("</tr></thead><tbody>");
+
+            foreach (CapacityPipeRow row in capacityData.Rows)
+            {
+                ReadPipe rp = row.Pipe;
+                string rowClass = row.Surcharged ? " class=\"surcharged\"" : "";
+                sb.AppendLine($"<tr{rowClass}>");
+                sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "<td>{0}</td><td>{1:0.0}</td><td>{2:0.0}</td><td>{3:0.00}</td><td>{4:0.00}</td><td>{5}</td>",
+                    ReportWriterCommon.EscapeHtml(ReportWriterCommon.Trim(rp.NetworkName + "/" + rp.PipeName, 48)),
+                    row.QFullCfs, row.DesignFlowCfs, row.FlowRatio, row.RelativeDepth,
+                    row.Surcharged ? "*" : ""));
+                sb.AppendLine("</tr>");
+            }
+
+            sb.AppendLine("</tbody></table>");
+        }
+
         private static void AppendHglSection(StringBuilder sb, HglReportData hglData)
         {
             string lossNote = hglData.IncludeMinorLosses ? " with HEC-22 junction/exit losses" : "";
             sb.AppendLine("<h2>Steady HGL Profile</h2>");
             sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
                 "<p>Method: steady uniform-flow stepping downstream from headwater HGL " +
+                "using Manning normal depth per reach (partial-flow A and R){0}. " +
                 "(S<sub>f</sub> = [n&middot;Q/(1.486&middot;A&middot;R<sup>2/3</sup>)]<sup>2</sup>, " +
-                "h<sub>f</sub> = S<sub>f</sub>&middot;L, h<sub>m</sub> = K&middot;Vh){0}. " +
+                "h<sub>f</sub> = S<sub>f</sub>&middot;L, h<sub>m</sub> = K&middot;Vh). " +
                 "Design Q = <strong>{1:0.00} cfs</strong>.</p>",
                 lossNote, hglData.DesignFlowCfs));
 
@@ -121,7 +155,7 @@ namespace HydroComplete.Civil3D.Writing
                     ReportWriterCommon.EscapeHtml(ReportWriterCommon.Trim(net.NetworkName, 64)), net.StartHglFt));
 
                 sb.AppendLine("<table><thead><tr>");
-                sb.AppendLine("<th>Pipe</th><th>h<sub>f</sub> (ft)</th><th>h<sub>m</sub> (ft)</th>");
+                sb.AppendLine("<th>Pipe</th><th>d/D</th><th>h<sub>f</sub> (ft)</th><th>h<sub>m</sub> (ft)</th>");
                 sb.AppendLine("<th>HGL<sub>US</sub> (ft)</th><th>HGL<sub>DS</sub> (ft)</th><th>SURCH</th>");
                 sb.AppendLine("</tr></thead><tbody>");
 
@@ -129,9 +163,14 @@ namespace HydroComplete.Civil3D.Writing
                 {
                     string rowClass = row.IsSurcharged ? " class=\"surcharged\"" : "";
                     sb.AppendLine($"<tr{rowClass}>");
+                    string dOverD = row.FlowSurcharged
+                        ? "SURCH"
+                        : row.RelativeDepth.ToString("0.00", CultureInfo.InvariantCulture);
+
                     sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
-                        "<td>{0}</td><td>{1:0.00}</td><td>{2:0.00}</td><td>{3:0.00}</td><td>{4:0.00}</td><td>{5}</td>",
+                        "<td>{0}</td><td>{1}</td><td>{2:0.00}</td><td>{3:0.00}</td><td>{4:0.00}</td><td>{5:0.00}</td><td>{6}</td>",
                         ReportWriterCommon.EscapeHtml(ReportWriterCommon.Trim(row.PipeName, 48)),
+                        dOverD,
                         row.Point.HfFt, row.Point.HmFt,
                         row.HglUsFt, row.HglDsFt,
                         row.IsSurcharged ? "*" : ""));

@@ -46,6 +46,8 @@ namespace HydroComplete.Civil3D.Ribbon
 
             source.Items.Add(MakeButton("Pipe\nCapacity", "HC_PIPES", "Manning capacity of every pipe in the drawing's pipe networks."));
             source.Items.Add(MakeButton("Write\nCapacity", "HC_PIPES_WRITE", "Label Qfull and Vfull on layer HC-CAPACITY."));
+            source.Items.Add(MakeButton("Design\nCapacity", "HC_CAPACITY", "Design Q vs Q_full check with d/D and surcharge flag."));
+            source.Items.Add(MakeButton("Write\nOverload", "HC_CAPACITY_WRITE", "Label overloaded pipes on layer HC-CAPACITY."));
             source.Items.Add(MakeButton("HGL\nProfile", "HC_HGL", "Steady HGL profile and labels on layer HC-HGL."));
             source.Items.Add(MakeButton("HTML\nReport", "HC_REPORT", "Export formula-transparent Manning + HGL HTML report."));
             source.Items.Add(MakeButton("PDF\nReport", "HC_REPORT_PDF", "Export formula-transparent Manning + HGL PDF report."));

@@ -59,6 +59,67 @@ namespace HydroComplete.Engine.Tests
             var pipe = new PipeSegment { DiameterFt = 2.0, ManningN = 0.013, Slope = 0.0 };
             Assert.Throws<ArgumentOutOfRangeException>(() => Manning.Capacity(pipe));
         }
+
+        [Fact]
+        public void PartialFlowGeometry_AtFullDepth_MatchesFullBarrel()
+        {
+            double d = 2.0;
+            var (area, r) = Manning.PartialFlowGeometry(d, d);
+            Assert.Equal(Math.PI * d * d / 4.0, area, 4);
+            Assert.Equal(d / 4.0, r, 4);
+        }
+
+        [Fact]
+        public void PartialFlowGeometry_BelowInvert_IsZero()
+        {
+            var (area, r) = Manning.PartialFlowGeometry(2.0, 0.0);
+            Assert.Equal(0.0, area);
+            Assert.Equal(0.0, r);
+        }
+    }
+
+    public class ReachFactoryTests
+    {
+        [Fact]
+        public void FromNormalDepth_SubCapacityFlow_UsesPartialGeometry()
+        {
+            var pipe = new PipeSegment { DiameterFt = 2.0, ManningN = 0.013, Slope = 0.01 };
+            double designQ = 10.0;
+            var reach = ReachFactory.FromNormalDepth(pipe, designQ, lengthFt: 100.0, name: "P1");
+
+            Assert.False(reach.FlowSurcharged);
+            Assert.InRange(reach.RelativeDepth, 0.0, 0.94);
+            Assert.True(reach.AreaFt2 < Math.PI * pipe.DiameterFt * pipe.DiameterFt / 4.0);
+            Assert.True(reach.HydRadiusFt < pipe.DiameterFt / 4.0);
+            Assert.True(reach.VelHeadDownFt > 0);
+            Assert.Equal(reach.VelHeadUpFt, reach.VelHeadDownFt, 6);
+            Assert.Equal(pipe.DiameterFt, reach.DiameterFt);
+        }
+
+        [Fact]
+        public void FromNormalDepth_AbovePeak_FlagsSurchargeAndUsesFullBarrel()
+        {
+            var pipe = new PipeSegment { DiameterFt = 2.0, ManningN = 0.013, Slope = 0.01 };
+            var reach = ReachFactory.FromNormalDepth(pipe, 100.0);
+
+            Assert.True(reach.FlowSurcharged);
+            Assert.Equal(1.0, reach.RelativeDepth, 4);
+            double areaFull = Math.PI * pipe.DiameterFt * pipe.DiameterFt / 4.0;
+            Assert.Equal(areaFull, reach.AreaFt2, 4);
+            Assert.Equal(pipe.DiameterFt / 4.0, reach.HydRadiusFt, 4);
+        }
+
+        [Fact]
+        public void FromFullBarrel_MatchesLegacyGeometry()
+        {
+            var pipe = new PipeSegment { DiameterFt = 2.0, ManningN = 0.013, Slope = 0.01 };
+            var reach = ReachFactory.FromFullBarrel(pipe, 10.0, lengthFt: 50.0);
+
+            Assert.False(reach.FlowSurcharged);
+            Assert.Equal(1.0, reach.RelativeDepth, 4);
+            Assert.Equal(Math.PI * 4.0 / 4.0, reach.AreaFt2, 4);
+            Assert.Equal(0.5, reach.HydRadiusFt, 4);
+        }
     }
 
     public class RationalTests
@@ -279,6 +340,26 @@ namespace HydroComplete.Engine.Tests
         {
             Assert.False(Hgl.IsSurcharged(105.0, 104.0, 100.0, 99.0, 5.0));
             Assert.False(Hgl.IsSurcharged(104.0, 104.0, 100.0, 99.0, 5.0));
+        }
+
+        [Fact]
+        public void SteadyNetworkHglProfile_NormalDepth_DiffersFromFullBarrel_WhenQBelowFull()
+        {
+            var pipe = new PipeSegment { DiameterFt = 2.0, ManningN = 0.013, Slope = 0.01 };
+            double designQ = 10.0;
+
+            var normalReach = ReachFactory.FromNormalDepth(pipe, designQ, lengthFt: 100.0, name: "N");
+            var fullReach = ReachFactory.FromFullBarrel(pipe, designQ, lengthFt: 100.0, name: "F");
+
+            var normalProfile = Hgl.SteadyNetworkHglProfile(
+                new List<NetworkReach> { normalReach }, startHglFt: 10.0);
+            var fullProfile = Hgl.SteadyNetworkHglProfile(
+                new List<NetworkReach> { fullReach }, startHglFt: 10.0);
+
+            Assert.NotEqual(normalProfile[0].HfFt, fullProfile[0].HfFt);
+            Assert.True(normalProfile[0].HfFt > fullProfile[0].HfFt);
+            Assert.Equal(normalReach.RelativeDepth, normalProfile[0].RelativeDepth, 4);
+            Assert.False(normalProfile[0].FlowSurcharged);
         }
 
         [Fact]

@@ -25,6 +25,79 @@ namespace HydroComplete.Civil3D.Writing
             public List<string> Errors { get; } = new List<string>();
         }
 
+        public static WriteResult WriteDesignCapacity(
+            Database db,
+            IReadOnlyList<CapacityPipeRow> rows,
+            bool overloadOnly)
+        {
+            if (db == null) throw new ArgumentNullException(nameof(db));
+            if (rows == null) throw new ArgumentNullException(nameof(rows));
+
+            var result = new WriteResult();
+
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+                EnsureLayer(db, tr);
+                ClearExistingLabels(db, tr);
+
+                BlockTableRecord space = (BlockTableRecord)tr.GetObject(
+                    db.CurrentSpaceId, OpenMode.ForWrite);
+
+                foreach (CapacityPipeRow row in rows)
+                {
+                    ReadPipe rp = row.Pipe;
+                    if (overloadOnly && !row.Surcharged)
+                    {
+                        result.Skipped++;
+                        continue;
+                    }
+
+                    try
+                    {
+                        if (!(tr.GetObject(rp.PipeId, OpenMode.ForRead) is Pipe pipe))
+                        {
+                            result.Skipped++;
+                            continue;
+                        }
+
+                        string prefix = row.Surcharged ? "OVER" : "OK";
+                        string text = string.Format(CultureInfo.InvariantCulture,
+                            "{0}: {1:0.1}/{2:0.1} cfs",
+                            prefix, row.DesignFlowCfs, row.QFullCfs);
+
+                        Point3d mid = Midpoint(pipe.StartPoint, pipe.EndPoint);
+                        double height = Math.Max(0.5, rp.Segment.DiameterFt * 0.15);
+
+                        var label = new MText
+                        {
+                            Location = mid,
+                            TextHeight = height,
+                            Layer = LabelLayer,
+                            Contents = text,
+                            Attachment = AttachmentPoint.MiddleCenter,
+                        };
+                        label.SetDatabaseDefaults(db);
+                        label.Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(
+                            Autodesk.AutoCAD.Colors.ColorMethod.ByAci,
+                            row.Surcharged ? (short)1 : (short)8);
+
+                        space.AppendEntity(label);
+                        tr.AddNewlyCreatedDBObject(label, true);
+                        result.Updated++;
+                    }
+                    catch (System.Exception ex)
+                    {
+                        result.Skipped++;
+                        result.Errors.Add($"{rp.PipeName}: {ex.Message}");
+                    }
+                }
+
+                tr.Commit();
+            }
+
+            return result;
+        }
+
         public static WriteResult WriteCapacities(
             Database db,
             IReadOnlyList<ReadPipe> pipes,

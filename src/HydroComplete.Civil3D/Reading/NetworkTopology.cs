@@ -126,17 +126,26 @@ namespace HydroComplete.Civil3D.Reading
         }
 
         /// <summary>
-        /// Builds HGL reaches from ordered pipes using full-barrel circular area and
-        /// hydraulic radius (R = D/4) with a uniform design flow.
+        /// Builds HGL reaches from ordered pipes using Manning normal depth at design Q
+        /// (partial-flow area and R per reach).
         /// </summary>
         public static List<NetworkReach> BuildReaches(IReadOnlyList<ReadPipe> pipes, double designFlowCfs)
             => BuildReaches(pipes, designFlowCfs, includeJunctionLosses: false);
 
         /// <summary>
         /// Builds HGL reaches with optional HEC-22 junction K at internal manholes.
+        /// Uses Manning normal depth at design Q by default.
         /// </summary>
         public static List<NetworkReach> BuildReaches(
             IReadOnlyList<ReadPipe> pipes, double designFlowCfs, bool includeJunctionLosses)
+            => BuildReaches(pipes, designFlowCfs, includeJunctionLosses, useNormalDepth: true);
+
+        /// <summary>
+        /// Builds HGL reaches with optional junction losses and geometry mode.
+        /// </summary>
+        public static List<NetworkReach> BuildReaches(
+            IReadOnlyList<ReadPipe> pipes, double designFlowCfs, bool includeJunctionLosses,
+            bool useNormalDepth)
         {
             if (pipes == null) throw new ArgumentNullException(nameof(pipes));
 
@@ -144,7 +153,9 @@ namespace HydroComplete.Civil3D.Reading
             for (int i = 0; i < pipes.Count; i++)
             {
                 ReadPipe rp = pipes[i];
-                NetworkReach reach = ToReach(rp, designFlowCfs);
+                NetworkReach reach = useNormalDepth
+                    ? ToReachNormalDepth(rp, designFlowCfs)
+                    : ToReach(rp, designFlowCfs);
 
                 if (includeJunctionLosses && i < pipes.Count - 1)
                 {
@@ -159,21 +170,22 @@ namespace HydroComplete.Civil3D.Reading
             return reaches;
         }
 
+        /// <summary>
+        /// Full-barrel circular area (pi*D²/4) and hydraulic radius (R = D/4).
+        /// </summary>
         public static NetworkReach ToReach(ReadPipe rp, double designFlowCfs)
         {
-            double d = rp.Segment.DiameterFt;
-            double areaFull = Math.PI * d * d / 4.0;
-            double rFull = d / 4.0;
+            string name = string.IsNullOrEmpty(rp.PipeName) ? rp.PipeId.Handle.ToString() : rp.PipeName;
+            return ReachFactory.FromFullBarrel(rp.Segment, designFlowCfs, rp.LengthFt, name);
+        }
 
-            return new NetworkReach
-            {
-                Name = string.IsNullOrEmpty(rp.PipeName) ? rp.PipeId.Handle.ToString() : rp.PipeName,
-                LengthFt = rp.LengthFt,
-                ManningN = rp.Segment.ManningN,
-                AreaFt2 = areaFull,
-                HydRadiusFt = rFull,
-                FlowCfs = designFlowCfs,
-            };
+        /// <summary>
+        /// Manning normal depth at design Q with partial-flow area, R, and velocity heads.
+        /// </summary>
+        public static NetworkReach ToReachNormalDepth(ReadPipe rp, double designFlowCfs)
+        {
+            string name = string.IsNullOrEmpty(rp.PipeName) ? rp.PipeId.Handle.ToString() : rp.PipeName;
+            return ReachFactory.FromNormalDepth(rp.Segment, designFlowCfs, rp.LengthFt, name);
         }
     }
 }

@@ -183,6 +183,8 @@ namespace HydroComplete.Engine
                     DeltaEglFt = eglStep.DeltaEglFt,
                     HmFt = hmTotal,
                     VelocityHeadFt = velHeadDownFt,
+                    RelativeDepth = reach.RelativeDepth,
+                    FlowSurcharged = reach.FlowSurcharged,
                 };
 
                 if (!string.IsNullOrEmpty(reach.Name))

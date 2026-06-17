@@ -42,6 +42,24 @@ namespace HydroComplete.Engine
             public bool Surcharged { get; set; }
         }
 
+        /// <summary>
+        /// Partial-flow area and hydraulic radius for a circular pipe at depth
+        /// <paramref name="y"/> (ft). Returns (0, 0) when y &lt;= 0.
+        /// </summary>
+        public static (double AreaFt2, double HydRadiusFt) PartialFlowGeometry(double diameterFt, double y)
+        {
+            if (diameterFt <= 0) throw new ArgumentOutOfRangeException(nameof(diameterFt));
+            if (y <= 0) return (0.0, 0.0);
+            if (y > diameterFt) y = diameterFt;
+
+            // Central angle subtended by the water surface (radians).
+            double theta = 2.0 * Math.Acos(1.0 - 2.0 * y / diameterFt);
+            double area = (diameterFt * diameterFt / 8.0) * (theta - Math.Sin(theta));
+            double perimeter = diameterFt * theta / 2.0;
+            if (perimeter <= 0) return (0.0, 0.0);
+            return (area, area / perimeter);
+        }
+
         /// <summary>Flow (cfs) carried by a circular pipe flowing at depth <paramref name="y"/> (ft).</summary>
         public static double FlowAtDepth(double diameterFt, double y, double n, double slope)
         {
@@ -49,14 +67,9 @@ namespace HydroComplete.Engine
             if (n <= 0) throw new ArgumentOutOfRangeException(nameof(n));
             if (slope <= 0) throw new ArgumentOutOfRangeException(nameof(slope));
             if (y <= 0) return 0.0;
-            if (y > diameterFt) y = diameterFt;
 
-            // Central angle subtended by the water surface (radians).
-            double theta = 2.0 * Math.Acos(1.0 - 2.0 * y / diameterFt);
-            double area = (diameterFt * diameterFt / 8.0) * (theta - Math.Sin(theta));
-            double perimeter = diameterFt * theta / 2.0;
-            if (perimeter <= 0) return 0.0;
-            double r = area / perimeter;
+            var (area, r) = PartialFlowGeometry(diameterFt, y);
+            if (area <= 0 || r <= 0) return 0.0;
             return (Kn / n) * area * Math.Pow(r, 2.0 / 3.0) * Math.Sqrt(slope);
         }
 
@@ -128,8 +141,7 @@ namespace HydroComplete.Engine
             double y = 0.5 * (lo + hi);
 
             // Velocity at that depth.
-            double theta = 2.0 * Math.Acos(1.0 - 2.0 * y / d);
-            double area = (d * d / 8.0) * (theta - Math.Sin(theta));
+            var (area, _) = PartialFlowGeometry(d, y);
             double v = area > 0 ? targetFlowCfs / area : 0.0;
 
             result.DepthFt = y;

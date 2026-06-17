@@ -116,6 +116,15 @@ namespace HydroComplete.Engine
 
         /// <summary>Exit loss K at the downstream end (1.0 = full velocity-head dissipation).</summary>
         public double ExitLossK { get; set; }
+
+        /// <summary>Inside diameter, ft. Set when reach geometry is derived from a pipe segment.</summary>
+        public double? DiameterFt { get; set; }
+
+        /// <summary>Normal-depth relative depth d/D (1.0 when flow-surcharged).</summary>
+        public double RelativeDepth { get; set; }
+
+        /// <summary>True when design Q exceeds the pipe's peak open-channel capacity.</summary>
+        public bool FlowSurcharged { get; set; }
     }
 
     /// <summary>Options for steady HGL profile stepping.</summary>
@@ -160,5 +169,11 @@ namespace HydroComplete.Engine
 
         /// <summary>Velocity head at the downstream end of this reach, ft.</summary>
         public double VelocityHeadFt { get; set; }
+
+        /// <summary>Normal-depth relative depth d/D at design Q.</summary>
+        public double RelativeDepth { get; set; }
+
+        /// <summary>True when design Q exceeds peak open-channel capacity for this reach.</summary>
+        public bool FlowSurcharged { get; set; }
     }
 }

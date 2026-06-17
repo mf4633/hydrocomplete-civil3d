@@ -28,10 +28,12 @@ namespace HydroComplete.Civil3D.Commands
         public void About()
         {
             Editor ed = Active().Editor;
-            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.3.2 ===");
-            ed.WriteMessage("\n  HC_PIPES       Manning capacity of every pipe-network pipe");
-            ed.WriteMessage("\n  HC_PIPES_WRITE Label Qfull/Vfull on layer HC-CAPACITY");
-            ed.WriteMessage("\n  HC_HGL         Steady HGL + HEC-22 junction losses + HC-HGL labels");
+            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.4.0 ===");
+            ed.WriteMessage("\n  HC_PIPES         Manning capacity of every pipe-network pipe");
+            ed.WriteMessage("\n  HC_PIPES_WRITE   Label Qfull/Vfull on layer HC-CAPACITY");
+            ed.WriteMessage("\n  HC_CAPACITY      Design Q vs Q_full check (d/D, surcharge flag)");
+            ed.WriteMessage("\n  HC_CAPACITY_WRITE Label overloaded pipes on layer HC-CAPACITY");
+            ed.WriteMessage("\n  HC_HGL           Steady HGL (normal depth) + HEC-22 losses + HC-HGL labels");
             ed.WriteMessage("\n  HC_REPORT      Export formula-transparent HTML Manning + HGL report (free)");
             ed.WriteMessage("\n  HC_REPORT_PDF  Export formula-transparent PDF Manning + HGL report (Pro)");
             ed.WriteMessage("\n  HC_RATIONAL    Rational Q from catchments + NOAA Atlas 14 IDF presets");
@@ -92,6 +94,76 @@ namespace HydroComplete.Civil3D.Commands
                 }
             }
             ed.WriteMessage("\n");
+        }
+
+        [CommandMethod("HC_CAPACITY")]
+        public void CapacityCheck()
+        {
+            Document doc = Active();
+            Editor ed = doc.Editor;
+            CivilDocument civilDoc = CivilApplication.ActiveDocument;
+
+            var pipes = PipeNetworkReader.ReadAll(doc.Database, civilDoc);
+            if (pipes.Count == 0)
+            {
+                ed.WriteMessage("\nNo pipe networks found in this drawing.\n");
+                return;
+            }
+
+            double designQ = PromptDesignFlow(ed, doc, civilDoc);
+            var report = CapacityReportBuilder.Build(pipes, designQ);
+
+            ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                "\n--- HydroComplete: design capacity check (Q={0:0.0} cfs, {1} pipes) ---",
+                designQ, report.Rows.Count));
+            ed.WriteMessage("\nNetwork / Pipe            Q_full   Q_des   Q_des/Q   d/D   SURCH");
+
+            foreach (CapacityPipeRow row in report.Rows)
+            {
+                ReadPipe rp = row.Pipe;
+                ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                    "\n{0,-24} {1,6:0.0}  {2,6:0.0}  {3,7:0.00}  {4,5:0.00}  {5,5}",
+                    Trim(rp.NetworkName + "/" + rp.PipeName, 24),
+                    row.QFullCfs, designQ, row.FlowRatio, row.RelativeDepth,
+                    row.Surcharged ? "*" : ""));
+            }
+
+            int overloaded = report.Rows.Count(r => r.Surcharged);
+            ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                "\n  {0} pipe(s) surcharged (Q > peak open-channel capacity).\n", overloaded));
+        }
+
+        [CommandMethod("HC_CAPACITY_WRITE")]
+        public void CapacityWrite()
+        {
+            Document doc = Active();
+            Editor ed = doc.Editor;
+            CivilDocument civilDoc = CivilApplication.ActiveDocument;
+
+            var pipes = PipeNetworkReader.ReadAll(doc.Database, civilDoc);
+            if (pipes.Count == 0)
+            {
+                ed.WriteMessage("\nNo pipe networks found in this drawing.\n");
+                return;
+            }
+
+            double designQ = PromptDesignFlow(ed, doc, civilDoc);
+            bool overloadOnly = PromptYesNo(ed,
+                "\nLabel overloaded pipes only (No = label all pipes, dim OK)",
+                defaultYes: true);
+
+            var report = CapacityReportBuilder.Build(pipes, designQ);
+            var write = PipeNetworkWriter.WriteDesignCapacity(doc.Database, report.Rows, overloadOnly);
+
+            string mode = overloadOnly ? "overloaded" : "all";
+            ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                "\n--- HydroComplete: wrote {0} capacity label(s) ({1} mode) ---",
+                write.Updated, mode));
+            if (write.Skipped > 0)
+                ed.WriteMessage($"\n  Skipped {write.Skipped} pipe(s).");
+            foreach (string err in write.Errors)
+                ed.WriteMessage($"\n  {err}");
+            ed.WriteMessage("\n  Labels on layer HC-CAPACITY at each pipe midpoint.\n");
         }
 
         [CommandMethod("HC_PIPES_WRITE")]
@@ -158,8 +230,8 @@ namespace HydroComplete.Civil3D.Commands
             var surchargedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             string lossNote = useMinorLosses ? " + HEC-22" : "";
-            ed.WriteMessage($"\n--- HydroComplete: steady HGL{lossNote} (Q={designQ:0.0} cfs) ---");
-            ed.WriteMessage("\nNetwork                 Pipe              HGL_US(ft)  HGL_DS(ft)  HGL_mid(ft)  h_m(ft)  SURCH");
+            ed.WriteMessage($"\n--- HydroComplete: steady HGL{lossNote} (Q={designQ:0.0} cfs, normal depth) ---");
+            ed.WriteMessage("\nNetwork                 Pipe              HGL_US(ft)  HGL_DS(ft)  HGL_mid(ft)  h_m(ft)  d/D    SURCH");
 
             foreach (var net in networks)
             {
@@ -188,11 +260,16 @@ namespace HydroComplete.Civil3D.Commands
                     if (surcharged)
                         surchargedKeys.Add(reachName);
 
+                    string dOverD = reaches[i].FlowSurcharged
+                        ? "SURCH"
+                        : reaches[i].RelativeDepth.ToString("0.00", CultureInfo.InvariantCulture);
+
                     ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
-                        "\n{0,-22} {1,-16} {2,10:0.00}  {3,10:0.00}  {4,10:0.00}  {5,8:0.00}  {6,5}",
+                        "\n{0,-22} {1,-16} {2,10:0.00}  {3,10:0.00}  {4,10:0.00}  {5,8:0.00}  {6,5}  {7,5}",
                         Trim(net.NetworkName, 22),
                         Trim(rp.PipeName, 16),
                         hglUs, hglDs, hglMid, point.HmFt,
+                        dOverD,
                         surcharged ? "*" : ""));
 
                     hglUs = hglDs;
@@ -213,10 +290,10 @@ namespace HydroComplete.Civil3D.Commands
         {
             Document doc = Active();
             Editor ed = doc.Editor;
-            if (!TryBuildHydraulicReport(doc, ed, out var pipes, out var capacities, out var hglData, out string drawingName))
+            if (!TryBuildHydraulicReport(doc, ed, out var pipes, out var capacities, out var hglData, out var capacityData, out string drawingName))
                 return;
 
-            string reportPath = HtmlReportWriter.Write(drawingName, pipes, capacities, hglData);
+            string reportPath = HtmlReportWriter.Write(drawingName, pipes, capacities, hglData, capacityData);
             ed.WriteMessage($"\n--- HydroComplete: HTML report written ---");
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
                 "\n  Manning capacity + steady HGL (Q={0:0.0} cfs) -> {1}\n", hglData.DesignFlowCfs, reportPath));
@@ -236,10 +313,10 @@ namespace HydroComplete.Civil3D.Commands
                 return;
             }
 
-            if (!TryBuildHydraulicReport(doc, ed, out var pipes, out var capacities, out var hglData, out string drawingName))
+            if (!TryBuildHydraulicReport(doc, ed, out var pipes, out var capacities, out var hglData, out var capacityData, out string drawingName))
                 return;
 
-            string reportPath = PdfReportWriter.Write(drawingName, pipes, capacities, hglData);
+            string reportPath = PdfReportWriter.Write(drawingName, pipes, capacities, hglData, capacityData);
             ed.WriteMessage($"\n--- HydroComplete: PDF report written ---");
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
                 "\n  Manning capacity + steady HGL (Q={0:0.0} cfs) -> {1}\n", hglData.DesignFlowCfs, reportPath));
@@ -251,6 +328,7 @@ namespace HydroComplete.Civil3D.Commands
             out List<ReadPipe> pipes,
             out Dictionary<ObjectId, Manning.CapacityResult> capacities,
             out HglReportData hglData,
+            out CapacityReportData capacityData,
             out string drawingName)
         {
             CivilDocument civilDoc = CivilApplication.ActiveDocument;
@@ -261,6 +339,7 @@ namespace HydroComplete.Civil3D.Commands
             {
                 ed.WriteMessage("\nNo pipe networks found in this drawing.\n");
                 hglData = new HglReportData();
+                capacityData = new CapacityReportData();
                 drawingName = "";
                 return false;
             }
@@ -281,6 +360,7 @@ namespace HydroComplete.Civil3D.Commands
             }
 
             hglData = BuildHglReportData(pipes, designQ, useMinorLosses);
+            capacityData = CapacityReportBuilder.Build(pipes, designQ);
 
             drawingName = Path.GetFileNameWithoutExtension(doc.Name);
             if (string.IsNullOrWhiteSpace(drawingName))
@@ -334,6 +414,8 @@ namespace HydroComplete.Civil3D.Commands
                         IsSurcharged = Hgl.IsSurcharged(
                             hglUs, point.HglFt,
                             rp.UpstreamInvertFt, rp.DownstreamInvertFt, rp.Segment.DiameterFt),
+                        RelativeDepth = reaches[i].RelativeDepth,
+                        FlowSurcharged = reaches[i].FlowSurcharged,
                     });
 
                     hglUs = point.HglFt;
