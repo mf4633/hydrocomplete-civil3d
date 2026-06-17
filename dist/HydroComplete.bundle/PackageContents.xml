@@ -4,7 +4,7 @@
   Series: Civil 3D 2025 = R25.0, Civil 3D 2026 = R25.1.
 -->
 <ApplicationPackage SchemaVersion="1.0"
-                    AppVersion="0.1.0"
+                    AppVersion="0.1.1"
                     Name="HydroComplete for Civil 3D"
                     Description="Stormwater analysis driven straight from your Civil 3D drawing — Rational, SCS Tc, Manning, IDF with full formula transparency."
                     ProductCode="{8d07b4c8-06cb-497d-832a-dcb5b095d9fa}">

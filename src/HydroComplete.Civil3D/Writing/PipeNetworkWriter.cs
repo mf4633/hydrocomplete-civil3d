@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Geometry;
 using Autodesk.Civil.DatabaseServices;
 using HydroComplete.Civil3D.Reading;
 using HydroComplete.Engine;
@@ -9,13 +10,13 @@ using HydroComplete.Engine;
 namespace HydroComplete.Civil3D.Writing
 {
     /// <summary>
-    /// Writes Manning capacity results back onto Civil 3D pipe objects.
-    /// v0.1 stores a short summary on each pipe's Description field (visible in
-    /// Prospector) and mirrors the values in HydroComplete XData for later sync.
+    /// Writes Manning capacity results back into the drawing as MText labels on
+    /// layer HC-CAPACITY. Civil 3D pipe parts reject arbitrary Description/XData
+    /// (eBadDxfSequence), so labels are the reliable v0.1 write-back path.
     /// </summary>
     public static class PipeNetworkWriter
     {
-        public const string XDataAppName = "HYDROCOMPLETE";
+        public const string LabelLayer = "HC-CAPACITY";
 
         public sealed class WriteResult
         {
@@ -34,10 +35,15 @@ namespace HydroComplete.Civil3D.Writing
             if (capacities == null) throw new ArgumentNullException(nameof(capacities));
 
             var result = new WriteResult();
-            EnsureXDataApp(db);
 
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
+                EnsureLayer(db, tr);
+                ClearExistingLabels(db, tr);
+
+                BlockTableRecord space = (BlockTableRecord)tr.GetObject(
+                    db.CurrentSpaceId, OpenMode.ForWrite);
+
                 foreach (ReadPipe rp in pipes)
                 {
                     if (!capacities.TryGetValue(rp.PipeId, out Manning.CapacityResult? cap))
@@ -46,39 +52,40 @@ namespace HydroComplete.Civil3D.Writing
                         continue;
                     }
 
-                    if (!(tr.GetObject(rp.PipeId, OpenMode.ForWrite) is Pipe pipe))
+                    try
+                    {
+                        if (!(tr.GetObject(rp.PipeId, OpenMode.ForRead) is Pipe pipe))
+                        {
+                            result.Skipped++;
+                            continue;
+                        }
+
+                        string text = string.Format(CultureInfo.InvariantCulture,
+                            "Qfull={0:0.0} cfs\\PVfull={1:0.1f} fps",
+                            cap.FullFlowCfs, cap.FullVelocityFps);
+
+                        Point3d mid = Midpoint(pipe.StartPoint, pipe.EndPoint);
+                        double height = Math.Max(0.5, rp.Segment.DiameterFt * 0.15);
+
+                        var label = new MText
+                        {
+                            Location = mid,
+                            TextHeight = height,
+                            Layer = LabelLayer,
+                            Contents = text,
+                            Attachment = AttachmentPoint.MiddleCenter,
+                        };
+                        label.SetDatabaseDefaults(db);
+
+                        space.AppendEntity(label);
+                        tr.AddNewlyCreatedDBObject(label, true);
+                        result.Updated++;
+                    }
+                    catch (System.Exception ex)
                     {
                         result.Skipped++;
-                        continue;
+                        result.Errors.Add($"{rp.PipeName}: {ex.Message}");
                     }
-
-                    string summary = string.Format(CultureInfo.InvariantCulture,
-                        "HC Qfull={0:0.0} cfs, Vfull={1:0.1f} fps, n={2:0.3f}",
-                        cap.FullFlowCfs, cap.FullVelocityFps, rp.Segment.ManningN);
-
-                    bool wrote = false;
-                    try
-                    {
-                        pipe.Description = summary;
-                        wrote = true;
-                    }
-                    catch (System.Exception ex)
-                    {
-                        result.Errors.Add($"{rp.PipeName} Description: {ex.Message}");
-                    }
-
-                    try
-                    {
-                        WriteXData(pipe, cap.FullFlowCfs, cap.FullVelocityFps);
-                        wrote = true;
-                    }
-                    catch (System.Exception ex)
-                    {
-                        result.Errors.Add($"{rp.PipeName} XData: {ex.Message}");
-                    }
-
-                    if (wrote) result.Updated++;
-                    else result.Skipped++;
                 }
 
                 tr.Commit();
@@ -87,32 +94,48 @@ namespace HydroComplete.Civil3D.Writing
             return result;
         }
 
-        private static void EnsureXDataApp(Database db)
+        private static Point3d Midpoint(Point3d a, Point3d b)
         {
-            using (Transaction tr = db.TransactionManager.StartTransaction())
-            {
-                RegAppTable rat = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForRead);
-                if (!rat.Has(XDataAppName))
-                {
-                    rat.UpgradeOpen();
-                    var rec = new RegAppTableRecord { Name = XDataAppName };
-                    rat.Add(rec);
-                    tr.AddNewlyCreatedDBObject(rec, true);
-                }
-                tr.Commit();
-            }
+            return new Point3d(
+                (a.X + b.X) * 0.5,
+                (a.Y + b.Y) * 0.5,
+                (a.Z + b.Z) * 0.5);
         }
 
-        private static void WriteXData(Pipe pipe, double qFullCfs, double vFullFps)
+        private static void EnsureLayer(Database db, Transaction tr)
         {
-            // XData must begin with the registered application name (1001) or AutoCAD
-            // raises eBadDxfSequence.
-            pipe.XData = new ResultBuffer(
-                new TypedValue((int)DxfCode.ExtendedDataRegAppName, XDataAppName),
-                new TypedValue((int)DxfCode.ExtendedDataAsciiString, "QFULL"),
-                new TypedValue((int)DxfCode.ExtendedDataReal, qFullCfs),
-                new TypedValue((int)DxfCode.ExtendedDataAsciiString, "VFULL"),
-                new TypedValue((int)DxfCode.ExtendedDataReal, vFullFps));
+            LayerTable lt = (LayerTable)tr.GetObject(db.LayerTableId, OpenMode.ForRead);
+            if (lt.Has(LabelLayer)) return;
+
+            lt.UpgradeOpen();
+            var layer = new LayerTableRecord
+            {
+                Name = LabelLayer,
+                Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(
+                    Autodesk.AutoCAD.Colors.ColorMethod.ByAci, 3), // green
+            };
+            lt.Add(layer);
+            tr.AddNewlyCreatedDBObject(layer, true);
+        }
+
+        private static void ClearExistingLabels(Database db, Transaction tr)
+        {
+            var erase = new List<ObjectId>();
+            BlockTableRecord space = (BlockTableRecord)tr.GetObject(
+                db.CurrentSpaceId, OpenMode.ForRead);
+
+            foreach (ObjectId id in space)
+            {
+                if (!(tr.GetObject(id, OpenMode.ForRead) is MText mt)) continue;
+                if (string.Equals(mt.Layer, LabelLayer, StringComparison.OrdinalIgnoreCase))
+                    erase.Add(id);
+            }
+
+            foreach (ObjectId id in erase)
+            {
+                var ent = tr.GetObject(id, OpenMode.ForWrite);
+                ent.Erase();
+            }
         }
     }
 }

@@ -25,9 +25,9 @@ namespace HydroComplete.Civil3D.Commands
         public void About()
         {
             Editor ed = Active().Editor;
-            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.1.0 ===");
+            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.1.1 ===");
             ed.WriteMessage("\n  HC_PIPES       Manning capacity of every pipe-network pipe");
-            ed.WriteMessage("\n  HC_PIPES_WRITE Write Qfull/Vfull to pipe Description + XData");
+            ed.WriteMessage("\n  HC_PIPES_WRITE Label Qfull/Vfull on layer HC-CAPACITY");
             ed.WriteMessage("\n  HC_RATIONAL    Composite Rational-method peak flow from catchments");
             ed.WriteMessage("\n  HC_ABOUT       This list");
             ed.WriteMessage("\n  Engine: Rational, SCS Tc, Manning, IDF — public-domain, fully shown.\n");
@@ -101,7 +101,7 @@ namespace HydroComplete.Civil3D.Commands
                 ed.WriteMessage($"\n  Skipped {write.Skipped} pipe(s).");
             foreach (string err in write.Errors)
                 ed.WriteMessage($"\n  {err}");
-            ed.WriteMessage("\n  Check Prospector > pipe Description, or LIST for HYDROCOMPLETE XData.\n");
+            ed.WriteMessage("\n  Labels placed on layer HC-CAPACITY at each pipe midpoint.\n");
         }
 
         [CommandMethod("HC_RATIONAL")]

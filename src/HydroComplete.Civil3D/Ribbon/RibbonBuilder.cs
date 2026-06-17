@@ -45,7 +45,7 @@ namespace HydroComplete.Civil3D.Ribbon
             _tab.Panels.Add(panel);
 
             source.Items.Add(MakeButton("Pipe\nCapacity", "HC_PIPES", "Manning capacity of every pipe in the drawing's pipe networks."));
-            source.Items.Add(MakeButton("Write\nCapacity", "HC_PIPES_WRITE", "Write Qfull and Vfull to each pipe's Description field."));
+            source.Items.Add(MakeButton("Write\nCapacity", "HC_PIPES_WRITE", "Label Qfull and Vfull on layer HC-CAPACITY."));
             source.Items.Add(MakeButton("Rational\nQ", "HC_RATIONAL", "Composite Rational-method peak flow from catchments."));
             source.Items.Add(MakeButton("About", "HC_ABOUT", "List HydroComplete commands."));
 
