@@ -30,7 +30,8 @@ HydroComplete.bundle/
 ├── PackageContents.xml          ← manifest (required)
 └── Contents/
     ├── HydroComplete.Civil3D.dll  ← plugin entry (ModuleName)
-    └── HydroComplete.Engine.dll   ← mapped dependency
+    ├── HydroComplete.Engine.dll   ← mapped dependency
+    └── PackageIcon.png            ← 96×96 bundle icon (App Store)
 ```
 
 ### `PackageContents.xml` requirements
@@ -47,17 +48,14 @@ HydroComplete.bundle/
 | `LoadOnAutoCADStartup` | ✅ `True` | |
 | `Commands` block (Local + Global) | ✅ All 7 `HC_*` commands listed | |
 | `AssemblyMappings` for Engine.dll | ✅ Present | Required for split assembly |
-| **Bundle icon** | ⚠️ **Missing** | Add `Icon="./Contents/PackageIcon.png"` (see §2a) |
-| **Help file URL** | ⚠️ **Missing** | Add `HelpFile` on `ApplicationPackage` or `ComponentEntry` |
+| **Bundle icon** | ✅ Present | `Icon="./Contents/PackageIcon.png"` — 96×96 PNG in `Contents/` |
+| **Help file URL** | ✅ Present | `HelpFile="https://hydrocomplete.com/civil3d"` on `ApplicationPackage` |
 | **Publisher certificate / signing** | ⚠️ **Not configured** | See §3 |
 
 ### 2a. Manifest gaps to fix before upload
 
-1. **Icon** — Autodesk listings require a product icon (typically 96×96 PNG).
-   - Add `dist/HydroComplete.bundle/Contents/PackageIcon.png` (export from `/assets/images/icon-192.png` on hydrocomplete.com).
-   - Add attribute: `Icon="./Contents/PackageIcon.png"` on `<ApplicationPackage>`.
-2. **HelpFile** — Point to `https://hydrocomplete.com/civil3d` or a dedicated help page:
-   - `HelpFile="https://hydrocomplete.com/civil3d"` on `<ApplicationPackage>`.
+1. ~~**Icon**~~ — ✅ Done: `PackageIcon.png` (96×96, from `hc-refactored/assets/images/icon-192.png`) + `Icon` attribute on `<ApplicationPackage>`.
+2. ~~**HelpFile**~~ — ✅ Done: `HelpFile="https://hydrocomplete.com/civil3d"` on `<ApplicationPackage>`.
 3. **Version bump workflow** — Sync `AppVersion` in XML, `Plugin.cs` banner, and `LISTING.md` on every submission.
 
 ### Verify locally before zipping

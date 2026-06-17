@@ -43,6 +43,12 @@ try {
         Copy-Item $bundle $dest -Recurse -Force
     }
 
+    $packageIcon = Join-Path $bundle 'Contents\PackageIcon.png'
+    if (Test-Path $packageIcon) {
+        New-Item -ItemType Directory -Force -Path (Join-Path $dest 'Contents') | Out-Null
+        Copy-Item $packageIcon (Join-Path $dest 'Contents') -Force
+    }
+
     Write-Host "Installed to $dest"
     Write-Host "Restart Civil 3D. You should see the load banner without NETLOAD."
     & "$root\verify-install.ps1"
