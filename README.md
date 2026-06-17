@@ -7,6 +7,8 @@ and show every formula. This is the desktop companion behind
 
 Status: **v0.3.0** — see [User validation](#user-validation) below.
 
+**Autodesk App Store:** Listing copy, submission checklist, and screenshot shot list live in [`dist/app-store/`](dist/app-store/) (`LISTING.md`, `SUBMISSION_CHECKLIST.md`, `SCREENSHOTS.md`).
+
 ## User validation
 
 Checked off = confirmed by Michael on Civil 3D 2026 with a live storm-sewer
@@ -27,7 +29,7 @@ not yet re-tested after the listed fix.
 | Waitlist page `hydrocomplete.com/civil3d` | *deploy only* | HTTP 200 deployed; signup flow not user-tested |
 | Engine unit tests | **validated** | `dotnet test` on dev machine (grows with each release) |
 | `HC_HGL` (steady profile + HC-HGL labels) | *pending* | v0.2.0 base; v0.3.0 adds HEC-22 junction/exit losses |
-| `HC_REPORT` (HTML export) | *pending* | v0.2.0 — writes to `%USERPROFILE%\Documents\HydroComplete\` |
+| `HC_REPORT` (HTML export) | *pending* | v0.3.0 — Manning capacity + steady HGL per network (Q prompt, HEC-22 optional); `%USERPROFILE%\Documents\HydroComplete\` |
 | `HC_ATLAS14` (IDF preset list) | *pending* | v0.3.0 — 18 embedded NOAA Atlas 14 city curves |
 | `HC_RATIONAL` + Atlas 14 presets | *pending* | v0.3.0 — preset key instead of manual a/b/c |
 | `HC_HGL` + Rational design Q | *pending* | v0.3.0 — optional catchment-driven Q when catchments exist |
@@ -116,7 +118,7 @@ before the one-time install above.
 | `HC_PIPES` | Manning capacity + full-flow velocity for every pipe in every pipe network |
 | `HC_PIPES_WRITE` | Label Qfull/Vfull on layer `HC-CAPACITY` at each pipe midpoint |
 | `HC_HGL` | Steady HGL at design Q with optional HEC-22 junction/exit losses; labels on `HC-HGL` |
-| `HC_REPORT` | Formula-transparent HTML Manning report to `Documents\HydroComplete\` |
+| `HC_REPORT` | Formula-transparent HTML Manning + steady HGL report to `Documents\HydroComplete\` |
 | `HC_RATIONAL` | Rational peak Q from catchments + NOAA Atlas 14 IDF preset (or custom a/b/c) |
 | `HC_ATLAS14` | List embedded Atlas 14 IDF presets (18 US cities, 10-yr) |
 
