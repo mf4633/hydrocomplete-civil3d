@@ -23,8 +23,21 @@ try {
     $bundle = Join-Path $root 'dist\HydroComplete.bundle'
     $dest = Join-Path $env:APPDATA 'Autodesk\ApplicationPlugins\HydroComplete.bundle'
 
-    if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
-    Copy-Item $bundle $dest -Recurse -Force
+    if (Test-Path $dest) {
+        try {
+            Remove-Item $dest -Recurse -Force
+            Copy-Item $bundle $dest -Recurse -Force
+        }
+        catch {
+            Write-Host "Bundle locked (Civil 3D open?) - updating files in place..."
+            New-Item -ItemType Directory -Force -Path (Join-Path $dest 'Contents') | Out-Null
+            Copy-Item "$bundle\PackageContents.xml" $dest -Force
+            Copy-Item "$bundle\Contents\*" (Join-Path $dest 'Contents') -Force -ErrorAction Stop
+        }
+    }
+    else {
+        Copy-Item $bundle $dest -Recurse -Force
+    }
 
     Write-Host "Installed to $dest"
     Write-Host "Restart Civil 3D. You should see the load banner without NETLOAD."
