@@ -5,10 +5,27 @@ drawing** — read pipe networks and catchments, compute on public-domain method
 and show every formula. This is the desktop companion behind
 [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d).
 
-Status: **v0.1 — live-tested.** The engine is implemented and unit-tested;
-the plugin compiles against the real Civil 3D 2026 API, reads live pipe networks
-from drawings (`HC_PIPES` verified on a 30-pipe storm network), and can write
-Manning capacity back to pipe Description + XData (`HC_PIPES_WRITE`).
+Status: **v0.1.1** — see [User validation](#user-validation) below.
+
+## User validation
+
+Checked off = confirmed by Michael on Civil 3D 2026 with a live storm-sewer
+drawing (`C-STORM`, 30 pipes, AutoCAD 2018-format DWG). Unchecked = built but
+not yet re-tested after the listed fix.
+
+| Item | Status | Notes |
+|---|---|---|
+| Bundle auto-load on startup | **validated** | Banner: `HydroComplete for Civil 3D 0.1.0 loaded` (no NETLOAD) |
+| `HC_ABOUT` | **validated** | Command list prints after load |
+| `HC_PIPES` | **validated** | 30 pipes; dia in ft (2.00 = 24″); Q/V match hand calcs; run twice, same output |
+| `HC_RATIONAL` (no catchments) | **validated** | Correctly reports *No catchments found* on this drawing |
+| `NETLOAD` fallback | **validated** | Works when bundle not yet loaded; cannot reload while assembly in memory |
+| `HC_PIPES_WRITE` (Description/XData) | **failed → removed** | All 30 pipes: `eBadDxfSequence` — Civil 3D parts reject arbitrary Description/XData |
+| `HC_PIPES_WRITE` (MText labels, v0.1.1) | *pending* | Places labels on layer `HC-CAPACITY`; needs restart + `install.ps1` to pick up 0.1.1 |
+| HydroComplete ribbon tab | *pending* | Not explicitly confirmed in session |
+| `HC_RATIONAL` (with catchments) | *pending* | No catchment objects in test drawing |
+| Waitlist page `hydrocomplete.com/civil3d` | *deploy only* | HTTP 200 deployed; signup flow not user-tested |
+| Engine unit tests (14/14) | **validated** | `dotnet test` on dev machine |
 
 ## Layout
 
@@ -75,14 +92,14 @@ run `NETLOAD` on the DLL.
 |---|---|
 | `HC_ABOUT` | List commands |
 | `HC_PIPES` | Manning capacity + full-flow velocity for every pipe in every pipe network |
-| `HC_PIPES_WRITE` | Write Qfull/Vfull to each pipe's Description + HYDROCOMPLETE XData |
+| `HC_PIPES_WRITE` | Label Qfull/Vfull on layer `HC-CAPACITY` at each pipe midpoint |
 | `HC_RATIONAL` | Composite Rational peak flow from catchments (prompts for site IDF a/b/c) |
 
 The ribbon tab **HydroComplete › Analysis** exposes the same four.
 
 ## Roadmap
 
-1. **Write-back (in progress)** — pipe Description/XData done; next: MText labels, HGL profile.
+1. **Write-back (in progress)** — MText labels on `HC-CAPACITY` (v0.1.1, pending user validation); next: HGL profile.
 2. **HGL backwater** — HEC-22 energy/momentum pass with junction losses (engine).
 3. **Report export** — formula-transparent PDF mirroring the web app.
 4. **NOAA Atlas 14** — auto-fetch IDF coefficients by drawing location instead of prompting.
