@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Linq;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -25,9 +27,11 @@ namespace HydroComplete.Civil3D.Commands
         public void About()
         {
             Editor ed = Active().Editor;
-            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.1.1 ===");
+            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.2.0 ===");
             ed.WriteMessage("\n  HC_PIPES       Manning capacity of every pipe-network pipe");
             ed.WriteMessage("\n  HC_PIPES_WRITE Label Qfull/Vfull on layer HC-CAPACITY");
+            ed.WriteMessage("\n  HC_HGL         Steady HGL profile + labels on layer HC-HGL");
+            ed.WriteMessage("\n  HC_REPORT      Export formula-transparent HTML Manning report");
             ed.WriteMessage("\n  HC_RATIONAL    Composite Rational-method peak flow from catchments");
             ed.WriteMessage("\n  HC_ABOUT       This list");
             ed.WriteMessage("\n  Engine: Rational, SCS Tc, Manning, IDF — public-domain, fully shown.\n");
@@ -102,6 +106,104 @@ namespace HydroComplete.Civil3D.Commands
             foreach (string err in write.Errors)
                 ed.WriteMessage($"\n  {err}");
             ed.WriteMessage("\n  Labels placed on layer HC-CAPACITY at each pipe midpoint.\n");
+        }
+
+        [CommandMethod("HC_HGL")]
+        public void HglProfile()
+        {
+            Document doc = Active();
+            Editor ed = doc.Editor;
+            CivilDocument civilDoc = CivilApplication.ActiveDocument;
+
+            var pipes = PipeNetworkReader.ReadAll(doc.Database, civilDoc);
+            if (pipes.Count == 0)
+            {
+                ed.WriteMessage("\nNo pipe networks found in this drawing.\n");
+                return;
+            }
+
+            double designQ = PromptDouble(ed, "\nUniform design flow Q (cfs)", 10.0);
+            var networks = NetworkTopology.BuildOrderedNetworks(pipes);
+            var allMidHgl = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+
+            ed.WriteMessage($"\n--- HydroComplete: steady HGL (Q={designQ:0.0} cfs) ---");
+            ed.WriteMessage("\nNetwork                 Pipe              HGL_US(ft)  HGL_DS(ft)  HGL_mid(ft)");
+
+            foreach (var net in networks)
+            {
+                if (net.OrderedPipes.Count == 0) continue;
+
+                var reaches = net.OrderedPipes
+                    .Select(rp => NetworkTopology.ToReach(rp, designQ))
+                    .ToList();
+
+                double startHgl = net.MaxUpstreamInvertFt + 1.0;
+                var profile = Hgl.SteadyNetworkHglProfile(reaches, startHgl);
+                double hglUs = startHgl;
+
+                for (int i = 0; i < net.OrderedPipes.Count && i < profile.Count; i++)
+                {
+                    ReadPipe rp = net.OrderedPipes[i];
+                    HglProfilePoint point = profile[i];
+                    string reachName = reaches[i].Name;
+
+                    double hglDs = point.HglFt;
+                    double hglMid = 0.5 * (hglUs + hglDs);
+                    allMidHgl[reachName] = hglMid;
+
+                    ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                        "\n{0,-22} {1,-16} {2,10:0.00}  {3,10:0.00}  {4,10:0.00}",
+                        Trim(net.NetworkName, 22),
+                        Trim(rp.PipeName, 16),
+                        hglUs, hglDs, hglMid));
+
+                    hglUs = hglDs;
+                }
+            }
+
+            var write = HglLabelWriter.WriteHglLabels(doc.Database, pipes, allMidHgl);
+            ed.WriteMessage($"\n--- Wrote HGL labels to {write.Updated} pipe(s) on layer HC-HGL ---");
+            if (write.Skipped > 0)
+                ed.WriteMessage($"\n  Skipped {write.Skipped} pipe(s).");
+            foreach (string err in write.Errors)
+                ed.WriteMessage($"\n  {err}");
+            ed.WriteMessage("\n");
+        }
+
+        [CommandMethod("HC_REPORT")]
+        public void Report()
+        {
+            Document doc = Active();
+            Editor ed = doc.Editor;
+            CivilDocument civilDoc = CivilApplication.ActiveDocument;
+
+            var pipes = PipeNetworkReader.ReadAll(doc.Database, civilDoc);
+            if (pipes.Count == 0)
+            {
+                ed.WriteMessage("\nNo pipe networks found in this drawing.\n");
+                return;
+            }
+
+            var capacities = new Dictionary<ObjectId, Manning.CapacityResult>();
+            foreach (var rp in pipes)
+            {
+                try
+                {
+                    capacities[rp.PipeId] = Manning.Capacity(rp.Segment);
+                }
+                catch (System.Exception ex)
+                {
+                    ed.WriteMessage($"\nSkipping {rp.PipeName}: {ex.Message}");
+                }
+            }
+
+            string drawingName = Path.GetFileNameWithoutExtension(doc.Name);
+            if (string.IsNullOrWhiteSpace(drawingName))
+                drawingName = "untitled";
+
+            string reportPath = HtmlReportWriter.Write(drawingName, pipes, capacities);
+            ed.WriteMessage($"\n--- HydroComplete: HTML report written ---");
+            ed.WriteMessage($"\n  {reportPath}\n");
         }
 
         [CommandMethod("HC_RATIONAL")]

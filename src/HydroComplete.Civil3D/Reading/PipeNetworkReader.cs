@@ -68,8 +68,13 @@ namespace HydroComplete.Civil3D.Reading
 
                         double startInvert = InvertAt(pipe.StartPoint, pipe.InnerDiameterOrWidth);
                         double endInvert = InvertAt(pipe.EndPoint, pipe.InnerDiameterOrWidth);
-                        bool startIsUpstream = startInvert >= endInvert;
-                        double lengthFt = pipe.Length2DCenterToCenter;
+                        bool startIsUpstream = pipe.FlowDirection == FlowDirectionType.StartToEnd
+                            || (pipe.FlowDirection != FlowDirectionType.EndToStart
+                                && startInvert >= endInvert);
+
+                        double lengthFt = pipe.Length2D;
+                        if (lengthFt <= 0)
+                            lengthFt = pipe.Length3D;
 
                         pipes.Add(new ReadPipe
                         {

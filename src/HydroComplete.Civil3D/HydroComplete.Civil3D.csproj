@@ -16,7 +16,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>HydroComplete.Civil3D</AssemblyName>
     <RootNamespace>HydroComplete.Civil3D</RootNamespace>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <!-- AutoCAD loads the DLL into its own process; never copy the host
          assemblies, and don't try to produce a runnable host. -->
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>

@@ -5,7 +5,7 @@ drawing** — read pipe networks and catchments, compute on public-domain method
 and show every formula. This is the desktop companion behind
 [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d).
 
-Status: **v0.1.1** — see [User validation](#user-validation) below.
+Status: **v0.2.0** — see [User validation](#user-validation) below.
 
 ## User validation
 
@@ -26,6 +26,8 @@ not yet re-tested after the listed fix.
 | `HC_RATIONAL` (with catchments) | *pending* | No catchment objects in test drawing |
 | Waitlist page `hydrocomplete.com/civil3d` | *deploy only* | HTTP 200 deployed; signup flow not user-tested |
 | Engine unit tests (14/14) | **validated** | `dotnet test` on dev machine |
+| `HC_HGL` (steady profile + HC-HGL labels) | *pending* | v0.2.0 — built, not yet re-tested on C-STORM drawing |
+| `HC_REPORT` (HTML export) | *pending* | v0.2.0 — writes to `%USERPROFILE%\Documents\HydroComplete\` |
 
 ## Layout
 
@@ -88,7 +90,7 @@ plugin automatically.
 3. **Launch Civil 3D 2026** from the Start menu (the full desktop app — not
    `accoreconsole`, not plain AutoCAD).
 4. Confirm the command line shows:
-   `HydroComplete for Civil 3D 0.1.1 loaded. Type HC_ABOUT for commands.`
+   `HydroComplete for Civil 3D 0.2.0 loaded. Type HC_ABOUT for commands.`
 
 Check install any time:
 ```
@@ -110,15 +112,17 @@ before the one-time install above.
 | `HC_ABOUT` | List commands |
 | `HC_PIPES` | Manning capacity + full-flow velocity for every pipe in every pipe network |
 | `HC_PIPES_WRITE` | Label Qfull/Vfull on layer `HC-CAPACITY` at each pipe midpoint |
+| `HC_HGL` | Steady HGL profile at uniform design Q; labels on layer `HC-HGL` |
+| `HC_REPORT` | Formula-transparent HTML Manning report to `Documents\HydroComplete\` |
 | `HC_RATIONAL` | Composite Rational peak flow from catchments (prompts for site IDF a/b/c) |
 
-The ribbon tab **HydroComplete › Analysis** exposes the same four.
+The ribbon tab **HydroComplete › Analysis** exposes the same commands.
 
 ## Roadmap
 
-1. **Write-back (v0.1 done)** — MText labels on `HC-CAPACITY` validated; next: HGL profile, drawing labels tied to pipe styles.
+1. **Write-back (v0.1 done)** — MText labels on `HC-CAPACITY` validated; HGL labels on `HC-HGL` in v0.2 (pending validation).
 2. **HGL backwater** — HEC-22 energy/momentum pass with junction losses (engine).
-3. **Report export** — formula-transparent PDF mirroring the web app.
+3. **Report export** — HTML in v0.2; formula-transparent PDF mirroring the web app next.
 4. **NOAA Atlas 14** — auto-fetch IDF coefficients by drawing location instead of prompting.
 5. **Account/auth handoff** — gate Pro features against a hydrocomplete.com login.
 
