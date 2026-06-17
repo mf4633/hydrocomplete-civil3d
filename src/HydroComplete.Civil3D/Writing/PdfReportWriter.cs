@@ -104,8 +104,8 @@ namespace HydroComplete.Civil3D.Writing
                         "Start HGL = {0:0.00} ft (max upstream invert + 1.0 ft freeboard).",
                         net.StartHglFt));
 
-                string[] headers = { "Pipe", "hf (ft)", "hm (ft)", "HGL_US (ft)", "HGL_DS (ft)" };
-                double[] colWidths = { 180, 66, 66, 90, 90 };
+                string[] headers = { "Pipe", "hf (ft)", "hm (ft)", "HGL_US (ft)", "HGL_DS (ft)", "SURCH" };
+                double[] colWidths = { 150, 58, 58, 82, 82, 42 };
                 double rowHeight = 18;
                 y = DrawTableHeader(activeGfx, ref page, ref activeGfx, document, y, headers, colWidths, rowHeight);
 
@@ -113,14 +113,15 @@ namespace HydroComplete.Civil3D.Writing
                 {
                     string[] cells =
                     {
-                        ReportWriterCommon.Trim(row.PipeName, 36),
+                        ReportWriterCommon.Trim(row.PipeName, 32),
                         row.Point.HfFt.ToString("0.00", CultureInfo.InvariantCulture),
                         row.Point.HmFt.ToString("0.00", CultureInfo.InvariantCulture),
                         row.HglUsFt.ToString("0.00", CultureInfo.InvariantCulture),
                         row.HglDsFt.ToString("0.00", CultureInfo.InvariantCulture),
+                        row.IsSurcharged ? "*" : "",
                     };
                     y = EnsureSpace(document, ref page, ref activeGfx, y, rowHeight + 4);
-                    y = DrawTableRow(activeGfx, y, cells, colWidths, rowHeight);
+                    y = DrawTableRow(activeGfx, y, cells, colWidths, rowHeight, row.IsSurcharged);
                 }
 
                 y += 8;
@@ -212,12 +213,16 @@ namespace HydroComplete.Civil3D.Writing
             double y,
             string[] cells,
             double[] colWidths,
-            double rowHeight)
+            double rowHeight,
+            bool highlight = false)
         {
             var font = new XFont("Segoe UI", 9);
             double x = MarginLeft;
             double tableWidth = Sum(colWidths);
 
+            if (highlight)
+                gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(255, 230, 230)),
+                    MarginLeft, y, tableWidth, rowHeight);
             gfx.DrawRectangle(XPens.LightGray, MarginLeft, y, tableWidth, rowHeight);
 
             for (int i = 0; i < cells.Length; i++)

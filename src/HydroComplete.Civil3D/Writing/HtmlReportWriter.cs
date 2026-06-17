@@ -31,7 +31,8 @@ namespace HydroComplete.Civil3D.Writing
             sb.AppendLine("h1{font-size:1.4rem;} h2{font-size:1.15rem;margin-top:28px;}");
             sb.AppendLine("table{border-collapse:collapse;width:100%;margin:16px 0;}");
             sb.AppendLine("th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;font-size:0.9rem;}");
-            sb.AppendLine("th{background:#f0f4f8;} .steps{font-family:Consolas,monospace;font-size:0.85rem;}");
+            sb.AppendLine("th{background:#f0f4f8;} tr.surcharged{background:#ffe6e6;}");
+            sb.AppendLine(".steps{font-family:Consolas,monospace;font-size:0.85rem;}");
             sb.AppendLine(".disclaimer{margin-top:24px;padding:12px;background:#fff8e6;border:1px solid #e6c200;}");
             sb.AppendLine("</style></head><body>");
             sb.AppendLine("<h1>HydroComplete — Hydraulic Report</h1>");
@@ -121,17 +122,19 @@ namespace HydroComplete.Civil3D.Writing
 
                 sb.AppendLine("<table><thead><tr>");
                 sb.AppendLine("<th>Pipe</th><th>h<sub>f</sub> (ft)</th><th>h<sub>m</sub> (ft)</th>");
-                sb.AppendLine("<th>HGL<sub>US</sub> (ft)</th><th>HGL<sub>DS</sub> (ft)</th>");
+                sb.AppendLine("<th>HGL<sub>US</sub> (ft)</th><th>HGL<sub>DS</sub> (ft)</th><th>SURCH</th>");
                 sb.AppendLine("</tr></thead><tbody>");
 
                 foreach (HglPipeReportRow row in net.Rows)
                 {
-                    sb.AppendLine("<tr>");
+                    string rowClass = row.IsSurcharged ? " class=\"surcharged\"" : "";
+                    sb.AppendLine($"<tr{rowClass}>");
                     sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
-                        "<td>{0}</td><td>{1:0.00}</td><td>{2:0.00}</td><td>{3:0.00}</td><td>{4:0.00}</td>",
+                        "<td>{0}</td><td>{1:0.00}</td><td>{2:0.00}</td><td>{3:0.00}</td><td>{4:0.00}</td><td>{5}</td>",
                         ReportWriterCommon.EscapeHtml(ReportWriterCommon.Trim(row.PipeName, 48)),
                         row.Point.HfFt, row.Point.HmFt,
-                        row.HglUsFt, row.HglDsFt));
+                        row.HglUsFt, row.HglDsFt,
+                        row.IsSurcharged ? "*" : ""));
                     sb.AppendLine("</tr>");
                 }
 

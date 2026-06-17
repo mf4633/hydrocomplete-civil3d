@@ -29,6 +29,9 @@ namespace HydroComplete.Civil3D.Writing
 
         /// <summary>Engine profile point (friction, minor losses, calc steps).</summary>
         public HglProfilePoint Point { get; set; } = null!;
+
+        /// <summary>True when HGL exceeds pipe crown at US or DS end.</summary>
+        public bool IsSurcharged { get; set; }
     }
 
     /// <summary>Design-flow and per-network HGL results for HTML export.</summary>

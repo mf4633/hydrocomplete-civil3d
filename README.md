@@ -5,7 +5,7 @@ drawing** — read pipe networks and catchments, compute on public-domain method
 and show every formula. This is the desktop companion behind
 [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d).
 
-Status: **v0.3.1** — see [User validation](#user-validation) below.
+Status: **v0.3.2** — see [User validation](#user-validation) below.
 
 **Autodesk App Store:** Listing copy, submission checklist, and screenshot shot list live in [`dist/app-store/`](dist/app-store/) (`LISTING.md`, `SUBMISSION_CHECKLIST.md`, `SCREENSHOTS.md`).
 
@@ -96,7 +96,7 @@ plugin automatically.
 3. **Launch Civil 3D 2026** from the Start menu (the full desktop app — not
    `accoreconsole`, not plain AutoCAD).
 4. Confirm the command line shows:
-   `HydroComplete for Civil 3D 0.3.1 loaded. Type HC_ABOUT for commands.`
+   `HydroComplete for Civil 3D 0.3.2 loaded. Type HC_ABOUT for commands.`
 
 Check install any time:
 ```
@@ -119,9 +119,11 @@ before the one-time install above.
 | `HC_PIPES` | Manning capacity + full-flow velocity for every pipe in every pipe network |
 | `HC_PIPES_WRITE` | Label Qfull/Vfull on layer `HC-CAPACITY` at each pipe midpoint |
 | `HC_HGL` | Steady HGL at design Q with optional HEC-22 junction/exit losses; labels on `HC-HGL` |
-| `HC_REPORT` | Formula-transparent HTML Manning + steady HGL report to `Documents\HydroComplete\` |
+| `HC_REPORT` | Formula-transparent HTML Manning + steady HGL report to `Documents\HydroComplete\` (free) |
+| `HC_REPORT_PDF` | Same report as PDF — **Pro** (requires license; use `HC_REPORT` for free HTML) |
 | `HC_RATIONAL` | Rational peak Q from catchments + NOAA Atlas 14 IDF preset (or custom a/b/c) |
 | `HC_ATLAS14` | List embedded Atlas 14 IDF presets (18 US cities, 10-yr) |
+| `HC_LICENSE` | Show Free/Pro status, license file path, and activation link |
 
 **Atlas 14 geolocation (v0.3.1):** When the drawing has geo-reference data
 (`GEOGRAPHICLOCATION` / `Database.GeoDataObject`), `HC_RATIONAL` and the
@@ -141,7 +143,7 @@ The ribbon tab **HydroComplete › Analysis** exposes the same commands.
 2. **HGL backwater (v0.3 partial)** — HEC-22 junction/exit minor losses in steady profile; full momentum backwater next.
 3. **Report export** — HTML in v0.2; formula-transparent PDF mirroring the web app next.
 4. **NOAA Atlas 14 (v0.3.1 partial)** — 18 embedded city presets; auto-select nearest from drawing geolocation.
-5. **Account/auth handoff** — gate Pro features against a hydrocomplete.com login.
+5. **Account/auth handoff (skeleton)** — `LicenseGate` checks `%APPDATA%\HydroComplete\license.json` (stub: non-expired `expires` field) or dev bypass `HYDROCOMPLETE_PRO=1`; `HC_REPORT_PDF` is the first gated Pro feature; `HC_LICENSE` shows status. Online validation against hydrocomplete.com API is TODO.
 
 Civil 3D, AutoCAD, and Storm and Sanitary Analysis are trademarks of Autodesk,
 Inc. HydroComplete is an independent product, not affiliated with or endorsed by

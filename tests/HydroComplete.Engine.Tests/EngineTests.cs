@@ -260,6 +260,28 @@ namespace HydroComplete.Engine.Tests
         }
 
         [Fact]
+        public void CrownElevationFt_IsInvertPlusDiameter()
+        {
+            Assert.Equal(105.0, Hgl.CrownElevationFt(100.0, 5.0), 6);
+        }
+
+        [Fact]
+        public void IsSurcharged_FlagsWhenHglExceedsEitherCrown()
+        {
+            Assert.False(Hgl.IsSurcharged(104.0, 103.0, 100.0, 99.0, 5.0));
+            Assert.True(Hgl.IsSurcharged(105.1, 103.0, 100.0, 99.0, 5.0));
+            Assert.True(Hgl.IsSurcharged(104.0, 104.1, 100.0, 99.0, 5.0));
+            Assert.True(Hgl.IsSurcharged(106.0, 105.0, 100.0, 99.0, 5.0));
+        }
+
+        [Fact]
+        public void IsSurcharged_AtCrownIsNotSurcharged()
+        {
+            Assert.False(Hgl.IsSurcharged(105.0, 104.0, 100.0, 99.0, 5.0));
+            Assert.False(Hgl.IsSurcharged(104.0, 104.0, 100.0, 99.0, 5.0));
+        }
+
+        [Fact]
         public void SteadyNetworkHglProfile_WithJunctionLosses_DropsMoreThanFrictionOnly()
         {
             var reaches = new List<NetworkReach>

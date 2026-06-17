@@ -8,6 +8,7 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.Civil.ApplicationServices;
+using HydroComplete.Civil3D.Auth;
 using HydroComplete.Civil3D.Reading;
 using HydroComplete.Civil3D.Writing;
 using HydroComplete.Engine;
@@ -27,16 +28,29 @@ namespace HydroComplete.Civil3D.Commands
         public void About()
         {
             Editor ed = Active().Editor;
-            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.3.1 ===");
+            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.3.2 ===");
             ed.WriteMessage("\n  HC_PIPES       Manning capacity of every pipe-network pipe");
             ed.WriteMessage("\n  HC_PIPES_WRITE Label Qfull/Vfull on layer HC-CAPACITY");
             ed.WriteMessage("\n  HC_HGL         Steady HGL + HEC-22 junction losses + HC-HGL labels");
-            ed.WriteMessage("\n  HC_REPORT      Export formula-transparent HTML Manning + HGL report");
-            ed.WriteMessage("\n  HC_REPORT_PDF  Export formula-transparent PDF Manning + HGL report");
+            ed.WriteMessage("\n  HC_REPORT      Export formula-transparent HTML Manning + HGL report (free)");
+            ed.WriteMessage("\n  HC_REPORT_PDF  Export formula-transparent PDF Manning + HGL report (Pro)");
             ed.WriteMessage("\n  HC_RATIONAL    Rational Q from catchments + NOAA Atlas 14 IDF presets");
             ed.WriteMessage("\n  HC_ATLAS14     List embedded Atlas 14 IDF presets by city");
+            ed.WriteMessage("\n  HC_LICENSE     Show Free/Pro license status and activation info");
             ed.WriteMessage("\n  HC_ABOUT       This list");
+            ed.WriteMessage("\n  Pro features (PDF export) require a license — visit https://hydrocomplete.com/civil3d");
             ed.WriteMessage("\n  Engine: Rational, SCS Tc, Manning, IDF, HEC-22 — public-domain, fully shown.\n");
+        }
+
+        [CommandMethod("HC_LICENSE")]
+        public void License()
+        {
+            Editor ed = Active().Editor;
+            ed.WriteMessage("\n=== HydroComplete License ===");
+            ed.WriteMessage($"\n  Status: {LicenseGate.GetStatusLabel()}");
+            ed.WriteMessage($"\n  License file: {LicenseGate.GetLicenseFilePath()}");
+            ed.WriteMessage("\n  Activate Pro at https://hydrocomplete.com/civil3d");
+            ed.WriteMessage("\n  Pro unlocks PDF export (HC_REPORT_PDF). HTML reports (HC_REPORT) stay free.\n");
         }
 
         [CommandMethod("HC_ATLAS14")]
@@ -141,10 +155,11 @@ namespace HydroComplete.Civil3D.Commands
 
             var networks = NetworkTopology.BuildOrderedNetworks(pipes);
             var allMidHgl = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+            var surchargedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             string lossNote = useMinorLosses ? " + HEC-22" : "";
             ed.WriteMessage($"\n--- HydroComplete: steady HGL{lossNote} (Q={designQ:0.0} cfs) ---");
-            ed.WriteMessage("\nNetwork                 Pipe              HGL_US(ft)  HGL_DS(ft)  HGL_mid(ft)  h_m(ft)");
+            ed.WriteMessage("\nNetwork                 Pipe              HGL_US(ft)  HGL_DS(ft)  HGL_mid(ft)  h_m(ft)  SURCH");
 
             foreach (var net in networks)
             {
@@ -167,17 +182,24 @@ namespace HydroComplete.Civil3D.Commands
                     double hglMid = 0.5 * (hglUs + hglDs);
                     allMidHgl[reachName] = hglMid;
 
+                    bool surcharged = Hgl.IsSurcharged(
+                        hglUs, hglDs,
+                        rp.UpstreamInvertFt, rp.DownstreamInvertFt, rp.Segment.DiameterFt);
+                    if (surcharged)
+                        surchargedKeys.Add(reachName);
+
                     ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
-                        "\n{0,-22} {1,-16} {2,10:0.00}  {3,10:0.00}  {4,10:0.00}  {5,8:0.00}",
+                        "\n{0,-22} {1,-16} {2,10:0.00}  {3,10:0.00}  {4,10:0.00}  {5,8:0.00}  {6,5}",
                         Trim(net.NetworkName, 22),
                         Trim(rp.PipeName, 16),
-                        hglUs, hglDs, hglMid, point.HmFt));
+                        hglUs, hglDs, hglMid, point.HmFt,
+                        surcharged ? "*" : ""));
 
                     hglUs = hglDs;
                 }
             }
 
-            var write = HglLabelWriter.WriteHglLabels(doc.Database, pipes, allMidHgl);
+            var write = HglLabelWriter.WriteHglLabels(doc.Database, pipes, allMidHgl, surchargedKeys);
             ed.WriteMessage($"\n--- Wrote HGL labels to {write.Updated} pipe(s) on layer HC-HGL ---");
             if (write.Skipped > 0)
                 ed.WriteMessage($"\n  Skipped {write.Skipped} pipe(s).");
@@ -205,6 +227,15 @@ namespace HydroComplete.Civil3D.Commands
         {
             Document doc = Active();
             Editor ed = doc.Editor;
+
+            if (!LicenseGate.IsProEnabled())
+            {
+                ed.WriteMessage("\n--- HydroComplete: PDF export is a Pro feature ---");
+                ed.WriteMessage("\n  Activate at https://hydrocomplete.com/civil3d");
+                ed.WriteMessage("\n  Free alternative: HC_REPORT exports the same Manning + HGL report as HTML.\n");
+                return;
+            }
+
             if (!TryBuildHydraulicReport(doc, ed, out var pipes, out var capacities, out var hglData, out string drawingName))
                 return;
 
@@ -300,6 +331,9 @@ namespace HydroComplete.Civil3D.Commands
                         HglUsFt = hglUs,
                         HglDsFt = point.HglFt,
                         Point = point,
+                        IsSurcharged = Hgl.IsSurcharged(
+                            hglUs, point.HglFt,
+                            rp.UpstreamInvertFt, rp.DownstreamInvertFt, rp.Segment.DiameterFt),
                     });
 
                     hglUs = point.HglFt;

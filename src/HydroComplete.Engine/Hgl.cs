@@ -14,6 +14,25 @@ namespace HydroComplete.Engine
     /// </summary>
     public static class Hgl
     {
+        /// <summary>
+        /// Pipe crown elevation from invert + inside diameter, ft.
+        /// </summary>
+        public static double CrownElevationFt(double invertFt, double diameterFt) =>
+            invertFt + diameterFt;
+
+        /// <summary>
+        /// True when HGL exceeds pipe crown at either the upstream or downstream end.
+        /// Matches ConveyanceEngine: HGL_up &gt; crownUp || HGL_down &gt; crownDown.
+        /// </summary>
+        public static bool IsSurcharged(
+            double hglUsFt, double hglDsFt,
+            double upstreamInvertFt, double downstreamInvertFt, double diameterFt)
+        {
+            double crownUp = CrownElevationFt(upstreamInvertFt, diameterFt);
+            double crownDown = CrownElevationFt(downstreamInvertFt, diameterFt);
+            return hglUsFt > crownUp || hglDsFt > crownDown;
+        }
+
         public sealed class FrictionHeadLossResult : TracedResult
         {
             /// <summary>Friction head loss over the reach, ft.</summary>

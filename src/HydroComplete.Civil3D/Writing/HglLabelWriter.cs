@@ -26,7 +26,8 @@ namespace HydroComplete.Civil3D.Writing
         public static WriteResult WriteHglLabels(
             Database db,
             IReadOnlyList<ReadPipe> pipes,
-            IReadOnlyDictionary<string, double> midpointHglFt)
+            IReadOnlyDictionary<string, double> midpointHglFt,
+            IReadOnlySet<string>? surchargedKeys = null)
         {
             if (db == null) throw new ArgumentNullException(nameof(db));
             if (pipes == null) throw new ArgumentNullException(nameof(pipes));
@@ -62,8 +63,9 @@ namespace HydroComplete.Civil3D.Writing
                             continue;
                         }
 
+                        bool surcharged = surchargedKeys != null && surchargedKeys.Contains(key);
                         string text = string.Format(CultureInfo.InvariantCulture,
-                            "HGL={0:0.00} ft", hgl);
+                            surcharged ? "HGL={0:0.00} ft SURCH" : "HGL={0:0.00} ft", hgl);
 
                         Point3d mid = Midpoint(pipe.StartPoint, pipe.EndPoint);
                         double height = Math.Max(0.5, rp.Segment.DiameterFt * 0.15);
