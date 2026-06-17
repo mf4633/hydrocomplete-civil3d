@@ -15,7 +15,7 @@ not yet re-tested after the listed fix.
 
 | Item | Status | Notes |
 |---|---|---|
-| Bundle auto-load on startup | **validated** | Banner: `HydroComplete for Civil 3D 0.1.0 loaded` (no NETLOAD) |
+| Bundle auto-load on startup | **validated** | v0.1.1 banner on fresh start, no NETLOAD (`install.ps1` + verify-install OK) |
 | `HC_ABOUT` | **validated** | Command list prints after load |
 | `HC_PIPES` | **validated** | 30 pipes; dia in ft (2.00 = 24″); Q/V match hand calcs; run twice, same output |
 | `HC_RATIONAL` (no catchments) | **validated** | Correctly reports *No catchments found* on this drawing |
