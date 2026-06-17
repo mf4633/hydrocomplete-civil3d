@@ -19,6 +19,10 @@ try {
 
     Copy-Item "$out\HydroComplete.Civil3D.dll" $contents -Force
     Copy-Item "$eng\HydroComplete.Engine.dll" $contents -Force
+    # PDFsharp + transitive deps (MIT) for HC_REPORT_PDF
+    Get-ChildItem $out -Filter '*.dll' |
+        Where-Object { $_.Name -notmatch '^HydroComplete\.' } |
+        Copy-Item -Destination $contents -Force
 
     $bundle = Join-Path $root 'dist\HydroComplete.bundle'
     $dest = Join-Path $env:APPDATA 'Autodesk\ApplicationPlugins\HydroComplete.bundle'

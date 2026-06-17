@@ -20,14 +20,7 @@ namespace HydroComplete.Civil3D.Writing
             IReadOnlyDictionary<ObjectId, Manning.CapacityResult> capacities,
             HglReportData? hglData = null)
         {
-            string folder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "HydroComplete");
-            Directory.CreateDirectory(folder);
-
-            string stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
-            string safeDrawing = SanitizeFileName(drawingName);
-            string path = Path.Combine(folder, $"report-{safeDrawing}-{stamp}.html");
+            string path = ReportWriterCommon.BuildReportPath(drawingName, "html");
 
             var sb = new StringBuilder();
             sb.AppendLine("<!DOCTYPE html>");
@@ -44,7 +37,8 @@ namespace HydroComplete.Civil3D.Writing
             sb.AppendLine("<h1>HydroComplete — Hydraulic Report</h1>");
             sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
                 "<p>Drawing: <strong>{0}</strong><br/>Generated: {1}</p>",
-                Escape(drawingName), Escape(DateTime.Now.ToString("f", CultureInfo.CurrentCulture))));
+                ReportWriterCommon.EscapeHtml(drawingName),
+                ReportWriterCommon.EscapeHtml(DateTime.Now.ToString("f", CultureInfo.CurrentCulture))));
 
             AppendManningSection(sb, pipes, capacities);
 
@@ -83,7 +77,7 @@ namespace HydroComplete.Civil3D.Writing
                 sb.AppendLine("<tr>");
                 sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
                     "<td>{0}</td><td>{1:0.00}</td><td>{2:0.0000}</td><td>{3:0.00}</td><td>{4:0.00}</td>",
-                    Escape(Trim(rp.NetworkName + "/" + rp.PipeName, 48)),
+                    ReportWriterCommon.EscapeHtml(ReportWriterCommon.Trim(rp.NetworkName + "/" + rp.PipeName, 48)),
                     rp.Segment.DiameterFt, rp.Segment.Slope,
                     cap.FullFlowCfs, cap.FullVelocityFps));
                 sb.AppendLine("</tr>");
@@ -99,9 +93,9 @@ namespace HydroComplete.Civil3D.Writing
 
                 sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
                     "<h4>{0}</h4><div class=\"steps\">",
-                    Escape(Trim(rp.NetworkName + "/" + rp.PipeName, 64))));
+                    ReportWriterCommon.EscapeHtml(ReportWriterCommon.Trim(rp.NetworkName + "/" + rp.PipeName, 64))));
                 foreach (CalcStep step in cap.Steps)
-                    sb.AppendLine(Escape(step.ToString()) + "<br/>");
+                    sb.AppendLine(ReportWriterCommon.EscapeHtml(step.ToString()) + "<br/>");
                 sb.AppendLine("</div>");
             }
         }
@@ -123,7 +117,7 @@ namespace HydroComplete.Civil3D.Writing
 
                 sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
                     "<h3>{0}</h3><p>Start HGL = {1:0.00} ft (max upstream invert + 1.0 ft freeboard).</p>",
-                    Escape(Trim(net.NetworkName, 64)), net.StartHglFt));
+                    ReportWriterCommon.EscapeHtml(ReportWriterCommon.Trim(net.NetworkName, 64)), net.StartHglFt));
 
                 sb.AppendLine("<table><thead><tr>");
                 sb.AppendLine("<th>Pipe</th><th>h<sub>f</sub> (ft)</th><th>h<sub>m</sub> (ft)</th>");
@@ -135,7 +129,7 @@ namespace HydroComplete.Civil3D.Writing
                     sb.AppendLine("<tr>");
                     sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
                         "<td>{0}</td><td>{1:0.00}</td><td>{2:0.00}</td><td>{3:0.00}</td><td>{4:0.00}</td>",
-                        Escape(Trim(row.PipeName, 48)),
+                        ReportWriterCommon.EscapeHtml(ReportWriterCommon.Trim(row.PipeName, 48)),
                         row.Point.HfFt, row.Point.HmFt,
                         row.HglUsFt, row.HglDsFt));
                     sb.AppendLine("</tr>");
@@ -148,35 +142,13 @@ namespace HydroComplete.Civil3D.Writing
                 {
                     sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
                         "<h5>{0}</h5><div class=\"steps\">",
-                        Escape(Trim(row.PipeName, 64))));
+                        ReportWriterCommon.EscapeHtml(ReportWriterCommon.Trim(row.PipeName, 64))));
                     foreach (CalcStep step in row.Point.Steps)
-                        sb.AppendLine(Escape(step.ToString()) + "<br/>");
+                        sb.AppendLine(ReportWriterCommon.EscapeHtml(step.ToString()) + "<br/>");
                     sb.AppendLine("</div>");
                 }
             }
         }
 
-        private static string SanitizeFileName(string name)
-        {
-            if (string.IsNullOrWhiteSpace(name)) return "drawing";
-            foreach (char c in Path.GetInvalidFileNameChars())
-                name = name.Replace(c, '_');
-            return name.Trim();
-        }
-
-        private static string Escape(string s)
-        {
-            return s
-                .Replace("&", "&amp;", StringComparison.Ordinal)
-                .Replace("<", "&lt;", StringComparison.Ordinal)
-                .Replace(">", "&gt;", StringComparison.Ordinal)
-                .Replace("\"", "&quot;", StringComparison.Ordinal);
-        }
-
-        private static string Trim(string s, int max)
-        {
-            if (string.IsNullOrEmpty(s)) return "";
-            return s.Length <= max ? s : s.Substring(0, max - 1) + "~";
-        }
     }
 }

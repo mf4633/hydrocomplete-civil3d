@@ -24,4 +24,4 @@ if (Test-Path $built) {
 Select-String -Path $manifest -Pattern 'LoadOnAutoCADStartup|Platform|AppVersion' | ForEach-Object { Write-Host $_.Line.Trim() }
 Write-Host ""
 Write-Host "Launch Civil 3D 2026 full app (not core console)."
-Write-Host "Startup banner: HydroComplete for Civil 3D 0.3.0 loaded"
+Write-Host "Startup banner: HydroComplete for Civil 3D 0.3.1 loaded"

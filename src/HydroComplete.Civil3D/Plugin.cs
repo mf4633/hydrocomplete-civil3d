@@ -23,7 +23,7 @@ namespace HydroComplete.Civil3D
             {
                 var doc = AcadApp.DocumentManager?.MdiActiveDocument;
                 doc?.Editor.WriteMessage(
-                    $"\n{ProductName} for Civil 3D 0.3.0 loaded. Type HC_ABOUT for commands.\n");
+                    $"\n{ProductName} for Civil 3D 0.3.1 loaded. Type HC_ABOUT for commands.\n");
             }
             catch
             {

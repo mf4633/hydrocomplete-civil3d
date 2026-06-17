@@ -16,10 +16,10 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>HydroComplete.Civil3D</AssemblyName>
     <RootNamespace>HydroComplete.Civil3D</RootNamespace>
-    <Version>0.2.0</Version>
+    <Version>0.3.1</Version>
     <!-- AutoCAD loads the DLL into its own process; never copy the host
-         assemblies, and don't try to produce a runnable host. -->
-    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+         assemblies (Private=false), but ship PDFsharp and other NuGet deps. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
   </PropertyGroup>
@@ -65,6 +65,11 @@
   <ItemGroup>
     <!-- Our portable engine ships alongside the plugin (Private=true is the default). -->
     <ProjectReference Include="..\HydroComplete.Engine\HydroComplete.Engine.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- MIT license — formula-transparent PDF Manning reports (Civil3D project only). -->
+    <PackageReference Include="PDFsharp" Version="6.2.0" />
   </ItemGroup>
 
 </Project>

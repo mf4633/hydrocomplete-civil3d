@@ -27,11 +27,12 @@ namespace HydroComplete.Civil3D.Commands
         public void About()
         {
             Editor ed = Active().Editor;
-            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.3.0 ===");
+            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.3.1 ===");
             ed.WriteMessage("\n  HC_PIPES       Manning capacity of every pipe-network pipe");
             ed.WriteMessage("\n  HC_PIPES_WRITE Label Qfull/Vfull on layer HC-CAPACITY");
             ed.WriteMessage("\n  HC_HGL         Steady HGL + HEC-22 junction losses + HC-HGL labels");
             ed.WriteMessage("\n  HC_REPORT      Export formula-transparent HTML Manning + HGL report");
+            ed.WriteMessage("\n  HC_REPORT_PDF  Export formula-transparent PDF Manning + HGL report");
             ed.WriteMessage("\n  HC_RATIONAL    Rational Q from catchments + NOAA Atlas 14 IDF presets");
             ed.WriteMessage("\n  HC_ATLAS14     List embedded Atlas 14 IDF presets by city");
             ed.WriteMessage("\n  HC_ABOUT       This list");
@@ -190,19 +191,52 @@ namespace HydroComplete.Civil3D.Commands
         {
             Document doc = Active();
             Editor ed = doc.Editor;
-            CivilDocument civilDoc = CivilApplication.ActiveDocument;
+            if (!TryBuildHydraulicReport(doc, ed, out var pipes, out var capacities, out var hglData, out string drawingName))
+                return;
 
-            var pipes = PipeNetworkReader.ReadAll(doc.Database, civilDoc);
+            string reportPath = HtmlReportWriter.Write(drawingName, pipes, capacities, hglData);
+            ed.WriteMessage($"\n--- HydroComplete: HTML report written ---");
+            ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                "\n  Manning capacity + steady HGL (Q={0:0.0} cfs) -> {1}\n", hglData.DesignFlowCfs, reportPath));
+        }
+
+        [CommandMethod("HC_REPORT_PDF")]
+        public void ReportPdf()
+        {
+            Document doc = Active();
+            Editor ed = doc.Editor;
+            if (!TryBuildHydraulicReport(doc, ed, out var pipes, out var capacities, out var hglData, out string drawingName))
+                return;
+
+            string reportPath = PdfReportWriter.Write(drawingName, pipes, capacities, hglData);
+            ed.WriteMessage($"\n--- HydroComplete: PDF report written ---");
+            ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                "\n  Manning capacity + steady HGL (Q={0:0.0} cfs) -> {1}\n", hglData.DesignFlowCfs, reportPath));
+        }
+
+        private static bool TryBuildHydraulicReport(
+            Document doc,
+            Editor ed,
+            out List<ReadPipe> pipes,
+            out Dictionary<ObjectId, Manning.CapacityResult> capacities,
+            out HglReportData hglData,
+            out string drawingName)
+        {
+            CivilDocument civilDoc = CivilApplication.ActiveDocument;
+            pipes = PipeNetworkReader.ReadAll(doc.Database, civilDoc);
+            capacities = new Dictionary<ObjectId, Manning.CapacityResult>();
+
             if (pipes.Count == 0)
             {
                 ed.WriteMessage("\nNo pipe networks found in this drawing.\n");
-                return;
+                hglData = new HglReportData();
+                drawingName = "";
+                return false;
             }
 
             double designQ = PromptDesignFlow(ed, doc, civilDoc);
             bool useMinorLosses = PromptYesNo(ed, "\nInclude HEC-22 junction/exit losses in HGL section", defaultYes: true);
 
-            var capacities = new Dictionary<ObjectId, Manning.CapacityResult>();
             foreach (var rp in pipes)
             {
                 try
@@ -215,16 +249,12 @@ namespace HydroComplete.Civil3D.Commands
                 }
             }
 
-            HglReportData hglData = BuildHglReportData(pipes, designQ, useMinorLosses);
+            hglData = BuildHglReportData(pipes, designQ, useMinorLosses);
 
-            string drawingName = Path.GetFileNameWithoutExtension(doc.Name);
+            drawingName = Path.GetFileNameWithoutExtension(doc.Name);
             if (string.IsNullOrWhiteSpace(drawingName))
                 drawingName = "untitled";
-
-            string reportPath = HtmlReportWriter.Write(drawingName, pipes, capacities, hglData);
-            ed.WriteMessage($"\n--- HydroComplete: HTML report written ---");
-            ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
-                "\n  Manning capacity + steady HGL (Q={0:0.0} cfs) -> {1}\n", designQ, reportPath));
+            return true;
         }
 
         private static HglReportData BuildHglReportData(
