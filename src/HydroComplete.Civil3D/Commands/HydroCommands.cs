@@ -37,7 +37,7 @@ namespace HydroComplete.Civil3D.Commands
             ed.WriteMessage("\n  HC_REPORT      Export formula-transparent HTML Manning + HGL report (free)");
             ed.WriteMessage("\n  HC_REPORT_PDF  Export formula-transparent PDF Manning + HGL report (Pro)");
             ed.WriteMessage("\n  HC_RATIONAL    Rational Q from catchments + NOAA Atlas 14 IDF presets");
-            ed.WriteMessage("\n  HC_ATLAS14     List embedded Atlas 14 IDF presets by city");
+            ed.WriteMessage("\n  HC_ATLAS14     List Atlas 14 IDF presets + live PFDS fetch info");
             ed.WriteMessage("\n  HC_LICENSE     Show Free/Pro license status and activation info");
             ed.WriteMessage("\n  HC_ABOUT       This list");
             ed.WriteMessage("\n  Pro features (PDF export) require a license — visit https://hydrocomplete.com/civil3d");
@@ -441,15 +441,18 @@ namespace HydroComplete.Civil3D.Commands
                 return;
             }
 
-            Atlas14Presets.Preset? preset = IdfPrompts.PromptPreset(ed, doc.Database);
+            Atlas14Resolution? resolution = IdfPrompts.PromptPreset(ed, doc.Database);
             Rational.PeakFlowResult q;
             double systemTc = 0.0;
             foreach (var cm in catchments) systemTc = Math.Max(systemTc, cm.TcMinutes);
 
-            if (preset != null)
+            if (resolution != null)
             {
-                q = Atlas14Presets.PeakFromCatchments(catchments, preset);
-                ed.WriteMessage($"\n  IDF preset: {preset.DisplayName} ({preset.Key}, {preset.ReturnPeriodYears}-yr)\n");
+                q = resolution.PeakFromCatchments(catchments);
+                string keySuffix = resolution.PresetKey != null ? $" ({resolution.PresetKey})" : "";
+                ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                    "\n  IDF: {0}{1} [{2}, {3}-yr]\n",
+                    resolution.DisplayLabel, keySuffix, resolution.SourceLabel, resolution.ReturnPeriodYears));
             }
             else
             {
@@ -484,8 +487,8 @@ namespace HydroComplete.Civil3D.Commands
             var catchments = CatchmentReader.ReadAll(doc.Database, civilDoc);
             if (catchments.Count > 0 && PromptYesNo(ed, "\nUse Rational Q from catchments + Atlas 14 IDF", defaultYes: true))
             {
-                Atlas14Presets.Preset? preset = IdfPrompts.PromptPreset(ed, doc.Database);
-                if (preset == null)
+                Atlas14Resolution? resolution = IdfPrompts.PromptPreset(ed, doc.Database);
+                if (resolution == null)
                 {
                     IdfCurve idf = IdfPrompts.PromptCustomIdfCurve(ed);
                     double systemTc = 0.0;
@@ -498,12 +501,13 @@ namespace HydroComplete.Civil3D.Commands
                     return q.PeakFlowCfs;
                 }
 
-                var peak = Atlas14Presets.PeakFromCatchments(catchments, preset);
+                var peak = resolution.PeakFromCatchments(catchments);
                 double tc = 0.0;
                 foreach (var cm in catchments) tc = Math.Max(tc, cm.TcMinutes);
                 ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
-                    "\n  Rational design Q = {0:0.00} cfs ({1}, {2} catchments, Tc={3:0.0} min)\n",
-                    peak.PeakFlowCfs, preset.DisplayName, catchments.Count, tc));
+                    "\n  Rational design Q = {0:0.00} cfs ({1} [{2}], {3} catchments, Tc={4:0.0} min)\n",
+                    peak.PeakFlowCfs, resolution.DisplayLabel, resolution.SourceLabel,
+                    catchments.Count, tc));
                 return peak.PeakFlowCfs;
             }
 

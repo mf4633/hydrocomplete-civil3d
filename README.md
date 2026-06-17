@@ -5,7 +5,7 @@ drawing** — read pipe networks and catchments, compute on public-domain method
 and show every formula. This is the desktop companion behind
 [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d).
 
-Status: **v0.3.2** — see [User validation](#user-validation) below.
+Status: **v0.4.0** — see [User validation](#user-validation) below.
 
 **Autodesk App Store:** Listing copy, submission checklist, and screenshot shot list live in [`dist/app-store/`](dist/app-store/) (`LISTING.md`, `SUBMISSION_CHECKLIST.md`, `SCREENSHOTS.md`).
 
@@ -34,6 +34,7 @@ not yet re-tested after the listed fix.
 | `HC_RATIONAL` + Atlas 14 presets | *pending* | v0.3.0 — preset key instead of manual a/b/c |
 | `HC_HGL` + Rational design Q | *pending* | v0.3.0 — optional catchment-driven Q when catchments exist |
 | Atlas 14 auto from drawing geo | *pending* | v0.3.1 — `GEOGRAPHICLOCATION` → nearest preset; Enter accepts `auto` |
+| Atlas 14 live PFDS fetch | *pending* | v0.4.0 — NOAA HDSC CSV by lat/lon; 30-day cache; offline → embedded |
 
 ## Layout
 
@@ -102,7 +103,7 @@ loads the plugin automatically.
 3. **Launch Civil 3D 2025 or 2026** from the Start menu (the full desktop app — not
    `accoreconsole`, not plain AutoCAD).
 4. Confirm the command line shows:
-   `HydroComplete for Civil 3D 0.3.2 loaded. Type HC_ABOUT for commands.`
+   `HydroComplete for Civil 3D 0.4.0 loaded. Type HC_ABOUT for commands.`
 
 Check install any time:
 ```
@@ -128,18 +129,27 @@ before the one-time install above.
 | `HC_REPORT` | Formula-transparent HTML Manning + steady HGL report to `Documents\HydroComplete\` (free) |
 | `HC_REPORT_PDF` | Same report as PDF — **Pro** (requires license; use `HC_REPORT` for free HTML) |
 | `HC_RATIONAL` | Rational peak Q from catchments + NOAA Atlas 14 IDF preset (or custom a/b/c) |
-| `HC_ATLAS14` | List embedded Atlas 14 IDF presets (18 US cities, 10-yr) |
+| `HC_ATLAS14` | List Atlas 14 IDF presets + live PFDS fetch info |
 | `HC_LICENSE` | Show Free/Pro status, license file path, and activation link |
 
 **Atlas 14 geolocation (v0.3.1):** When the drawing has geo-reference data
 (`GEOGRAPHICLOCATION` / `Database.GeoDataObject`), `HC_RATIONAL` and the
-Rational Q path in `HC_HGL` default the preset prompt to **auto** and pick the
-nearest embedded city. The reader uses `Database.GeoDataObject` →
-`GeoLocationData.ReferencePoint` (lon in X, lat in Y), optional marker properties
-via reflection (`GeoMarkerPosition` / `GeoPosition` — neither is on AcDbMgd 2026;
-`DesignPoint` + `TransformToLonLatAlt` is the fallback). Drawings without geo
-still default to `charlotte-nc`. Not unit-tested in-process (requires Civil 3D);
-engine `ResolveForDrawing` is tested.
+Rational Q path in `HC_HGL` default the preset prompt to **auto**.
+
+**Atlas 14 live fetch (v0.4.0):** With geolocation, **auto** tries NOAA HDSC PFDS
+first:
+
+```
+https://hdsc.nws.noaa.gov/cgi-bin/hdsc/new/fe_text.csv?lat={lat}&lon={lon}&data=intensity&units=english&series=pds
+```
+
+The engine parses the 10-yr intensity-duration table, fits `i = a/(t+b)^c`, and
+caches JSON under `%APPDATA%\HydroComplete\idf-cache\` (30-day TTL). Offline,
+out-of-coverage, or fetch errors fall back to the nearest embedded city preset.
+The prompt shows **live**, **cached live**, or **embedded** source. Drawings
+without geo still default to `charlotte-nc`. Geolocation reading is not
+unit-tested in-process (requires Civil 3D); parser/fit/cache are tested with a
+recorded Charlotte fixture in `tests/HydroComplete.Engine.Tests/Fixtures/`.
 
 The ribbon tab **HydroComplete › Analysis** exposes the same commands.
 
@@ -148,7 +158,7 @@ The ribbon tab **HydroComplete › Analysis** exposes the same commands.
 1. **Write-back (v0.1 done)** — MText labels on `HC-CAPACITY` validated; HGL labels on `HC-HGL` in v0.2 (pending validation).
 2. **HGL backwater (v0.3 partial)** — HEC-22 junction/exit minor losses in steady profile; full momentum backwater next.
 3. **Report export** — HTML in v0.2; formula-transparent PDF mirroring the web app next.
-4. **NOAA Atlas 14 (v0.3.1 partial)** — 18 embedded city presets; auto-select nearest from drawing geolocation.
+4. **NOAA Atlas 14 (v0.4.0)** — Live PFDS fetch + cache; 18 embedded city presets as offline fallback.
 5. **Account/auth handoff (skeleton)** — `LicenseGate` checks `%APPDATA%\HydroComplete\license.json` (stub: non-expired `expires` field) or dev bypass `HYDROCOMPLETE_PRO=1`; `HC_REPORT_PDF` is the first gated Pro feature; `HC_LICENSE` shows status. Online validation against hydrocomplete.com API is TODO.
 
 Civil 3D, AutoCAD, and Storm and Sanitary Analysis are trademarks of Autodesk,
