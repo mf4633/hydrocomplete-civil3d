@@ -139,4 +139,49 @@ namespace HydroComplete.Engine.Tests
             Assert.Equal(10.80, r.IntensityInHr, 1); // 120/(5+12)^0.85
         }
     }
+
+    public class HglTests
+    {
+        // Trap Q=17.656 cfs, n=0.013, A=3 ft², R=0.6708 ft, L=100 ft -> hf ~0.500 ft (hglStep0_2).
+        [Fact]
+        public void ManningFrictionHeadLoss_MatchesHydroToolsHglStep0_2()
+        {
+            var r = Hgl.ManningFrictionHeadLoss(17.656, 0.013, 3.0, 0.6708, 100.0);
+            Assert.Equal(0.5, r.HfFt, 1);
+            Assert.NotEmpty(r.Steps);
+        }
+
+        [Fact]
+        public void SteadyNetworkHglProfile_TwoReaches_ReturnsDescendingHgl()
+        {
+            var reaches = new List<NetworkReach>
+            {
+                new NetworkReach
+                {
+                    Name = "R1",
+                    LengthFt = 100.0,
+                    ManningN = 0.013,
+                    AreaFt2 = 3.0,
+                    HydRadiusFt = 0.6708,
+                    FlowCfs = 17.656,
+                },
+                new NetworkReach
+                {
+                    Name = "R2",
+                    LengthFt = 100.0,
+                    ManningN = 0.013,
+                    AreaFt2 = 3.0,
+                    HydRadiusFt = 0.6708,
+                    FlowCfs = 17.656,
+                },
+            };
+
+            var profile = Hgl.SteadyNetworkHglProfile(reaches, startHglFt: 10.0);
+
+            Assert.Equal(2, profile.Count);
+            Assert.True(profile[0].HglFt > profile[1].HglFt);
+            Assert.True(profile[0].HfFt > 0);
+            Assert.NotEmpty(profile[0].Steps);
+        }
+    }
 }

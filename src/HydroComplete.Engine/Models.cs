@@ -69,4 +69,52 @@ namespace HydroComplete.Engine
         /// <summary>Design (peak) flow the pipe must carry, cfs. Optional.</summary>
         public double DesignFlowCfs { get; set; }
     }
+
+    /// <summary>A single reach in a steady HGL network profile.</summary>
+    public sealed class NetworkReach
+    {
+        public string Name { get; set; } = "";
+
+        /// <summary>Reach length, ft.</summary>
+        public double LengthFt { get; set; }
+
+        /// <summary>Manning's roughness n (dimensionless).</summary>
+        public double ManningN { get; set; } = 0.013;
+
+        /// <summary>Flow cross-sectional area, ft².</summary>
+        public double AreaFt2 { get; set; }
+
+        /// <summary>Hydraulic radius, ft.</summary>
+        public double HydRadiusFt { get; set; }
+
+        /// <summary>Discharge, cfs.</summary>
+        public double FlowCfs { get; set; }
+
+        /// <summary>Upstream velocity head, ft (V²/2g).</summary>
+        public double VelHeadUpFt { get; set; }
+
+        /// <summary>Downstream velocity head, ft (V²/2g).</summary>
+        public double VelHeadDownFt { get; set; }
+    }
+
+    /// <summary>One point on a steady network HGL/EGL profile (downstream end of a reach).</summary>
+    public sealed class HglProfilePoint : TracedResult
+    {
+        public int ReachIndex { get; set; }
+
+        /// <summary>Cumulative distance from profile start, ft.</summary>
+        public double CumLengthFt { get; set; }
+
+        /// <summary>Hydraulic grade line elevation, ft.</summary>
+        public double HglFt { get; set; }
+
+        /// <summary>Energy grade line elevation, ft.</summary>
+        public double EglFt { get; set; }
+
+        /// <summary>Friction head loss over this reach, ft.</summary>
+        public double HfFt { get; set; }
+
+        /// <summary>Energy grade line drop over this reach, ft.</summary>
+        public double DeltaEglFt { get; set; }
+    }
 }
