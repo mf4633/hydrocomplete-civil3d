@@ -75,16 +75,33 @@ Host assemblies (`AcMgd`, `AcCoreMgd`, `AcDbMgd`, `AdWindows`, `AeccDbMgd`,
 `AecBaseMgd`) are referenced with `Private=false` — they are never copied; the
 plugin binds to them inside the running AutoCAD process.
 
-## Loading in Civil 3D
+## Loading in Civil 3D (no NETLOAD)
 
-**Quick (per session):** `NETLOAD` →
-`src/HydroComplete.Civil3D/bin/Release/net8.0-windows/HydroComplete.Civil3D.dll`
+Auto-load is a **one-time install**, then every Civil 3D 2026 startup loads the
+plugin automatically.
 
-**Auto-load (recommended):** `powershell -File install.ps1` (or `bash package.sh`
-then copy `dist/HydroComplete.bundle` into
-`%APPDATA%\Autodesk\ApplicationPlugins\`). Restart Civil 3D — the bundle should
-load on startup. If it does not, type `HC_PIPES` once (command-invoked load) or
-run `NETLOAD` on the DLL.
+1. **Quit Civil 3D completely** (Task Manager: no `acad.exe` still running).
+2. In PowerShell:
+   ```
+   powershell -File C:\Users\michael.flynn\dev\hydrocomplete-civil3d\install.ps1
+   ```
+3. **Launch Civil 3D 2026** from the Start menu (the full desktop app — not
+   `accoreconsole`, not plain AutoCAD).
+4. Confirm the command line shows:
+   `HydroComplete for Civil 3D 0.1.1 loaded. Type HC_ABOUT for commands.`
+
+Check install any time:
+```
+powershell -File C:\Users\michael.flynn\dev\hydrocomplete-civil3d\verify-install.ps1
+```
+
+**If commands are still unknown after restart:** the bundle folder must be exactly
+`%APPDATA%\Autodesk\ApplicationPlugins\HydroComplete.bundle\` with
+`PackageContents.xml` + `Contents\*.dll`. Re-run `install.ps1` with Civil 3D
+closed.
+
+**NETLOAD** is only a dev fallback while Civil 3D is open and locking the DLL, or
+before the one-time install above.
 
 ## Commands
 

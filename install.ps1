@@ -15,7 +15,7 @@ try {
     if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
     Copy-Item $bundle $dest -Recurse -Force
     Write-Host "Installed to $dest"
-    Write-Host "Restart Civil 3D — you should see the load banner without NETLOAD."
+    Write-Host "Restart Civil 3D. You should see the load banner without NETLOAD."
 }
 finally {
     Pop-Location
