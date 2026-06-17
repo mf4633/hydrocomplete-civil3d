@@ -21,7 +21,7 @@ not yet re-tested after the listed fix.
 | `HC_RATIONAL` (no catchments) | **validated** | Correctly reports *No catchments found* on this drawing |
 | `NETLOAD` fallback | **validated** | Works when bundle not yet loaded; cannot reload while assembly in memory |
 | `HC_PIPES_WRITE` (Description/XData) | **failed → removed** | All 30 pipes: `eBadDxfSequence` — Civil 3D parts reject arbitrary Description/XData |
-| `HC_PIPES_WRITE` (MText labels, v0.1.1) | *pending* | Places labels on layer `HC-CAPACITY`; needs restart + `install.ps1` to pick up 0.1.1 |
+| `HC_PIPES_WRITE` (MText labels, v0.1.1) | **validated** | 30 labels on layer `HC-CAPACITY` at pipe midpoints (auto-load, no NETLOAD) |
 | HydroComplete ribbon tab | *pending* | Not explicitly confirmed in session |
 | `HC_RATIONAL` (with catchments) | *pending* | No catchment objects in test drawing |
 | Waitlist page `hydrocomplete.com/civil3d` | *deploy only* | HTTP 200 deployed; signup flow not user-tested |
@@ -116,7 +116,7 @@ The ribbon tab **HydroComplete › Analysis** exposes the same four.
 
 ## Roadmap
 
-1. **Write-back (in progress)** — MText labels on `HC-CAPACITY` (v0.1.1, pending user validation); next: HGL profile.
+1. **Write-back (v0.1 done)** — MText labels on `HC-CAPACITY` validated; next: HGL profile, drawing labels tied to pipe styles.
 2. **HGL backwater** — HEC-22 energy/momentum pass with junction losses (engine).
 3. **Report export** — formula-transparent PDF mirroring the web app.
 4. **NOAA Atlas 14** — auto-fetch IDF coefficients by drawing location instead of prompting.
