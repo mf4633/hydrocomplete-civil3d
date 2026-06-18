@@ -85,6 +85,38 @@ Output:
 
 Before first release, ensure `dist/HydroComplete.bundle/Contents/PackageIcon.png` exists (96×96 PNG).
 
+## accoreconsole smoke test (`smoke-accoreconsole.ps1`)
+
+Optional headless check that runs `accoreconsole /product C3D` with `HC_ABOUT` when Civil 3D is installed locally. **Not wired into `ci.ps1` or GitHub Actions.**
+
+```powershell
+# From repo root (after install.ps1)
+.\scripts\smoke-accoreconsole.ps1
+
+# Fail if plugin output is missing
+.\scripts\smoke-accoreconsole.ps1 -Strict
+
+# Override paths
+.\scripts\smoke-accoreconsole.ps1 -AccoreConsole "C:\Program Files\Autodesk\AutoCAD 2026\accoreconsole.exe" -Drawing "C:\path\to\seed.dwg"
+```
+
+Behavior:
+
+- **Exit 0** when Civil 3D / `accoreconsole` is not found (graceful skip for machines without Autodesk installs).
+- **Exit 0** in default stub mode when the run is inconclusive; use **`-Strict`** to exit non-zero if `HC_ABOUT` output is not detected.
+- **Exit 0** when `HC_ABOUT` command list appears in the accoreconsole log.
+
+### Limitations
+
+| Topic | Detail |
+|---|---|
+| **Supported host** | HydroComplete is built for the **full Civil 3D desktop app** (`acad.exe`). `accoreconsole` is experimental for this stub only. |
+| **Auto-load bundle** | ApplicationPlugins bundles may not load in headless `accoreconsole` the same way as interactive startup. Run `install.ps1` first; manual `NETLOAD` is not attempted here. |
+| **Command scope** | Only `HC_ABOUT` is invoked — safe without pipe networks or catchments. Other `HC_*` commands need drawing data and UI. |
+| **Seed drawing** | Requires a template DWG/DWT under the AutoCAD install, or pass **`-Drawing`**. Without one, the script skips. |
+| **CI / release gate** | Informational stub only; does not block builds or App Store packaging. Use interactive Civil 3D for real validation. |
+| **Log parsing** | Success is inferred from `accoreconsole` log text, not from AutoCAD editor echo in a GUI session. |
+
 ## Related scripts (repo root)
 
 | Script | Purpose |
