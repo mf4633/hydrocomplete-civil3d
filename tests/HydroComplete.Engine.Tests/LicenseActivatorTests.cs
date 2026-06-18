@@ -89,6 +89,29 @@ namespace HydroComplete.Engine.Tests
         }
 
         [Fact]
+        public async Task ActivateAsync_ServerSaysInvalid_DeniesWithoutStub()
+        {
+            // Reachable server, HTTP 200, valid:false — even a well-formed token must be
+            // denied and NO license file written (the offline stub must not override a
+            // definitive server rejection).
+            string licensePath = Path.Combine(CreateTempDir(), "license.json");
+            const string response = @"{ ""valid"": false, ""error"": ""License revoked"" }";
+            var handler = new StubHttpHandler(response, HttpStatusCode.OK);
+            var activator = new LicenseActivator(
+                validateUrl: "https://example.test/api/licensing/validate",
+                httpClientFactory: () => new HttpClient(handler));
+
+            LicenseActivationResult result = await activator.ActivateAsync(
+                "revoked@hydrocomplete.com",
+                ValidToken,
+                licensePath);
+
+            Assert.False(result.Success);
+            Assert.False(File.Exists(licensePath));
+            Assert.Contains("revoked", result.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
         public async Task ActivateAsync_InvalidToken_ReturnsFailure()
         {
             string licensePath = Path.Combine(CreateTempDir(), "license.json");

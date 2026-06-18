@@ -41,6 +41,13 @@ namespace HydroComplete.Civil3D.Commands
                 ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
                     "\n  Drawing geolocation ({0}): lat {1:0.####}, lon {2:0.####}",
                     geo.Source, geo.Lat, geo.Lon));
+                if (autoResolution.Source == Atlas14Source.Embedded)
+                {
+                    ed.WriteMessage(
+                        "\n  ! No live NOAA Atlas 14 data for this location (offline, or outside Atlas 14"
+                        + "\n    coverage such as the Pacific NW). Using the NEAREST embedded city below —"
+                        + "\n    verify the IDF is appropriate for your site before relying on it.");
+                }
                 var autoSample = autoResolution.ToCurve().Intensity(10.0);
                 ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
                     "\n  auto             {0} [{1}] i@10min={2:0.00} in/hr (Enter to accept)",

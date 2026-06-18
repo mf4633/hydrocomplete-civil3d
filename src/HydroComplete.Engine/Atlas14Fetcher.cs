@@ -16,9 +16,13 @@ namespace HydroComplete.Engine
     /// </summary>
     public sealed class Atlas14Fetcher
     {
-        /// <summary>Public PFDS CSV endpoint documented at https://hdsc.nws.noaa.gov/pfds/</summary>
+        /// <summary>
+        /// Public PFDS CSV endpoint documented at https://hdsc.nws.noaa.gov/pfds/.
+        /// NOTE: the path has no "/hdsc/" segment — the old /cgi-bin/hdsc/new/ URL
+        /// 301-redirects here, which only worked via HttpClient auto-redirect.
+        /// </summary>
         public const string DefaultPfdsIntensityUrl =
-            "https://hdsc.nws.noaa.gov/cgi-bin/hdsc/new/fe_text.csv";
+            "https://hdsc.nws.noaa.gov/cgi-bin/new/fe_text.csv";
 
         /// <summary>Standard design return periods surfaced in presets and HC_ATLAS14.</summary>
         public static readonly int[] StandardReturnPeriods = { 2, 10, 25, 100 };
@@ -261,7 +265,10 @@ namespace HydroComplete.Engine
         {
             var client = new HttpClient
             {
-                Timeout = TimeSpan.FromSeconds(30),
+                // Interactive: Resolve() runs synchronously on the CAD command thread,
+                // so this caps how long the UI can freeze waiting on NOAA before the
+                // embedded/cached fallback kicks in.
+                Timeout = TimeSpan.FromSeconds(8),
             };
             client.DefaultRequestHeaders.TryAddWithoutValidation(
                 "User-Agent",

@@ -191,6 +191,13 @@ namespace HydroComplete.Engine
                 };
             }
 
+            // A definitive server rejection (reachable, HTTP 2xx, valid:false) must DENY.
+            // Falling back to the offline stub here would let any well-formed token defeat
+            // server-side validation entirely. The stub is only for genuine "couldn't reach
+            // the server" cases below.
+            if (online.ServerSaidInvalid)
+                return Fail(online.ErrorMessage ?? "License is not valid on the server. Contact support.");
+
             if (!IsWellFormedToken(token))
                 return Fail(online.ErrorMessage ?? "Online validation failed and token format is invalid.");
 
@@ -246,6 +253,7 @@ namespace HydroComplete.Engine
                     return new OnlineValidationAttempt
                     {
                         WasNetworkAttempt = true,
+                        ServerSaidInvalid = true,
                         ErrorMessage = ReadErrorMessage(root) ?? "License not valid on server.",
                     };
                 }
@@ -350,6 +358,10 @@ namespace HydroComplete.Engine
         {
             public bool Success { get; set; }
             public bool WasNetworkAttempt { get; set; }
+
+            /// <summary>True when the server was reached and authoritatively rejected the key.</summary>
+            public bool ServerSaidInvalid { get; set; }
+
             public string? ErrorMessage { get; set; }
             public LicenseRecord? Record { get; set; }
         }
