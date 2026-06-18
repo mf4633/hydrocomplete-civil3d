@@ -149,7 +149,7 @@ loads the plugin automatically.
 3. **Launch Civil 3D 2025 or 2026** from the Start menu (the full desktop app — not
    `accoreconsole`, not plain AutoCAD).
 4. Confirm the command line shows:
-   `HydroComplete for Civil 3D 0.7.0 loaded. Type HC_ABOUT for commands.`
+   `HydroComplete for Civil 3D 1.0.0 loaded. Type HC_ABOUT for commands.`
 
 Check install any time:
 ```
