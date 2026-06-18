@@ -153,12 +153,19 @@ namespace HydroComplete.Engine
                 hglFt -= friction.HfFt;
                 eglFt -= eglStep.DeltaEglFt;
 
-                if (options.IncludeJunctionLosses && reach.JunctionLossK > 0)
+                if (options.IncludeJunctionLosses)
                 {
-                    var hJunc = Hec22.MinorHeadLoss(reach.JunctionLossK, velHeadDownFt);
-                    hmTotal += hJunc.HeadLossFt;
-                    hglFt -= hJunc.HeadLossFt;
-                    eglFt -= hJunc.HeadLossFt;
+                    double junctionK = reach.JunctionLossK;
+                    if (reach.BendLossK > 0)
+                        junctionK += reach.BendLossK;
+
+                    if (junctionK > 0)
+                    {
+                        var hJunc = Hec22.MinorHeadLoss(junctionK, velHeadDownFt);
+                        hmTotal += hJunc.HeadLossFt;
+                        hglFt -= hJunc.HeadLossFt;
+                        eglFt -= hJunc.HeadLossFt;
+                    }
                 }
 
                 bool isOutfall = idx == reaches.Count - 1;

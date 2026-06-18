@@ -20,6 +20,15 @@ namespace HydroComplete.Engine
         /// <summary>Exit loss: velocity head fully dissipated.</summary>
         public const double DefaultExitK = 1.0;
 
+        /// <summary>HEC-22 Eq. 7-5 bend-loss K at 0° deflection (straight pipe run).</summary>
+        public const double BendLossK0Deg = 0.0;
+
+        /// <summary>HEC-22 Eq. 7-5 bend-loss K at 45° deflection (0.0033 × 45).</summary>
+        public const double BendLossK45Deg = 0.1485;
+
+        /// <summary>HEC-22 Eq. 7-5 bend-loss K at 90° deflection (0.0033 × 90).</summary>
+        public const double BendLossK90Deg = 0.297;
+
         public sealed class MinorLossResult : TracedResult
         {
             public double HeadLossFt { get; set; }
@@ -67,6 +76,27 @@ namespace HydroComplete.Engine
         {
             double vh = VelocityHeadFromFlow(qCfs, areaFt2);
             return MinorHeadLoss(lossCoefficient, vh);
+        }
+
+        /// <summary>
+        /// Bend/deflection loss coefficient K for pipe-run curvature (HEC-22 Eq. 7-5: K = 0.0033·θ).
+        /// Tabulated at 0°, 45°, and 90°; linear interpolation between anchors.
+        /// </summary>
+        /// <param name="deflectionDegrees">Angle of curvature, degrees (0 = straight).</param>
+        public static double BendLossK(double deflectionDegrees)
+        {
+            if (deflectionDegrees < 0)
+                throw new ArgumentOutOfRangeException(nameof(deflectionDegrees));
+
+            if (deflectionDegrees <= 0)
+                return BendLossK0Deg;
+            if (deflectionDegrees >= 90)
+                return BendLossK90Deg + (BendLossK90Deg - BendLossK45Deg) / 45.0 * (deflectionDegrees - 90.0);
+
+            if (deflectionDegrees <= 45)
+                return BendLossK0Deg + (BendLossK45Deg - BendLossK0Deg) * (deflectionDegrees / 45.0);
+
+            return BendLossK45Deg + (BendLossK90Deg - BendLossK45Deg) * ((deflectionDegrees - 45.0) / 45.0);
         }
     }
 }

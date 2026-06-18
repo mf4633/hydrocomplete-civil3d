@@ -142,6 +142,12 @@ namespace HydroComplete.Engine
         /// </summary>
         public double JunctionLossK { get; set; }
 
+        /// <summary>
+        /// Optional bend/deflection loss K (HEC-22 h_m = K*Vh). Added to junction loss when &gt; 0.
+        /// Set via <see cref="Hec22.BendLossK"/> from pipe deflection angle.
+        /// </summary>
+        public double BendLossK { get; set; }
+
         /// <summary>Entrance loss K at the upstream end of this reach (0 = none).</summary>
         public double EntranceLossK { get; set; }
 

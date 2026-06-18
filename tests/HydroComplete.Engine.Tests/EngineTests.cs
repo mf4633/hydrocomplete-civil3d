@@ -219,6 +219,28 @@ namespace HydroComplete.Engine.Tests
             double vh = Hec22.VelocityHeadFromFlow(10.0, 3.0);
             Assert.Equal(0.173, vh, 2);
         }
+
+        [Theory]
+        [InlineData(0, 0.0)]
+        [InlineData(45, 0.1485)]
+        [InlineData(90, 0.297)]
+        public void BendLossK_TableAnchors_MatchHec22Eq7_5(double degrees, double expectedK)
+        {
+            Assert.Equal(expectedK, Hec22.BendLossK(degrees), 4);
+        }
+
+        [Fact]
+        public void BendLossK_InterpolatesBetweenTableValues()
+        {
+            double k22 = Hec22.BendLossK(22.5);
+            Assert.Equal(0.07425, k22, 4);
+        }
+
+        [Fact]
+        public void BendLossK_NegativeDegrees_Throws()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => Hec22.BendLossK(-1.0));
+        }
     }
 
     public class Atlas14PresetsTests
@@ -385,6 +407,42 @@ namespace HydroComplete.Engine.Tests
 
             Assert.True(withLoss[0].HglFt < plain[0].HglFt);
             Assert.True(withLoss[0].HmFt > 0);
+        }
+
+        [Fact]
+        public void SteadyNetworkHglProfile_WithBendLossK_DropsMoreThanJunctionOnly()
+        {
+            var baseReach = new NetworkReach
+            {
+                Name = "R1",
+                LengthFt = 100.0,
+                ManningN = 0.013,
+                AreaFt2 = 3.0,
+                HydRadiusFt = 0.6708,
+                FlowCfs = 17.656,
+                JunctionLossK = Hec22.DefaultManholeK,
+            };
+
+            var options = new HglProfileOptions { IncludeJunctionLosses = true };
+            var junctionOnly = Hgl.SteadyNetworkHglProfile(
+                new List<NetworkReach> { baseReach }, startHglFt: 10.0, options);
+
+            var withBendReach = new NetworkReach
+            {
+                Name = baseReach.Name,
+                LengthFt = baseReach.LengthFt,
+                ManningN = baseReach.ManningN,
+                AreaFt2 = baseReach.AreaFt2,
+                HydRadiusFt = baseReach.HydRadiusFt,
+                FlowCfs = baseReach.FlowCfs,
+                JunctionLossK = baseReach.JunctionLossK,
+                BendLossK = Hec22.BendLossK(45),
+            };
+            var withBend = Hgl.SteadyNetworkHglProfile(
+                new List<NetworkReach> { withBendReach }, startHglFt: 10.0, options);
+
+            Assert.True(withBend[0].HglFt < junctionOnly[0].HglFt);
+            Assert.True(withBend[0].HmFt > junctionOnly[0].HmFt);
         }
     }
 }
