@@ -33,6 +33,15 @@ namespace HydroComplete.Engine
         public string StartStructureName { get; set; } = "";
 
         public string EndStructureName { get; set; } = "";
+
+        /// <summary>LandXML cross-section (CircPipe, BoxPipe, etc.).</summary>
+        public LandXmlPipeShape Shape { get; set; } = LandXmlPipeShape.Circular;
+
+        /// <summary>Box/arch inside width or span, ft.</summary>
+        public double WidthFt { get; set; }
+
+        /// <summary>Box/arch inside height or rise, ft.</summary>
+        public double HeightFt { get; set; }
     }
 
     /// <summary>Junction structure for LandXML export (rim/invert when known).</summary>
@@ -257,12 +266,25 @@ namespace HydroComplete.Engine
             if (pipe.DesignFlowCfs.HasValue && pipe.DesignFlowCfs.Value > 0)
                 writer.WriteAttributeString("flow", FormatDouble(pipe.DesignFlowCfs.Value));
 
-            writer.WriteStartElement("CircPipe");
-            writer.WriteAttributeString("diameter", FormatDouble(pipe.DiameterFt));
-            writer.WriteAttributeString("manningsN", FormatDouble(pipe.ManningN));
-            if (pipe.LengthFt > 0)
-                writer.WriteAttributeString("length", FormatDouble(pipe.LengthFt));
-            writer.WriteEndElement();
+            if (pipe.Shape == LandXmlPipeShape.Box && pipe.WidthFt > 0 && pipe.HeightFt > 0)
+            {
+                writer.WriteStartElement("BoxPipe");
+                writer.WriteAttributeString("width", FormatDouble(pipe.WidthFt));
+                writer.WriteAttributeString("height", FormatDouble(pipe.HeightFt));
+                writer.WriteAttributeString("manningsN", FormatDouble(pipe.ManningN));
+                if (pipe.LengthFt > 0)
+                    writer.WriteAttributeString("length", FormatDouble(pipe.LengthFt));
+                writer.WriteEndElement();
+            }
+            else
+            {
+                writer.WriteStartElement("CircPipe");
+                writer.WriteAttributeString("diameter", FormatDouble(pipe.DiameterFt));
+                writer.WriteAttributeString("manningsN", FormatDouble(pipe.ManningN));
+                if (pipe.LengthFt > 0)
+                    writer.WriteAttributeString("length", FormatDouble(pipe.LengthFt));
+                writer.WriteEndElement();
+            }
 
             writer.WriteEndElement(); // Pipe
         }

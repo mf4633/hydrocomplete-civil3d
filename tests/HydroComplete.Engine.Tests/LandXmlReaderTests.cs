@@ -85,9 +85,47 @@ namespace HydroComplete.Engine.Tests
 
             Assert.Empty(result.Errors);
             Assert.Single(result.Pipes);
-            Assert.Equal(2.667, result.Pipes[0].DiameterFt, 3);
-            Assert.Equal(80.0, result.Pipes[0].LengthFt, 3);
-            Assert.Equal(0.014, result.Pipes[0].ManningN, 6);
+
+            LandXmlPipeRecord pipe = result.Pipes[0];
+            Assert.Equal(LandXmlPipeShape.Box, pipe.Shape);
+            Assert.Equal(4.0, pipe.WidthFt, 3);
+            Assert.Equal(2.0, pipe.HeightFt, 3);
+            Assert.Equal(2.667, pipe.DiameterFt, 3);
+            Assert.Equal(80.0, pipe.LengthFt, 3);
+            Assert.Equal(0.014, pipe.ManningN, 6);
+        }
+
+        [Fact]
+        public void Parse_ArchPipe_PreservesSpanRiseAndShape()
+        {
+            const string xml = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<LandXML xmlns=""http://www.landxml.org/schema/LandXML-1.2"" version=""1.2"">
+  <Project name=""ArchProject"">
+    <PipeNetworks>
+      <PipeNetwork name=""Storm"" pipeNetType=""storm"">
+        <Structs />
+        <Pipes>
+          <Pipe name=""Arch-1"" refStart=""MH-1"" refEnd=""MH-2"" slope=""0.004"">
+            <ArchPipe span=""6"" rise=""4"" manningsN=""0.015"" length=""100"" />
+          </Pipe>
+        </Pipes>
+      </PipeNetwork>
+    </PipeNetworks>
+  </Project>
+</LandXML>";
+
+            LandXmlImportResult result = ParseString(xml);
+
+            Assert.Empty(result.Errors);
+            Assert.Single(result.Pipes);
+
+            LandXmlPipeRecord pipe = result.Pipes[0];
+            Assert.Equal(LandXmlPipeShape.Arch, pipe.Shape);
+            Assert.Equal(6.0, pipe.WidthFt, 3);
+            Assert.Equal(4.0, pipe.HeightFt, 3);
+            Assert.Equal(4.8, pipe.DiameterFt, 3);
+            Assert.Equal(100.0, pipe.LengthFt, 3);
+            Assert.Equal(0.015, pipe.ManningN, 6);
         }
 
         [Fact]

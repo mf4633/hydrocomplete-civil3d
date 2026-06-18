@@ -30,7 +30,7 @@ namespace HydroComplete.Civil3D.Commands
         public void About()
         {
             Editor ed = Active().Editor;
-            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.9.0 ===");
+            ed.WriteMessage("\n=== HydroComplete for Civil 3D 1.0.0 ===");
             ed.WriteMessage("\n  HC_NETWORK       Per-network summary (pipes, length, inverts, diameters, structures)");
             ed.WriteMessage("\n  HC_PIPES         Manning capacity of every pipe-network pipe (circular, box, arch)");
             ed.WriteMessage("\n  HC_PIPES_WRITE   Label Qfull/Vfull on layer HC-CAPACITY");
@@ -56,7 +56,7 @@ namespace HydroComplete.Civil3D.Commands
             ed.WriteMessage("\n  HC_TC          TR-55 segmented time-of-concentration worksheet");
             ed.WriteMessage("\n  HC_INLETS      HEC-22 inlet check (grate / sag / curb opening)");
             ed.WriteMessage("\n  HC_LANDXML       Export pipe network to LandXML 1.2");
-            ed.WriteMessage("\n  HC_LANDXML_IMPORT Import LandXML 1.2 (read + compare to drawing)");
+            ed.WriteMessage("\n  HC_LANDXML_IMPORT Import LandXML 1.2 (preview + optional write to drawing)");
             ed.WriteMessage("\n  HC_ATLAS14     List Atlas 14 IDF presets + live PFDS fetch info");
             ed.WriteMessage("\n  HC_ACTIVATE    Activate Pro with email + beta token (hc_live_*)");
             ed.WriteMessage("\n  HC_LICENSE     Show Free/Pro license status and activation info");

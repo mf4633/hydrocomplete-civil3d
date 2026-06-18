@@ -134,6 +134,35 @@ namespace HydroComplete.Civil3D.Commands
                 }
             }
 
+            if (!PromptYesNo(ed, "\nWrite LandXML geometry into the drawing? [Yes/No]", defaultYes: false))
+            {
+                ed.WriteMessage("\n  Import preview only — no geometry written.\n");
+                return;
+            }
+
+            string networkOverride = PromptNetworkName(ed, networkGroups);
+            LandXmlNetworkImporter.ImportResult write = LandXmlNetworkImporter.ImportToDrawing(
+                doc.Database,
+                civilDoc,
+                import,
+                networkOverride);
+
+            ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                "\n--- HydroComplete: LandXML import write ---\n  Networks: {0}  Structures: {1}  Pipes: {2}  Skipped: {3}\n",
+                write.NetworksCreated,
+                write.StructuresCreated,
+                write.PipesCreated,
+                write.Skipped));
+
+            foreach (string err in write.Errors.Take(10))
+                ed.WriteMessage("  " + err + "\n");
+            if (write.Errors.Count > 10)
+            {
+                ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                    "  ... and {0} more error(s).\n",
+                    write.Errors.Count - 10));
+            }
+
             ed.WriteMessage("\n");
         }
 
@@ -188,6 +217,8 @@ namespace HydroComplete.Civil3D.Commands
                 ? rp.Segment.DesignFlowCfs
                 : (double?)null;
 
+            LandXmlPipeShape shape = PipeShapeResolver.ToLandXmlShape(rp.Segment.Shape);
+
             return new LandXmlPipeRecord
             {
                 Name = rp.PipeName,
@@ -201,6 +232,9 @@ namespace HydroComplete.Civil3D.Commands
                 DesignFlowCfs = designQ,
                 StartStructureName = rp.StartStructureName,
                 EndStructureName = rp.EndStructureName,
+                Shape = shape,
+                WidthFt = rp.Segment.WidthFt > 0 ? rp.Segment.WidthFt : rp.Segment.SpanFt,
+                HeightFt = rp.Segment.HeightFt > 0 ? rp.Segment.HeightFt : rp.Segment.RiseFt,
             };
         }
 
@@ -336,6 +370,47 @@ namespace HydroComplete.Civil3D.Commands
         {
             if (string.IsNullOrEmpty(value)) return "";
             return value.Length <= max ? value : value.Substring(0, max - 1) + "~";
+        }
+
+        private static bool PromptYesNo(Editor ed, string message, bool defaultYes)
+        {
+            var opts = new PromptKeywordOptions(message)
+            {
+                AllowNone = true,
+            };
+            opts.Keywords.Add("Yes");
+            opts.Keywords.Add("No");
+            opts.Keywords.Default = defaultYes ? "Yes" : "No";
+            PromptResult res = ed.GetKeywords(opts);
+            if (res.Status != PromptStatus.OK)
+                return defaultYes;
+            return string.Equals(res.StringResult, "Yes", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string? PromptNetworkName(
+            Editor ed,
+            IReadOnlyList<IGrouping<string, LandXmlPipeRecord>> networkGroups)
+        {
+            if (networkGroups.Count == 1)
+                return networkGroups[0].Key;
+
+            ed.WriteMessage("\n  LandXML contains multiple networks. Enter name for imported network");
+            ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                "\n  (default: {0}): ", networkGroups[0].Key));
+
+            var opts = new PromptStringOptions("\nImported network name")
+            {
+                DefaultValue = networkGroups[0].Key,
+                UseDefaultValue = true,
+                AllowSpaces = true,
+            };
+            PromptResult res = ed.GetString(opts);
+            if (res.Status != PromptStatus.OK)
+                return networkGroups[0].Key;
+
+            return string.IsNullOrWhiteSpace(res.StringResult)
+                ? networkGroups[0].Key
+                : res.StringResult.Trim();
         }
 
         private static Document Active()

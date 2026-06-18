@@ -90,8 +90,8 @@ namespace HydroComplete.Civil3D.Reading
                     {
                         if (!(tr.GetObject(pid, OpenMode.ForRead) is Pipe pipe)) continue;
 
-                        double startInvert = InvertAt(pipe.StartPoint, pipe.InnerDiameterOrWidth);
-                        double endInvert = InvertAt(pipe.EndPoint, pipe.InnerDiameterOrWidth);
+                        double startInvert = InvertAt(pipe, pipe.StartPoint);
+                        double endInvert = InvertAt(pipe, pipe.EndPoint);
                         bool startIsUpstream = pipe.FlowDirection == FlowDirectionType.StartToEnd
                             || (pipe.FlowDirection != FlowDirectionType.EndToStart
                                 && startInvert >= endInvert);
@@ -118,16 +118,7 @@ namespace HydroComplete.Civil3D.Reading
                             DownstreamStructureId = startIsUpstream ? pipe.EndStructureId : pipe.StartStructureId,
                             StartPoint = pipe.StartPoint,
                             EndPoint = pipe.EndPoint,
-                            Segment = new PipeSegment
-                            {
-                                Name = pipe.Name ?? "",
-                                DiameterFt = pipe.InnerDiameterOrWidth,
-                                Slope = Math.Abs(pipe.Slope),
-                                ManningN = DefaultManningN,
-                                LengthFt = lengthFt,
-                                StartInvertFt = startInvert,
-                                EndInvertFt = endInvert,
-                            },
+                            Segment = BuildSegment(pipe, lengthFt, startInvert, endInvert),
                         });
                     }
                 }
@@ -165,8 +156,8 @@ namespace HydroComplete.Civil3D.Reading
                     {
                         if (!(tr.GetObject(pid, OpenMode.ForRead) is Pipe pipe)) continue;
 
-                        double startInvert = InvertAt(pipe.StartPoint, pipe.InnerDiameterOrWidth);
-                        double endInvert = InvertAt(pipe.EndPoint, pipe.InnerDiameterOrWidth);
+                        double startInvert = InvertAt(pipe, pipe.StartPoint);
+                        double endInvert = InvertAt(pipe, pipe.EndPoint);
                         double diameterFt = pipe.InnerDiameterOrWidth;
 
                         double lengthFt = pipe.Length2D;
@@ -190,15 +181,40 @@ namespace HydroComplete.Civil3D.Reading
             return summaries;
         }
 
-        /// <summary>
-        /// Civil 3D 2026 exposes pipe-end elevations via <see cref="Pipe.StartPoint"/> /
-        /// <see cref="Pipe.EndPoint"/> (Z); there is no StartInvert/EndInvert property.
-        /// For circular pipes we subtract half the inner diameter to obtain invert.
-        /// </summary>
-        private static double InvertAt(Point3d endPoint, double innerDiameterFt)
+        private static PipeSegment BuildSegment(
+            Pipe pipe, double lengthFt, double startInvert, double endInvert)
         {
-            double radius = innerDiameterFt > 0 ? innerDiameterFt / 2.0 : 0.0;
-            return endPoint.Z - radius;
+            var segment = new PipeSegment
+            {
+                Name = pipe.Name ?? "",
+                DiameterFt = pipe.InnerDiameterOrWidth,
+                Slope = Math.Abs(pipe.Slope),
+                ManningN = DefaultManningN,
+                LengthFt = lengthFt,
+                StartInvertFt = startInvert,
+                EndInvertFt = endInvert,
+            };
+            PipeShapeResolver.ApplyToSegment(pipe, segment);
+            return segment;
+        }
+
+        private static double InvertAt(Pipe pipe, Point3d endPoint)
+        {
+            return endPoint.Z - HalfDepthFt(pipe);
+        }
+
+        private static double HalfDepthFt(Pipe pipe)
+        {
+            switch (pipe.CrossSectionalShape)
+            {
+                case SweptShapeType.Rectangular:
+                case SweptShapeType.Arched:
+                case SweptShapeType.EggShaped:
+                    return pipe.InnerHeight > 0 ? pipe.InnerHeight / 2.0 : pipe.InnerDiameterOrWidth / 2.0;
+
+                default:
+                    return pipe.InnerDiameterOrWidth > 0 ? pipe.InnerDiameterOrWidth / 2.0 : 0.0;
+            }
         }
 
         private static Dictionary<ObjectId, string> BuildStructureNameLookup(Network net, Transaction tr)

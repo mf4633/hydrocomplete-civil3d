@@ -229,8 +229,11 @@ namespace HydroComplete.Engine
                 XmlNode? circPipe = SelectChild(pipeNode, nsm, "CircPipe");
                 XmlNode? boxPipe = SelectChild(pipeNode, nsm, "BoxPipe");
 
+                XmlNode? archPipe = SelectChild(pipeNode, nsm, "ArchPipe");
+
                 if (circPipe != null)
                 {
+                    record.Shape = LandXmlPipeShape.Circular;
                     record.DiameterFt = TryReadDouble(circPipe, "diameter").GetValueOrDefault();
                     record.ManningN = TryReadDouble(circPipe, "manningsN").GetValueOrDefault(0.013);
                     record.LengthFt = TryReadDouble(circPipe, "length").GetValueOrDefault();
@@ -239,12 +242,34 @@ namespace HydroComplete.Engine
                 {
                     double? width = TryReadDouble(boxPipe, "width");
                     double? height = TryReadDouble(boxPipe, "height");
+                    record.Shape = LandXmlPipeShape.Box;
+                    record.WidthFt = width.GetValueOrDefault();
+                    record.HeightFt = height.GetValueOrDefault();
                     record.DiameterFt = EquivalentDiameter(width, height);
                     record.ManningN = TryReadDouble(boxPipe, "manningsN").GetValueOrDefault(0.013);
                     record.LengthFt = TryReadDouble(boxPipe, "length").GetValueOrDefault();
 
                     if (!width.HasValue || !height.HasValue)
                         result.Warnings.Add("BoxPipe '" + name + "' missing width or height; diameter set to 0.");
+                }
+                else if (archPipe != null)
+                {
+                    double? span = TryReadDouble(archPipe, "span");
+                    if (!span.HasValue)
+                        span = TryReadDouble(archPipe, "width");
+                    double? rise = TryReadDouble(archPipe, "rise");
+                    if (!rise.HasValue)
+                        rise = TryReadDouble(archPipe, "height");
+
+                    record.Shape = LandXmlPipeShape.Arch;
+                    record.WidthFt = span.GetValueOrDefault();
+                    record.HeightFt = rise.GetValueOrDefault();
+                    record.DiameterFt = EquivalentDiameter(span, rise);
+                    record.ManningN = TryReadDouble(archPipe, "manningsN").GetValueOrDefault(0.013);
+                    record.LengthFt = TryReadDouble(archPipe, "length").GetValueOrDefault();
+
+                    if (!span.HasValue || !rise.HasValue)
+                        result.Warnings.Add("ArchPipe '" + name + "' missing span/rise; dimensions set to 0.");
                 }
                 else
                 {
