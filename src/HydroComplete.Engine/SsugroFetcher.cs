@@ -267,10 +267,11 @@ namespace HydroComplete.Engine
                 string? mukey = Get(row, "mukey");
                 if (string.IsNullOrWhiteSpace(mukey)) continue;
 
-                if (!byMukey.TryGetValue(mukey, out var bucket))
+                string mapUnitKey = mukey!;
+                if (!byMukey.TryGetValue(mapUnitKey, out var bucket))
                 {
-                    bucket = (Get(row, "muname") ?? mukey, new List<ComponentRow>());
-                    byMukey[mukey] = bucket;
+                    bucket = (Get(row, "muname") ?? mapUnitKey, new List<ComponentRow>());
+                    byMukey[mapUnitKey] = bucket;
                 }
 
                 bucket.Components.Add(new ComponentRow
@@ -421,7 +422,9 @@ namespace HydroComplete.Engine
         private static char? ParseHsg(string? text)
         {
             if (string.IsNullOrWhiteSpace(text)) return null;
-            char c = char.ToUpperInvariant(text.Trim()[0]);
+            string trimmed = text!.Trim();
+            if (trimmed.Length == 0) return null;
+            char c = char.ToUpperInvariant(trimmed[0]);
             return c is 'A' or 'B' or 'C' or 'D' ? c : (char?)null;
         }
 
