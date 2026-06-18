@@ -8,11 +8,35 @@ on:
 
 jobs:
   ci:
+    # GitHub-hosted windows-latest does NOT include Autodesk Civil 3D. The build
+    # step in scripts/ci.ps1 needs compile-time references to AcMgd.dll and
+    # related managed APIs under AcadDir (default: AutoCAD 2026 install path).
+    #
+    # Options:
+    #   1. Self-hosted Windows runner with Civil 3D — recommended for green CI.
+    #      See scripts/setup-self-hosted-runner.md for the full checklist.
+    #   2. Keep windows-latest — expect build failure; run ci.ps1 locally before release.
+    #
+    # To use a self-hosted runner, replace the line below with:
+    #   runs-on: [self-hosted, Windows, civil3d]
+    #
+    # If the runner has Civil 3D 2025 instead of 2026, add env and pass AcadDir
+    # to the build step (or set a repo Actions variable ACAD_DIR):
+    #
+    #   env:
+    #     ACAD_DIR: 'C:\Program Files\Autodesk\AutoCAD 2025\'
+    #   ...
+    #   run: |
+    #     dotnet build src/HydroComplete.Civil3D/HydroComplete.Civil3D.csproj -c Release `
+    #       -p:AcadDir="$env:ACAD_DIR"
+    #     # ...or extend ci.ps1 to accept -AcadDir and call that instead.
     runs-on: windows-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Unit tests target .NET 7; the Civil 3D plugin targets .NET 8.
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -20,6 +44,8 @@ jobs:
             8.0.x
             7.0.x
 
+      # Requires Civil 3D / AutoCAD managed assemblies on the runner for the
+      # dotnet build step. No acad.exe launch — compile-time refs only.
       - name: Run CI script
         shell: pwsh
         run: ./scripts/ci.ps1

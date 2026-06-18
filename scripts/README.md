@@ -29,9 +29,42 @@ Runs unit tests, builds the plugin, and verifies `dist/HydroComplete.bundle/Pack
 
 Exits **0** on success, **non-zero** on failure.
 
+### What runs
+
+| Step | Needs Civil 3D install? | Notes |
+|---|---|---|
+| `dotnet test` | No (engine tests only) | Solution includes `HydroComplete.Engine` unit tests |
+| `dotnet build` | **Yes** (API DLLs on disk) | References `AcMgd.dll`, `AeccDbMgd.dll`, etc. via `AcadDir` |
+| Manifest verification | No | Static XML check under `dist/HydroComplete.bundle/` |
+
+CI does **not** start `acad.exe`; compile-time references are enough.
+
 ### GitHub Actions
 
-The workflow in `.github/workflows/ci.yml` calls `ci.ps1` on `windows-latest`. The **build step requires Civil 3D / AutoCAD managed assemblies** on the runner (`C:\Program Files\Autodesk\AutoCAD 2026\` by default). Use a self-hosted Windows runner with Civil 3D installed, or run `ci.ps1` locally before tagging a release.
+The workflow in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) calls `ci.ps1`.
+
+**Hosted runners:** `windows-latest` has the .NET SDK (via `setup-dotnet`) but **not**
+Autodesk Civil 3D. The build step will fail unless host assemblies are present.
+
+**Self-hosted runners:** Use a Windows machine with Civil 3D installed. Full setup
+checklist: **[setup-self-hosted-runner.md](setup-self-hosted-runner.md)**.
+
+Summary:
+
+1. Install and register a self-hosted runner with labels `self-hosted`, `Windows`, and `civil3d`
+2. Change workflow `runs-on` to `[self-hosted, Windows, civil3d]` (see comments in `ci.yml`)
+3. Confirm `.\scripts\ci.ps1` passes on the runner machine before relying on CI
+
+If CI is unavailable, run `.\scripts\ci.ps1` locally before tagging a release.
+
+#### Default host paths (`HydroComplete.Civil3D.csproj`)
+
+| Install | `AcadDir` default |
+|---|---|
+| Civil 3D 2026 | `C:\Program Files\Autodesk\AutoCAD 2026\` |
+| Civil 3D 2025 | Override with `-p:AcadDir="C:\Program Files\Autodesk\AutoCAD 2025\"` |
+
+Related managed DLLs resolved from `$(AcadDir)` and `$(AcadDir)C3D\`.
 
 ## Release (`release.ps1`)
 
