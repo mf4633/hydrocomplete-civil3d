@@ -28,8 +28,11 @@ not yet re-tested after the listed fix.
 | `HC_RATIONAL` (with catchments) | *pending* | No catchment objects in test drawing |
 | Waitlist page `hydrocomplete.com/civil3d` | *deploy only* | HTTP 200 deployed; signup flow not user-tested |
 | Engine unit tests | **validated** | `dotnet test` on dev machine (grows with each release) |
-| `HC_HGL` (steady profile + HC-HGL labels) | *pending* | v0.2.0 base; v0.3.0 adds HEC-22 junction/exit losses |
-| `HC_REPORT` (HTML export) | *pending* | v0.3.0 — Manning capacity + steady HGL per network (Q prompt, HEC-22 optional); `%USERPROFILE%\Documents\HydroComplete\` |
+| `HC_HGL` (normal-depth profile + HC-HGL labels) | *pending* | v0.4.0 — Manning normal depth at design Q; v0.3.0 adds HEC-22 junction/exit losses |
+| `HC_CAPACITY` (design Q vs Q_full) | *pending* | v0.4.0 — overload check with Q_des/Q_full, d/D, surcharge flags |
+| `HC_CAPACITY_WRITE` (overload labels) | *pending* | v0.4.0 — MText on `HC-CAPACITY`; overload-only or all-pipes mode |
+| `HC_REPORT` (HTML export) | *pending* | v0.3.0 — Manning capacity + normal-depth HGL per network (Q prompt, HEC-22 optional); `%USERPROFILE%\Documents\HydroComplete\` |
+| `HC_REPORT_PDF` (Pro) | *pending* | v0.4.0 — formula-transparent PDF; requires Pro license or `HYDROCOMPLETE_PRO=1` |
 | `HC_ATLAS14` (IDF preset list) | *pending* | v0.3.0 — 18 embedded NOAA Atlas 14 city curves |
 | `HC_RATIONAL` + Atlas 14 presets | *pending* | v0.3.0 — preset key instead of manual a/b/c |
 | `HC_HGL` + Rational design Q | *pending* | v0.3.0 — optional catchment-driven Q when catchments exist |
