@@ -5,7 +5,7 @@ drawing** — read pipe networks and catchments, compute on public-domain method
 and show every formula. This is the desktop companion behind
 [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d).
 
-Status: **v0.4.0** — see [User validation](#user-validation) below.
+Status: **v0.5.0** — see [User validation](#user-validation) below.
 
 **Autodesk App Store:** Listing copy, submission checklist, and screenshot shot list live in [`dist/app-store/`](dist/app-store/) (`LISTING.md`, `SUBMISSION_CHECKLIST.md`, `SCREENSHOTS.md`).
 
@@ -29,6 +29,7 @@ not yet re-tested after the listed fix.
 | Waitlist page `hydrocomplete.com/civil3d` | *deploy only* | HTTP 200 deployed; signup flow not user-tested |
 | Engine unit tests | **validated** | `dotnet test` on dev machine (grows with each release) |
 | `HC_HGL` (normal-depth profile + HC-HGL labels) | *pending* | v0.4.0 — Manning normal depth at design Q; v0.3.0 adds HEC-22 junction/exit losses |
+| `HC_HGL` (HGL profile polyline on HC-HGL-PROFILE) | *pending* | v0.5.0 — 3D polyline at pipe US/DS ends; Yes/No prompt (default Yes) |
 | `HC_CAPACITY` (design Q vs Q_full) | *pending* | v0.4.0 — overload check with Q_des/Q_full, d/D, surcharge flags |
 | `HC_CAPACITY_WRITE` (overload labels) | *pending* | v0.4.0 — MText on `HC-CAPACITY`; overload-only or all-pipes mode |
 | `HC_REPORT` (HTML export) | *pending* | v0.3.0 — Manning capacity + normal-depth HGL per network (Q prompt, HEC-22 optional); `%USERPROFILE%\Documents\HydroComplete\` |
@@ -106,7 +107,7 @@ loads the plugin automatically.
 3. **Launch Civil 3D 2025 or 2026** from the Start menu (the full desktop app — not
    `accoreconsole`, not plain AutoCAD).
 4. Confirm the command line shows:
-   `HydroComplete for Civil 3D 0.4.0 loaded. Type HC_ABOUT for commands.`
+   `HydroComplete for Civil 3D 0.5.0 loaded. Type HC_ABOUT for commands.`
 
 Check install any time:
 ```
@@ -128,12 +129,40 @@ before the one-time install above.
 | `HC_ABOUT` | List commands |
 | `HC_PIPES` | Manning capacity + full-flow velocity for every pipe in every pipe network |
 | `HC_PIPES_WRITE` | Label Qfull/Vfull on layer `HC-CAPACITY` at each pipe midpoint |
-| `HC_HGL` | Steady HGL at design Q with optional HEC-22 junction/exit losses; labels on `HC-HGL` |
+| `HC_HGL` | Steady HGL at design Q with optional HEC-22 junction/exit losses; labels on `HC-HGL`; optional 3D profile polyline on `HC-HGL-PROFILE` |
 | `HC_REPORT` | Formula-transparent HTML Manning + steady HGL report to `Documents\HydroComplete\` (free) |
 | `HC_REPORT_PDF` | Same report as PDF — **Pro** (requires license; use `HC_REPORT` for free HTML) |
 | `HC_RATIONAL` | Rational peak Q from catchments + NOAA Atlas 14 IDF preset (or custom a/b/c) |
 | `HC_ATLAS14` | List Atlas 14 IDF presets + live PFDS fetch info |
-| `HC_LICENSE` | Show Free/Pro status, license file path, and activation link |
+| `HC_ACTIVATE` | Activate Pro with email + beta token (`hc_live_*`) — online or offline stub |
+| `HC_LICENSE` | Show Free/Pro status, validation mode, last check, and license file path |
+
+### Beta activation (v0.5.0)
+
+1. Join the beta at [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d) and receive your
+   activation token (format: `hc_live_…`, at least 16 characters).
+2. In Civil 3D, run **`HC_ACTIVATE`** (ribbon: **Activate Pro**).
+3. Enter your email, then paste the token — or paste both on one line:
+   `you@firm.com hc_live_your_token_here`
+4. With internet, HydroComplete POSTs to
+   `https://hydrocomplete.com/api/licensing/validate` (hc-refactored
+   `server/routes/licensing.js`). If the server is unreachable or the token is not
+   yet in the server registry, a **local offline stub** accepts well-formed
+   `hc_live_*` tokens and writes `%APPDATA%\HydroComplete\license.json` (1-year expiry).
+5. Run **`HC_LICENSE`** to confirm status, validation mode (`online` vs
+   `offline-stub`), and last validated timestamp.
+6. **`HC_REPORT_PDF`** unlocks after activation. HTML reports (`HC_REPORT`) stay free.
+
+**Dev bypass (engineers only):** set environment variable `HYDROCOMPLETE_PRO=1`
+before launching Civil 3D — skips license file checks.
+
+**HGL profile polyline (v0.5.0):** After `HC_HGL` writes midpoint labels, the
+command prompts **Draw HGL profile polyline** (default **Yes**). When enabled,
+one `Polyline3d` per pipe network is drawn on layer `HC-HGL-PROFILE` (magenta).
+Vertices use each pipe's upstream/downstream plan XY (Civil 3D `StartPoint` /
+`EndPoint` mapped to flow direction) with Z set to the computed HGL at that end.
+Prior polylines on `HC-HGL-PROFILE` are erased before redraw. Profile write-back
+requires Civil 3D and is not unit-tested in-process.
 
 **Atlas 14 geolocation (v0.3.1):** When the drawing has geo-reference data
 (`GEOGRAPHICLOCATION` / `Database.GeoDataObject`), `HC_RATIONAL` and the
@@ -158,11 +187,11 @@ The ribbon tab **HydroComplete › Analysis** exposes the same commands.
 
 ## Roadmap
 
-1. **Write-back (v0.1 done)** — MText labels on `HC-CAPACITY` validated; HGL labels on `HC-HGL` in v0.2 (pending validation).
+1. **Write-back (v0.1 done)** — MText labels on `HC-CAPACITY` validated; HGL labels on `HC-HGL` in v0.2; HGL profile polyline on `HC-HGL-PROFILE` in v0.5.0 (pending validation).
 2. **HGL backwater (v0.3 partial)** — HEC-22 junction/exit minor losses in steady profile; full momentum backwater next.
 3. **Report export** — HTML in v0.2; formula-transparent PDF mirroring the web app next.
 4. **NOAA Atlas 14 (v0.4.0)** — Live PFDS fetch + cache; 18 embedded city presets as offline fallback.
-5. **Account/auth handoff (skeleton)** — `LicenseGate` checks `%APPDATA%\HydroComplete\license.json` (stub: non-expired `expires` field) or dev bypass `HYDROCOMPLETE_PRO=1`; `HC_REPORT_PDF` is the first gated Pro feature; `HC_LICENSE` shows status. Online validation against hydrocomplete.com API is TODO.
+5. **Account/auth (v0.5.0)** — `HC_ACTIVATE` writes `%APPDATA%\HydroComplete\license.json`; online POST to `/api/licensing/validate` with offline `hc_live_*` stub fallback; `HC_LICENSE` shows validation mode and last check; `HC_REPORT_PDF` gated on Pro.
 
 Civil 3D, AutoCAD, and Storm and Sanitary Analysis are trademarks of Autodesk,
 Inc. HydroComplete is an independent product, not affiliated with or endorsed by

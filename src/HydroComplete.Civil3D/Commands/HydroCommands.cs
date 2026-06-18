@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -28,20 +29,93 @@ namespace HydroComplete.Civil3D.Commands
         public void About()
         {
             Editor ed = Active().Editor;
-            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.4.0 ===");
+            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.5.0 ===");
             ed.WriteMessage("\n  HC_PIPES         Manning capacity of every pipe-network pipe");
             ed.WriteMessage("\n  HC_PIPES_WRITE   Label Qfull/Vfull on layer HC-CAPACITY");
             ed.WriteMessage("\n  HC_CAPACITY      Design Q vs Q_full check (d/D, surcharge flag)");
             ed.WriteMessage("\n  HC_CAPACITY_WRITE Label overloaded pipes on layer HC-CAPACITY");
-            ed.WriteMessage("\n  HC_HGL           Steady HGL (normal depth) + HEC-22 losses + HC-HGL labels");
+            ed.WriteMessage("\n  HC_HGL           Steady HGL (normal depth) + HEC-22 losses + HC-HGL labels + profile");
             ed.WriteMessage("\n  HC_REPORT      Export formula-transparent HTML Manning + HGL report (free)");
             ed.WriteMessage("\n  HC_REPORT_PDF  Export formula-transparent PDF Manning + HGL report (Pro)");
             ed.WriteMessage("\n  HC_RATIONAL    Rational Q from catchments + NOAA Atlas 14 IDF presets");
             ed.WriteMessage("\n  HC_ATLAS14     List Atlas 14 IDF presets + live PFDS fetch info");
+            ed.WriteMessage("\n  HC_ACTIVATE    Activate Pro with email + beta token (hc_live_*)");
             ed.WriteMessage("\n  HC_LICENSE     Show Free/Pro license status and activation info");
             ed.WriteMessage("\n  HC_ABOUT       This list");
             ed.WriteMessage("\n  Pro features (PDF export) require a license — visit https://hydrocomplete.com/civil3d");
             ed.WriteMessage("\n  Engine: Rational, SCS Tc, Manning, IDF, HEC-22 — public-domain, fully shown.\n");
+        }
+
+        [CommandMethod("HC_ACTIVATE")]
+        public void Activate()
+        {
+            Editor ed = Active().Editor;
+            ed.WriteMessage("\n=== HydroComplete Pro Activation ===");
+            ed.WriteMessage("\n  Enter your beta email and token (format: hc_live_…).");
+            ed.WriteMessage("\n  You may paste both on one line: email@domain.com hc_live_…\n");
+
+            string email;
+            string token;
+
+            var emailOpts = new PromptStringOptions("\nEmail (or paste 'email token')")
+            {
+                AllowSpaces = true,
+            };
+            PromptResult emailRes = ed.GetString(emailOpts);
+            if (emailRes.Status != PromptStatus.OK || string.IsNullOrWhiteSpace(emailRes.StringResult))
+            {
+                ed.WriteMessage("\n  Activation cancelled.\n");
+                return;
+            }
+
+            if (LicenseActivator.TryParseCombinedInput(emailRes.StringResult, out email, out token))
+            {
+                ed.WriteMessage($"\n  Parsed email: {email}");
+            }
+            else
+            {
+                email = emailRes.StringResult.Trim();
+                var tokenOpts = new PromptStringOptions("\nActivation token")
+                {
+                    AllowSpaces = false,
+                };
+                PromptResult tokenRes = ed.GetString(tokenOpts);
+                if (tokenRes.Status != PromptStatus.OK || string.IsNullOrWhiteSpace(tokenRes.StringResult))
+                {
+                    ed.WriteMessage("\n  Activation cancelled.\n");
+                    return;
+                }
+
+                token = tokenRes.StringResult.Trim();
+            }
+
+            try
+            {
+                var result = LicenseGate.ActivateAsync(email, token, CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+
+                if (!result.Success)
+                {
+                    ed.WriteMessage($"\n  Activation failed: {result.Message}\n");
+                    return;
+                }
+
+                ed.WriteMessage($"\n  {result.Message}");
+                ed.WriteMessage($"\n  Mode: {result.Mode}");
+                if (!string.IsNullOrWhiteSpace(result.Expires)
+                    && DateTimeOffset.TryParse(result.Expires, out var expires))
+                {
+                    ed.WriteMessage($"\n  Expires: {expires:yyyy-MM-dd}");
+                }
+
+                ed.WriteMessage($"\n  Status: {LicenseGate.GetStatusLabel()}");
+                ed.WriteMessage("\n  Pro unlocks HC_REPORT_PDF. Run HC_LICENSE for details.\n");
+            }
+            catch (System.Exception ex)
+            {
+                ed.WriteMessage($"\n  Activation error: {ex.Message}\n");
+            }
         }
 
         [CommandMethod("HC_LICENSE")]
@@ -50,8 +124,11 @@ namespace HydroComplete.Civil3D.Commands
             Editor ed = Active().Editor;
             ed.WriteMessage("\n=== HydroComplete License ===");
             ed.WriteMessage($"\n  Status: {LicenseGate.GetStatusLabel()}");
+            ed.WriteMessage($"\n  Validation mode: {LicenseGate.GetValidationModeLabel()}");
+            ed.WriteMessage($"\n  Last validated: {LicenseGate.GetLastValidatedLabel()}");
+            ed.WriteMessage($"\n  Network: {LicenseGate.GetOnlineOfflineLabel()}");
             ed.WriteMessage($"\n  License file: {LicenseGate.GetLicenseFilePath()}");
-            ed.WriteMessage("\n  Activate Pro at https://hydrocomplete.com/civil3d");
+            ed.WriteMessage("\n  Activate: HC_ACTIVATE  |  https://hydrocomplete.com/civil3d");
             ed.WriteMessage("\n  Pro unlocks PDF export (HC_REPORT_PDF). HTML reports (HC_REPORT) stay free.\n");
         }
 
@@ -227,6 +304,7 @@ namespace HydroComplete.Civil3D.Commands
 
             var networks = NetworkTopology.BuildOrderedNetworks(pipes);
             var allMidHgl = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+            var pipeHglEnds = new Dictionary<string, HglProfileWriter.HglPipeEnds>(StringComparer.OrdinalIgnoreCase);
             var surchargedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             string lossNote = useMinorLosses ? " + HEC-22" : "";
@@ -253,6 +331,11 @@ namespace HydroComplete.Civil3D.Commands
                     double hglDs = point.HglFt;
                     double hglMid = 0.5 * (hglUs + hglDs);
                     allMidHgl[reachName] = hglMid;
+                    pipeHglEnds[reachName] = new HglProfileWriter.HglPipeEnds
+                    {
+                        HglUsFt = hglUs,
+                        HglDsFt = hglDs,
+                    };
 
                     bool surcharged = Hgl.IsSurcharged(
                         hglUs, hglDs,
@@ -282,6 +365,20 @@ namespace HydroComplete.Civil3D.Commands
                 ed.WriteMessage($"\n  Skipped {write.Skipped} pipe(s).");
             foreach (string err in write.Errors)
                 ed.WriteMessage($"\n  {err}");
+
+            bool drawProfile = PromptYesNo(ed, "\nDraw HGL profile polyline", defaultYes: true);
+            if (drawProfile)
+            {
+                var profileWrite = HglProfileWriter.WriteHglProfiles(doc.Database, networks, pipeHglEnds);
+                ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                    "\n--- Wrote HGL profile polyline(s) for {0} network(s) ({1} vertices) on layer HC-HGL-PROFILE ---",
+                    profileWrite.NetworksDrawn, profileWrite.VerticesDrawn));
+                if (profileWrite.Skipped > 0)
+                    ed.WriteMessage($"\n  Skipped {profileWrite.Skipped} network(s)/pipe(s).");
+                foreach (string err in profileWrite.Errors)
+                    ed.WriteMessage($"\n  {err}");
+            }
+
             ed.WriteMessage("\n");
         }
 

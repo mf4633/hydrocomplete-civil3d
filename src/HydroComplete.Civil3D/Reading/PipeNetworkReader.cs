@@ -34,6 +34,12 @@ namespace HydroComplete.Civil3D.Reading
 
         /// <summary>Structure at the downstream end of flow.</summary>
         public ObjectId DownstreamStructureId { get; set; }
+
+        /// <summary>Civil 3D pipe start point (plan XY + rim/center elevation Z).</summary>
+        public Point3d StartPoint { get; set; }
+
+        /// <summary>Civil 3D pipe end point (plan XY + rim/center elevation Z).</summary>
+        public Point3d EndPoint { get; set; }
     }
 
     /// <summary>
@@ -92,6 +98,8 @@ namespace HydroComplete.Civil3D.Reading
                             DownstreamInvertFt = startIsUpstream ? endInvert : startInvert,
                             UpstreamStructureId = startIsUpstream ? pipe.StartStructureId : pipe.EndStructureId,
                             DownstreamStructureId = startIsUpstream ? pipe.EndStructureId : pipe.StartStructureId,
+                            StartPoint = pipe.StartPoint,
+                            EndPoint = pipe.EndPoint,
                             Segment = new PipeSegment
                             {
                                 Name = pipe.Name ?? "",
