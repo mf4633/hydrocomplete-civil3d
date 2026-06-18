@@ -57,7 +57,8 @@ function Find-SeedDrawing {
     }
 
     $sampleDwgs = Get-ChildItem -Path (Join-Path $InstallRoot 'Sample') -Filter '*.dwg' -Recurse -ErrorAction SilentlyContinue
-    $sampleDwg = $sampleDwgs | Where-Object { $_.FullName -notmatch ' ' } | Select-Object -First 1
+    # Prefer filenames without spaces (accoreconsole /i quoting is fragile).
+    $sampleDwg = $sampleDwgs | Where-Object { $_.Name -notmatch ' ' } | Select-Object -First 1
     if (-not $sampleDwg) {
         $sampleDwg = $sampleDwgs | Select-Object -First 1
     }
