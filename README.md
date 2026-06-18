@@ -5,7 +5,7 @@ drawing** — read pipe networks and catchments, compute on public-domain method
 and show every formula. This is the desktop companion behind
 [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d).
 
-Status: **v0.5.0** — see [User validation](#user-validation) below.
+Status: **v0.6.0** — see [User validation](#user-validation) below.
 
 **Autodesk App Store:** Listing copy, submission checklist, and screenshot shot list live in [`dist/app-store/`](dist/app-store/) (`LISTING.md`, `SUBMISSION_CHECKLIST.md`, `SCREENSHOTS.md`).
 
@@ -37,6 +37,7 @@ not yet re-tested after the listed fix.
 | `HC_ATLAS14` (IDF preset list) | *pending* | v0.3.0 — 18 embedded NOAA Atlas 14 city curves |
 | `HC_RATIONAL` + Atlas 14 presets | *pending* | v0.3.0 — preset key instead of manual a/b/c |
 | `HC_HGL` + Rational design Q | *pending* | v0.3.0 — optional catchment-driven Q when catchments exist |
+| `HC_CAPACITY` / `HC_HGL` per-catchment Q routing | *pending* | v0.6.0 — route each catchment's Rational peak through pipe topology; per-pipe Q for capacity/HGL |
 | Atlas 14 auto from drawing geo | *pending* | v0.3.1 — `GEOGRAPHICLOCATION` → nearest preset; Enter accepts `auto` |
 | Atlas 14 live PFDS fetch | *pending* | v0.4.0 — NOAA HDSC CSV by lat/lon; 30-day cache; offline → embedded |
 
@@ -107,7 +108,7 @@ loads the plugin automatically.
 3. **Launch Civil 3D 2025 or 2026** from the Start menu (the full desktop app — not
    `accoreconsole`, not plain AutoCAD).
 4. Confirm the command line shows:
-   `HydroComplete for Civil 3D 0.5.0 loaded. Type HC_ABOUT for commands.`
+   `HydroComplete for Civil 3D 0.6.0 loaded. Type HC_ABOUT for commands.`
 
 Check install any time:
 ```
@@ -191,7 +192,14 @@ The ribbon tab **HydroComplete › Analysis** exposes the same commands.
 2. **HGL backwater (v0.3 partial)** — HEC-22 junction/exit minor losses in steady profile; full momentum backwater next.
 3. **Report export** — HTML in v0.2; formula-transparent PDF mirroring the web app next.
 4. **NOAA Atlas 14 (v0.4.0)** — Live PFDS fetch + cache; 18 embedded city presets as offline fallback.
-5. **Account/auth (v0.5.0)** — `HC_ACTIVATE` writes `%APPDATA%\HydroComplete\license.json`; online POST to `/api/licensing/validate` with offline `hc_live_*` stub fallback; `HC_LICENSE` shows validation mode and last check; `HC_REPORT_PDF` gated on Pro.
+5. **Account/auth (v0.5.0 done)** — `HC_ACTIVATE` writes `%APPDATA%\HydroComplete\license.json`; online POST to `/api/licensing/validate` with offline `hc_live_*` stub fallback; `HC_LICENSE` shows validation mode and last check; `HC_REPORT_PDF` gated on Pro. HGL profile polyline write-back on `HC-HGL-PROFILE` (Yes/No prompt, default Yes).
+6. **Catchment flow routing (v0.6.0)** — When catchments exist, `HC_CAPACITY` and `HC_HGL` prompt **Route catchment flows** (default Yes); engine routes each catchment's Rational peak through pipe-network topology to assign per-pipe design Q (outlet structure, nearest structure, or name match). Uniform Q fallback when routing is declined or no catchments are present.
+
+### v0.5.0 summary
+
+- **HGL profile polyline** — `HC_HGL` draws a `Polyline3d` per network on layer `HC-HGL-PROFILE` at upstream/downstream HGL elevations (optional, default Yes).
+- **Beta activation** — `HC_ACTIVATE` with email + `hc_live_*` token; online validation against `hydrocomplete.com/api/licensing/validate` with offline stub fallback; `HC_LICENSE` shows Free/Pro status and validation mode.
+- **Pro gating** — `HC_REPORT_PDF` requires activated Pro license (or `HYDROCOMPLETE_PRO=1` dev bypass); HTML reports remain free.
 
 Civil 3D, AutoCAD, and Storm and Sanitary Analysis are trademarks of Autodesk,
 Inc. HydroComplete is an independent product, not affiliated with or endorsed by
