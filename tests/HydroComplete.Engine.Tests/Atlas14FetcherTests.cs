@@ -11,13 +11,13 @@ namespace HydroComplete.Engine.Tests
 {
     public class Atlas14FetcherTests
     {
-        private static string FixturePath =>
-            Path.Combine(AppContext.BaseDirectory, "Fixtures", "charlotte_nc_intensity.csv");
+        private static string FixturePath(string fileName) =>
+            Path.Combine(AppContext.BaseDirectory, "Fixtures", fileName);
 
         [Fact]
         public void ParseIntensityTable_CharlotteFixture_ReadsTenYearColumn()
         {
-            string csv = File.ReadAllText(FixturePath);
+            string csv = File.ReadAllText(FixturePath("charlotte_nc_intensity.csv"));
             var table = Atlas14Fetcher.ParseIntensityTable(csv, returnPeriodYears: 10);
 
             Assert.True(table.Count >= 6);
@@ -28,7 +28,7 @@ namespace HydroComplete.Engine.Tests
         [Fact]
         public void ParseAndFit_CharlotteFixture_ProducesReasonableCoefficients()
         {
-            string csv = File.ReadAllText(FixturePath);
+            string csv = File.ReadAllText(FixturePath("charlotte_nc_intensity.csv"));
             Atlas14CacheEntry entry = Atlas14Fetcher.ParseAndFit(csv, 35.23, -80.84, 10);
 
             Assert.Equal("Ohio River Basin", entry.ProjectArea);
@@ -38,6 +38,68 @@ namespace HydroComplete.Engine.Tests
 
             double i10 = entry.A / Math.Pow(10.0 + entry.B, entry.C);
             Assert.InRange(i10, 5.0, 6.5);
+        }
+
+        [Fact]
+        public void ParseIntensityTable_HoustonFixture_ReadsTenYearColumn()
+        {
+            string csv = File.ReadAllText(FixturePath("houston_tx_intensity.csv"));
+            var table = Atlas14Fetcher.ParseIntensityTable(csv, returnPeriodYears: 10);
+
+            Assert.True(table.Count >= 6);
+            Assert.Contains(table, p => p.DurationMin == 10.0 && p.IntensityInHr == 8.07);
+            Assert.Contains(table, p => p.DurationMin == 60.0 && p.IntensityInHr == 3.22);
+        }
+
+        [Fact]
+        public void ParseAndFit_HoustonFixture_ProducesReasonableCoefficients()
+        {
+            string csv = File.ReadAllText(FixturePath("houston_tx_intensity.csv"));
+            Atlas14CacheEntry entry = Atlas14Fetcher.ParseAndFit(csv, 29.76, -95.37, 10);
+
+            Assert.Equal("Texas", entry.ProjectArea);
+            Assert.True(entry.A > 0);
+            Assert.True(entry.B > 0);
+            Assert.True(entry.C > 0);
+
+            double i10 = entry.A / Math.Pow(10.0 + entry.B, entry.C);
+            Assert.InRange(i10, 7.0, 9.0);
+        }
+
+        [Fact]
+        public void ParseIntensityTable_PhoenixFixture_ReadsTenYearColumn()
+        {
+            string csv = File.ReadAllText(FixturePath("phoenix_az_intensity.csv"));
+            var table = Atlas14Fetcher.ParseIntensityTable(csv, returnPeriodYears: 10);
+
+            Assert.True(table.Count >= 6);
+            Assert.Contains(table, p => p.DurationMin == 10.0 && p.IntensityInHr == 3.67);
+            Assert.Contains(table, p => p.DurationMin == 60.0 && p.IntensityInHr == 1.26);
+        }
+
+        [Fact]
+        public void ParseAndFit_PhoenixFixture_ProducesReasonableCoefficients()
+        {
+            string csv = File.ReadAllText(FixturePath("phoenix_az_intensity.csv"));
+            Atlas14CacheEntry entry = Atlas14Fetcher.ParseAndFit(csv, 33.45, -112.07, 10);
+
+            Assert.Equal("Southwest", entry.ProjectArea);
+            Assert.True(entry.A > 0);
+            Assert.True(entry.B > 0);
+            Assert.True(entry.C > 0);
+
+            double i10 = entry.A / Math.Pow(10.0 + entry.B, entry.C);
+            Assert.InRange(i10, 3.0, 4.5);
+        }
+
+        [Fact]
+        public void ParseAndFit_SeattleFixture_ThrowsOutOfCoverage()
+        {
+            string csv = File.ReadAllText(FixturePath("seattle_wa_out_of_coverage.csv"));
+            var ex = Assert.Throws<InvalidDataException>(() =>
+                Atlas14Fetcher.ParseAndFit(csv, 47.61, -122.33, 10));
+
+            Assert.Contains("not within a project area", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]
@@ -73,7 +135,7 @@ namespace HydroComplete.Engine.Tests
             string cacheDir = CreateTempDir();
             try
             {
-                string csv = File.ReadAllText(FixturePath);
+                string csv = File.ReadAllText(FixturePath("charlotte_nc_intensity.csv"));
                 Atlas14CacheEntry entry = Atlas14Fetcher.ParseAndFit(csv, 35.23, -80.84, 10);
                 string path = Atlas14Fetcher.CacheFilePath(cacheDir, 35.23, -80.84, 10);
                 Directory.CreateDirectory(cacheDir);
@@ -100,7 +162,7 @@ namespace HydroComplete.Engine.Tests
             string cacheDir = CreateTempDir();
             try
             {
-                string csv = File.ReadAllText(FixturePath);
+                string csv = File.ReadAllText(FixturePath("charlotte_nc_intensity.csv"));
                 var handler = new StubHttpHandler(csv);
                 var client = new HttpClient(handler);
 
