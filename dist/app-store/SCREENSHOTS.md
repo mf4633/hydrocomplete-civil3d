@@ -169,7 +169,7 @@ Target resolution: **1920×1080** (or Publisher portal minimum). Save as PNG.
 |---|---|
 | **What to show** | Command line from `HC_ATLAS14` **or** `HC_RATIONAL` prompt showing IDF source (`live`, `cached live`, or `embedded`) |
 | **Data visible** | Fitted *a*, *b*, *c* coefficients; preset name or lat/lon; note that live PFDS requires geolocation |
-| **Caption** | *Live NOAA Atlas 14 PFDS from drawing location — 18 embedded city presets when offline.* |
+| **Caption** | *Live NOAA Atlas 14 PFDS from drawing location — 25 embedded city presets when offline.* |
 | **Tips** | With geo set, run `HC_RATIONAL` and accept `auto` at preset prompt to show live fetch. Without geo, show embedded preset list from `HC_ATLAS14` (~6–8 cities in frame) |
 
 ---

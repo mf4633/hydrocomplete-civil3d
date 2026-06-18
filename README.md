@@ -34,7 +34,7 @@ not yet re-tested after the listed fix.
 | `HC_CAPACITY_WRITE` (overload labels) | *pending* | v0.4.0 — MText on `HC-CAPACITY`; overload-only or all-pipes mode |
 | `HC_REPORT` (HTML export) | *pending* | v0.3.0 — Manning capacity + normal-depth HGL per network (Q prompt, HEC-22 optional); `%USERPROFILE%\Documents\HydroComplete\` |
 | `HC_REPORT_PDF` (Pro) | *pending* | v0.4.0 — formula-transparent PDF; requires Pro license or `HYDROCOMPLETE_PRO=1` |
-| `HC_ATLAS14` (IDF preset list) | *pending* | v0.3.0 — 18 embedded NOAA Atlas 14 city curves |
+| `HC_ATLAS14` (IDF preset list) | *pending* | v0.3.0 — 25 embedded NOAA Atlas 14 city curves |
 | `HC_RATIONAL` + Atlas 14 presets | *pending* | v0.3.0 — preset key instead of manual a/b/c |
 | `HC_HGL` + Rational design Q | *pending* | v0.3.0 — optional catchment-driven Q when catchments exist |
 | `HC_CAPACITY` / `HC_HGL` per-catchment Q routing | *pending* | v0.6.0 — route each catchment's Rational peak through pipe topology; per-pipe Q for capacity/HGL |
@@ -231,7 +231,7 @@ The ribbon tab **HydroComplete › Analysis** exposes the same commands.
 1. **Write-back (v0.1 done)** — MText labels on `HC-CAPACITY` validated; HGL labels on `HC-HGL` in v0.2; HGL profile polyline on `HC-HGL-PROFILE` in v0.5.0 (pending validation).
 2. **HGL backwater (v0.3 partial)** — HEC-22 junction/exit minor losses in steady profile; full momentum backwater next.
 3. **Report export** — HTML in v0.2; formula-transparent PDF mirroring the web app next.
-4. **NOAA Atlas 14 (v0.4.0)** — Live PFDS fetch + cache; 18 embedded city presets as offline fallback.
+4. **NOAA Atlas 14 (v0.4.0)** — Live PFDS fetch + cache; 25 embedded city presets as offline fallback.
 5. **Account/auth (v0.5.0 done)** — `HC_ACTIVATE` writes `%APPDATA%\HydroComplete\license.json`; online POST to `/api/licensing/validate` with offline `hc_live_*` stub fallback; `HC_LICENSE` shows validation mode and last check; `HC_REPORT_PDF` gated on Pro. HGL profile polyline write-back on `HC-HGL-PROFILE` (Yes/No prompt, default Yes).
 6. **Catchment flow routing (v0.6.0)** — When catchments exist, `HC_CAPACITY` and `HC_HGL` prompt **Route catchment flows** (default Yes); engine routes each catchment's Rational peak through pipe-network topology to assign per-pipe design Q (outlet structure, nearest structure, or name match). Uniform Q fallback when routing is declined or no catchments are present.
 

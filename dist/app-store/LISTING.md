@@ -34,7 +34,7 @@ Built by a practicing PE for the everyday sizing and reporting work Civil 3D eng
 - **Manning capacity** — Full-barrel flow, normal depth, peak velocity, and surcharge flags for every pipe in every pipe network (`HC_PIPES`, `HC_PIPES_WRITE`).
 - **Normal-depth hydraulic grade line** — Steady HGL at design *Q* using Manning normal depth (partial flow + velocity head), with optional HEC-22 junction and exit minor losses; plan labels on layer `HC-HGL`; optional **3D profile polyline** on layer `HC-HGL-PROFILE` at pipe upstream/downstream ends (`HC_HGL`). Routed catchment *Q* supported when catchments are present.
 - **Rational peak flows** — `Q = C·i·A` from catchment geometry with composite runoff coefficients (`HC_RATIONAL`).
-- **Live NOAA Atlas 14 IDF** — PFDS intensity–duration–frequency fetch from drawing geolocation (30-day cache); 18 embedded US city presets as offline fallback (`HC_ATLAS14`, `HC_RATIONAL`).
+- **Live NOAA Atlas 14 IDF** — PFDS intensity–duration–frequency fetch from drawing geolocation (30-day cache); 25 embedded US city presets as offline fallback (`HC_ATLAS14`, `HC_RATIONAL`).
 - **Formula-transparent reports** — HTML export with step-by-step calculation traces to `Documents\HydroComplete\` (`HC_REPORT`); sealable PDF export with Pro (`HC_REPORT_PDF`). Reports reflect routed per-pipe *Q* when catchment routing is used.
 - **Pro activation** — Activate with email and beta token (`hc_live_*`) via online validation or offline stub; `HC_LICENSE` shows tier and last check (`HC_ACTIVATE`, `HC_LICENSE`).
 - **Ribbon integration** — **HydroComplete › Analysis** tab exposes the same commands as the command line.
@@ -74,7 +74,7 @@ Learn more: [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d)
 - **Normal-depth HGL** — Steady profile at design *Q* with HEC-22 junction/exit losses; plan labels on `HC-HGL`; 3D profile polyline on `HC-HGL-PROFILE`
 - **Catchment Q routing** — Route Rational peak flows through pipe networks for per-reach design *Q* in capacity, HGL, and reports
 - **Rational method** — Peak runoff from catchment areas with composite *C* and IDF intensity
-- **Live NOAA Atlas 14 IDF** — PFDS fetch from drawing geolocation; 18 embedded city presets offline
+- **Live NOAA Atlas 14 IDF** — PFDS fetch from drawing geolocation; 25 embedded city presets offline
 - **Formula transparency** — Every number traceable to its equation and inputs; HTML report export (free)
 - **PDF Pro export** — Sealable formula-transparent Manning + HGL PDF (`HC_REPORT_PDF`)
 - **Pro activation** — Email + beta token activation with online or offline validation (`HC_ACTIVATE`, `HC_LICENSE`)

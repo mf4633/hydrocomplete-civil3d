@@ -117,7 +117,7 @@ Capture at **1920×1080** or Autodesk's current minimum (check Publisher portal)
 | 6 | **Routed catchment Q** — Per-pipe design Q through pipe network topology | `HC_CAPACITY` or `HC_HGL` with catchments |
 | 7 | **Formula-transparent report** — Step-by-step Manning calcs in HTML export | `HC_REPORT` → browser |
 | 8 | **Pro activation** — Email + beta token unlocks PDF export | `HC_ACTIVATE` + `HC_LICENSE` |
-| 9 | **Atlas 14 IDF presets** — Live PFDS or 18 embedded NOAA city curves | `HC_ATLAS14` or `HC_RATIONAL` |
+| 9 | **Atlas 14 IDF presets** — Live PFDS or 25 embedded NOAA city curves | `HC_ATLAS14` or `HC_RATIONAL` |
 
 - [ ] All screenshots free of client-identifying project data (or use anonymized sample DWG)
 - [ ] Captions written per table above

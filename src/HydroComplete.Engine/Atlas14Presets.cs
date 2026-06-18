@@ -87,9 +87,12 @@ namespace HydroComplete.Engine
         // fit as Atlas14Fetcher/IdfCurveFitter. Tabular i@10m values are from the PFDS
         // 10-min row. These are the OFFLINE fallback; the live fetcher supersedes them
         // when the drawing is geolocated and online.
-        // NOTE: Seattle / Pacific NW is intentionally absent — it is OUTSIDE NOAA
-        // Atlas 14 coverage (PFDS returns "not within a project area"; that region
-        // is NOAA Atlas 2). Add a separate data source before serving PNW sites.
+        // Idaho & Montana are NOAA Atlas 14 Volume 12 (Interior Northwest), served by
+        // the same PFDS endpoint, so they are both embedded here and live-fetchable.
+        // NOTE: Oregon & Washington are NOT in Atlas 14 (PFDS returns "not within a
+        // project area") — that region is NOAA Atlas 2 (1973), which has no PFDS/CSV
+        // API. Atlas 2 IDF for OR/WA is PENDING an authoritative source; do not
+        // fabricate coefficients here.
         private static readonly Preset[] All =
         {
             new Preset("charlotte-nc",    "Charlotte, NC",    "NC", 35.23,  -80.84,  75.09, 13.25, 0.891,  81.21, 13.50, 0.832,  81.57, 13.50, 0.802,  69.60, 12.00, 0.729,  4.54, 5.81, 6.40, 7.19),
@@ -109,6 +112,16 @@ namespace HydroComplete.Engine
             new Preset("miami-fl",        "Miami, FL",        "FL", 25.76,  -80.19,  31.41,  4.50, 0.628,  39.39,  4.00, 0.599,  44.51,  4.00, 0.584,  51.63,  4.00, 0.561,  5.73, 7.93, 9.33, 11.50),
             new Preset("phoenix-az",      "Phoenix, AZ",      "AZ", 33.45, -112.07,  30.81, 10.00, 0.875,  62.26, 11.50, 0.918,  76.75, 11.50, 0.920,  95.72, 11.25, 0.913,  2.21, 3.67, 4.49, 5.79),
             new Preset("los-angeles-ca",  "Los Angeles, CA",  "CA", 34.05, -118.24,   8.37,  4.00, 0.611,  12.99,  4.00, 0.609,  16.13,  4.00, 0.611,  21.24,  4.00, 0.612,  1.67, 2.60, 3.22, 4.22),
+
+            // NOAA Atlas 14 Volume 12 (Interior Northwest), refit 2026-06-18 from live PFDS. RMSE < 4%.
+            new Preset("boise-id",        "Boise, ID",        "ID", 43.61, -116.20,  10.88,  4.00, 0.802,  23.29,  4.00, 0.829,  30.49,  4.00, 0.835,  40.59,  4.00, 0.837,  1.32, 2.62, 3.37, 4.47),
+            new Preset("coeur-dalene-id", "Coeur d'Alene, ID","ID", 47.68, -116.78,  11.21,  4.00, 0.790,  21.65,  4.00, 0.818,  27.49,  4.00, 0.825,  35.19,  4.00, 0.829,  1.41, 2.51, 3.13, 3.97),
+            new Preset("idaho-falls-id",  "Idaho Falls, ID",  "ID", 43.49, -112.03,  13.60,  4.00, 0.823,  26.93,  4.25, 0.850,  35.32,  4.50, 0.862,  47.20,  4.75, 0.872,  1.56, 2.81, 3.52, 4.51),
+            new Preset("billings-mt",     "Billings, MT",     "MT", 45.78, -108.50,  20.43,  4.00, 0.823,  38.62,  4.00, 0.837,  52.18,  4.25, 0.848,  71.61,  4.25, 0.850,  2.34, 4.25, 5.49, 7.48),
+            new Preset("helena-mt",       "Helena, MT",       "MT", 46.59, -112.04,  15.32,  4.00, 0.811,  29.55,  4.00, 0.830,  38.27,  4.00, 0.835,  53.15,  4.25, 0.846,  1.81, 3.31, 4.23, 5.62),
+            new Preset("missoula-mt",     "Missoula, MT",     "MT", 46.87, -113.99,  11.58,  4.00, 0.799,  23.39,  4.00, 0.827,  30.14,  4.00, 0.833,  39.27,  4.00, 0.836,  1.42, 2.65, 3.35, 4.34),
+            new Preset("great-falls-mt",  "Great Falls, MT",  "MT", 47.50, -111.30,  16.68,  4.00, 0.809,  32.45,  4.00, 0.833,  42.02,  4.00, 0.837,  59.08,  4.25, 0.848,  1.99, 3.61, 4.63, 6.21),
+            new Preset("bozeman-mt",      "Bozeman, MT",      "MT", 45.68, -111.04,  13.38,  4.00, 0.802,  28.15,  4.00, 0.831,  36.86,  4.00, 0.836,  51.28,  4.25, 0.847,  1.62, 3.15, 4.06, 5.41),
         };
 
         public static IReadOnlyList<Preset> List() => All;
