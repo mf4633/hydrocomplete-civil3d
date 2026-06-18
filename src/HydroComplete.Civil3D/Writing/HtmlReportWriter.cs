@@ -27,18 +27,7 @@ namespace HydroComplete.Civil3D.Writing
             string path = ReportWriterCommon.BuildReportPath(drawingName, "html");
 
             var sb = new StringBuilder();
-            sb.AppendLine("<!DOCTYPE html>");
-            sb.AppendLine("<html lang=\"en\"><head><meta charset=\"utf-8\"/>");
-            sb.AppendLine("<title>HydroComplete Report</title>");
-            sb.AppendLine("<style>");
-            sb.AppendLine("body{font-family:Segoe UI,Arial,sans-serif;margin:24px;color:#1a1a1a;}");
-            sb.AppendLine("h1{font-size:1.4rem;} h2{font-size:1.15rem;margin-top:28px;}");
-            sb.AppendLine("table{border-collapse:collapse;width:100%;margin:16px 0;}");
-            sb.AppendLine("th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;font-size:0.9rem;}");
-            sb.AppendLine("th{background:#f0f4f8;} tr.surcharged{background:#ffe6e6;}");
-            sb.AppendLine(".steps{font-family:Consolas,monospace;font-size:0.85rem;}");
-            sb.AppendLine(".disclaimer{margin-top:24px;padding:12px;background:#fff8e6;border:1px solid #e6c200;}");
-            sb.AppendLine("</style></head><body>");
+            ReportWriterCommon.AppendHtmlHead(sb, "HydroComplete Report");
             sb.AppendLine("<h1>HydroComplete — Hydraulic Report</h1>");
             sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
                 "<p>Drawing: <strong>{0}</strong><br/>Generated: {1}</p>",
@@ -65,7 +54,7 @@ namespace HydroComplete.Civil3D.Writing
             sb.AppendLine("against the engineer's design basis. Not a substitute for licensed professional ");
             sb.AppendLine("judgment or jurisdiction-specific design standards.");
             sb.AppendLine("</div>");
-            sb.AppendLine("</body></html>");
+            ReportWriterCommon.AppendHtmlFoot(sb);
 
             File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
             return path;
@@ -77,18 +66,7 @@ namespace HydroComplete.Civil3D.Writing
             string path = ReportWriterCommon.BuildReportPath(drawingName, "gvf.html");
 
             var sb = new StringBuilder();
-            sb.AppendLine("<!DOCTYPE html>");
-            sb.AppendLine("<html lang=\"en\"><head><meta charset=\"utf-8\"/>");
-            sb.AppendLine("<title>HydroComplete GVF Report</title>");
-            sb.AppendLine("<style>");
-            sb.AppendLine("body{font-family:Segoe UI,Arial,sans-serif;margin:24px;color:#1a1a1a;}");
-            sb.AppendLine("h1{font-size:1.4rem;} h2{font-size:1.15rem;margin-top:28px;}");
-            sb.AppendLine("table{border-collapse:collapse;width:100%;margin:16px 0;}");
-            sb.AppendLine("th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;font-size:0.9rem;}");
-            sb.AppendLine("th{background:#f0f4f8;}");
-            sb.AppendLine(".steps{font-family:Consolas,monospace;font-size:0.85rem;}");
-            sb.AppendLine(".disclaimer{margin-top:24px;padding:12px;background:#fff8e6;border:1px solid #e6c200;}");
-            sb.AppendLine("</style></head><body>");
+            ReportWriterCommon.AppendHtmlHead(sb, "HydroComplete GVF Report");
             sb.AppendLine("<h1>HydroComplete — Gradually Varied Flow</h1>");
             sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
                 "<p>Drawing: <strong>{0}</strong><br/>Generated: {1}</p>",
@@ -102,7 +80,7 @@ namespace HydroComplete.Civil3D.Writing
             sb.AppendLine("Manning friction. Verify channel geometry, roughness, and boundary conditions ");
             sb.AppendLine("against licensed professional judgment.");
             sb.AppendLine("</div>");
-            sb.AppendLine("</body></html>");
+            ReportWriterCommon.AppendHtmlFoot(sb);
 
             File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
             return path;
@@ -114,18 +92,7 @@ namespace HydroComplete.Civil3D.Writing
             string path = ReportWriterCommon.BuildReportPath(drawingName, "stormwater.html");
 
             var sb = new StringBuilder();
-            sb.AppendLine("<!DOCTYPE html>");
-            sb.AppendLine("<html lang=\"en\"><head><meta charset=\"utf-8\"/>");
-            sb.AppendLine("<title>HydroComplete Stormwater Report</title>");
-            sb.AppendLine("<style>");
-            sb.AppendLine("body{font-family:Segoe UI,Arial,sans-serif;margin:24px;color:#1a1a1a;}");
-            sb.AppendLine("h1{font-size:1.4rem;} h2{font-size:1.15rem;margin-top:28px;}");
-            sb.AppendLine("table{border-collapse:collapse;width:100%;margin:16px 0;}");
-            sb.AppendLine("th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;font-size:0.9rem;}");
-            sb.AppendLine("th{background:#f0f4f8;}");
-            sb.AppendLine(".steps{font-family:Consolas,monospace;font-size:0.85rem;}");
-            sb.AppendLine(".disclaimer{margin-top:24px;padding:12px;background:#fff8e6;border:1px solid #e6c200;}");
-            sb.AppendLine("</style></head><body>");
+            ReportWriterCommon.AppendHtmlHead(sb, "HydroComplete Stormwater Report");
             sb.AppendLine("<h1>HydroComplete — Stormwater Report</h1>");
             sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
                 "<p>Drawing: <strong>{0}</strong><br/>Generated: {1}</p>",
@@ -139,7 +106,7 @@ namespace HydroComplete.Civil3D.Writing
             sb.AppendLine("calculations are preliminary. Verify stage-storage curves, outlet hydraulics, ");
             sb.AppendLine("and jurisdictional BMP criteria against licensed professional judgment.");
             sb.AppendLine("</div>");
-            sb.AppendLine("</body></html>");
+            ReportWriterCommon.AppendHtmlFoot(sb);
 
             File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
             return path;
@@ -177,8 +144,7 @@ namespace HydroComplete.Civil3D.Writing
             sb.AppendLine("</tbody></table>");
 
             sb.AppendLine("<h3>Boundary calculation steps</h3><div class=\"steps\">");
-            foreach (CalcStep step in result.Steps)
-                sb.AppendLine(ReportWriterCommon.EscapeHtml(step.ToString()) + "<br/>");
+            ReportWriterCommon.AppendCalcSteps(sb, result.Steps);
             sb.AppendLine("</div>");
         }
 
@@ -241,8 +207,7 @@ namespace HydroComplete.Civil3D.Writing
             }
 
             sb.AppendLine("<h3>Routing calculation steps</h3><div class=\"steps\">");
-            foreach (CalcStep step in routing.Steps)
-                sb.AppendLine(ReportWriterCommon.EscapeHtml(step.ToString()) + "<br/>");
+            ReportWriterCommon.AppendCalcSteps(sb, routing.Steps);
             sb.AppendLine("</div>");
         }
 
@@ -271,8 +236,7 @@ namespace HydroComplete.Civil3D.Writing
             sb.AppendLine("</tr></tbody></table>");
 
             sb.AppendLine("<h3>BMP sizing calculation steps</h3><div class=\"steps\">");
-            foreach (CalcStep step in sizing.Steps)
-                sb.AppendLine(ReportWriterCommon.EscapeHtml(step.ToString()) + "<br/>");
+            ReportWriterCommon.AppendCalcSteps(sb, sizing.Steps);
             sb.AppendLine("</div>");
         }
 
@@ -305,8 +269,7 @@ namespace HydroComplete.Civil3D.Writing
             sb.AppendLine("</tbody></table>");
 
             sb.AppendLine("<h3>Treatment train calculation steps</h3><div class=\"steps\">");
-            foreach (CalcStep step in train.Steps)
-                sb.AppendLine(ReportWriterCommon.EscapeHtml(step.ToString()) + "<br/>");
+            ReportWriterCommon.AppendCalcSteps(sb, train.Steps);
             sb.AppendLine("</div>");
         }
 
@@ -340,8 +303,7 @@ namespace HydroComplete.Civil3D.Writing
                 design.DewateringTimeHr, ReportWriterCommon.EscapeHtml(design.TrapEfficiencyMethod)));
 
             sb.AppendLine("<h3>Sediment basin calculation steps</h3><div class=\"steps\">");
-            foreach (CalcStep step in design.Steps)
-                sb.AppendLine(ReportWriterCommon.EscapeHtml(step.ToString()) + "<br/>");
+            ReportWriterCommon.AppendCalcSteps(sb, design.Steps);
             sb.AppendLine("</div>");
         }
 
@@ -382,8 +344,7 @@ namespace HydroComplete.Civil3D.Writing
                 sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
                     "<h4>{0}</h4><div class=\"steps\">",
                     ReportWriterCommon.EscapeHtml(ReportWriterCommon.Trim(rp.NetworkName + "/" + rp.PipeName, 64))));
-                foreach (CalcStep step in cap.Steps)
-                    sb.AppendLine(ReportWriterCommon.EscapeHtml(step.ToString()) + "<br/>");
+                ReportWriterCommon.AppendCalcSteps(sb, cap.Steps);
                 sb.AppendLine("</div>");
             }
         }
@@ -480,8 +441,7 @@ namespace HydroComplete.Civil3D.Writing
                     sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
                         "<h5>{0}</h5><div class=\"steps\">",
                         ReportWriterCommon.EscapeHtml(ReportWriterCommon.Trim(row.PipeName, 64))));
-                    foreach (CalcStep step in row.Point.Steps)
-                        sb.AppendLine(ReportWriterCommon.EscapeHtml(step.ToString()) + "<br/>");
+                    ReportWriterCommon.AppendCalcSteps(sb, row.Point.Steps);
                     sb.AppendLine("</div>");
                 }
             }
@@ -496,19 +456,7 @@ namespace HydroComplete.Civil3D.Writing
             string path = ReportWriterCommon.BuildReportPath(drawingName, "analysis.html");
 
             var sb = new StringBuilder();
-            sb.AppendLine("<!DOCTYPE html>");
-            sb.AppendLine("<html lang=\"en\"><head><meta charset=\"utf-8\"/>");
-            sb.AppendLine("<title>HydroComplete Analysis Report</title>");
-            sb.AppendLine("<style>");
-            sb.AppendLine("body{font-family:Segoe UI,Arial,sans-serif;margin:24px;color:#1a1a1a;}");
-            sb.AppendLine("h1{font-size:1.4rem;} h2{font-size:1.15rem;margin-top:28px;}");
-            sb.AppendLine("table{border-collapse:collapse;width:100%;margin:16px 0;}");
-            sb.AppendLine("th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;font-size:0.9rem;}");
-            sb.AppendLine("th{background:#f0f4f8;} tr.fail{background:#ffe6e6;}");
-            sb.AppendLine(".steps{font-family:Consolas,monospace;font-size:0.85rem;}");
-            sb.AppendLine(".pass{color:#0a6b0a;font-weight:bold;}.failtxt{color:#b00020;font-weight:bold;}");
-            sb.AppendLine(".disclaimer{margin-top:24px;padding:12px;background:#fff8e6;border:1px solid #e6c200;}");
-            sb.AppendLine("</style></head><body>");
+            ReportWriterCommon.AppendHtmlHead(sb, "HydroComplete Analysis Report");
             sb.AppendLine("<h1>HydroComplete — Full Network Analysis</h1>");
             sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
                 "<p>Drawing: <strong>{0}</strong><br/>Generated: {1}<br/>State: <strong>{2}</strong>",
@@ -661,8 +609,7 @@ namespace HydroComplete.Civil3D.Writing
             }
 
             sb.AppendLine("<h2>Pipeline Trace</h2><div class=\"steps\">");
-            foreach (CalcStep step in result.Steps)
-                sb.AppendLine(ReportWriterCommon.EscapeHtml(step.ToString()) + "<br/>");
+            ReportWriterCommon.AppendCalcSteps(sb, result.Steps);
             sb.AppendLine("</div>");
 
             sb.AppendLine("<div class=\"disclaimer\">");
@@ -670,7 +617,7 @@ namespace HydroComplete.Civil3D.Writing
             sb.AppendLine("Placeholder BMP treatment assumes bioretention; verify all inputs and ");
             sb.AppendLine("jurisdiction-specific requirements with licensed professional judgment.");
             sb.AppendLine("</div>");
-            sb.AppendLine("</body></html>");
+            ReportWriterCommon.AppendHtmlFoot(sb);
 
             File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
             return path;

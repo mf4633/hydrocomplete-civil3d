@@ -22,6 +22,7 @@ using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.HydrographCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.HydrographRouterCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.NetworkEditorCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.NetworkDiagramCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.PeakControlCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.ProfileCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.PumpCommands))]

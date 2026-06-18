@@ -62,6 +62,7 @@ namespace HydroComplete.Civil3D.Commands
             ed.WriteMessage("\n  HC_TC          TR-55 segmented time-of-concentration worksheet");
             ed.WriteMessage("\n  HC_INLETS      HEC-22 inlet check (grate / sag / curb opening) â€” modal options dialog");
             ed.WriteMessage("\n  HC_NETWORK_EDIT  Edit pipe Q and Manning n overrides (saved per drawing)");
+            ed.WriteMessage("\n  HC_NETWORK_DIAGRAM Export HTML/SVG pipe network schematic from plan topology");
             ed.WriteMessage("\n  HC_PUMP          Pump station duty-point check (curve vs system head)");
             ed.WriteMessage("\n  HC_COST          Pipe cost roll-up from diameter catalog ($/LF)");
             ed.WriteMessage("\n  HC_BACKGROUND    Attach georeferenced raster on HC-BACKGROUND layer");
@@ -69,7 +70,7 @@ namespace HydroComplete.Civil3D.Commands
             ed.WriteMessage("\n  HC_ROUTE_HYDRO   Route catchment hydrographs through pipe network (lag + junction superposition)");
             ed.WriteMessage("\n  HC_BIORETENTION  Bioretention routing with underdrain/outlet");
             ed.WriteMessage("\n  HC_WETLAND       Wetland detention routing");
-            ed.WriteMessage("\n  HC_SOIL          NRCS soil group lookup by map unit");
+            ed.WriteMessage("\n  HC_SOIL          Live SSURGO soil lookup (drawing geo or map unit name) + BMP suitability");
             ed.WriteMessage("\n  HC_LANDXML       Export pipe network to LandXML 1.2");
             ed.WriteMessage("\n  HC_LANDXML_IMPORT Import LandXML 1.2 (preview + optional write to drawing)");
             ed.WriteMessage("\n  HC_ATLAS14     List Atlas 14 IDF presets + live PFDS fetch info");

@@ -75,6 +75,7 @@ namespace HydroComplete.Civil3D.Ribbon
             source.Items.Add(MakeButton("TR-55\nTc", "HC_TC", "TR-55 segmented time-of-concentration worksheet."));
             source.Items.Add(MakeButton("Inlet\nCheck", "HC_INLETS", "HEC-22 inlet check: grate, sag, or curb opening (modal dialog)."));
             source.Items.Add(MakeButton("Network\nEdit", "HC_NETWORK_EDIT", "Edit per-pipe Q and Manning n overrides (saved per drawing)."));
+            source.Items.Add(MakeButton("Network\nDiagram", "HC_NETWORK_DIAGRAM", "Export HTML/SVG pipe network schematic from plan topology."));
             source.Items.Add(MakeButton("Pump\nStation", "HC_PUMP", "Pump duty-point check: system head vs pump curve."));
             source.Items.Add(MakeButton("Pipe\nCost", "HC_COST", "Roll up pipe costs from diameter catalog ($/LF)."));
             source.Items.Add(MakeButton("Background\nMap", "HC_BACKGROUND", "Attach georeferenced raster image on HC-BACKGROUND."));

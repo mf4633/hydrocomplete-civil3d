@@ -157,28 +157,63 @@ namespace HydroComplete.Civil3D.Commands
         [CommandMethod("HC_SOIL")]
         public void SoilLookupCommand()
         {
-            Editor ed = Active().Editor;
+            Document doc = Active();
+            Editor ed = doc.Editor;
 
-            var opts = new PromptStringOptions("\nSoil map unit / series name")
-            {
-                AllowSpaces = true,
-            };
-            PromptResult nameRes = ed.GetString(opts);
-            if (nameRes.Status != PromptStatus.OK || string.IsNullOrWhiteSpace(nameRes.StringResult))
-            {
-                ed.WriteMessage("\nSoil lookup cancelled.\n");
-                return;
-            }
-
+            SsugroResolution? liveResolution = null;
             SoilDatabase.SoilProperties soil;
-            try
+
+            DrawingGeolocation.Result? geo = DrawingGeolocation.TryRead(doc.Database);
+            if (geo != null)
             {
-                soil = SoilDatabase.Lookup(nameRes.StringResult);
+                ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                    "\n  Drawing geolocation: {0:0.####}, {1:0.####} ({2})",
+                    geo.Lat, geo.Lon, geo.Source));
+                liveResolution = SsugroService.Resolve(geo.Lat, geo.Lon);
+                soil = liveResolution.ToSoilProperties();
             }
-            catch (ArgumentException ex)
+            else
             {
-                ed.WriteMessage($"\n{ex.Message}\n");
-                return;
+                var modeOpts = new PromptKeywordOptions("\nSoil lookup mode [Live/Name]")
+                {
+                    AllowNone = true,
+                };
+                modeOpts.Keywords.Add("Live");
+                modeOpts.Keywords.Add("Name");
+                modeOpts.Keywords.Default = "Name";
+                PromptResult modeRes = ed.GetKeywords(modeOpts);
+                string mode = modeRes.Status == PromptStatus.OK ? modeRes.StringResult : "Name";
+
+                if (string.Equals(mode, "Live", StringComparison.OrdinalIgnoreCase))
+                {
+                    double lat = PromptDouble(ed, "\nLatitude, degrees", 35.23);
+                    double lon = PromptDouble(ed, "\nLongitude, degrees", -80.84);
+                    liveResolution = SsugroService.Resolve(lat, lon);
+                    soil = liveResolution.ToSoilProperties();
+                }
+                else
+                {
+                    var opts = new PromptStringOptions("\nSoil map unit / series name")
+                    {
+                        AllowSpaces = true,
+                    };
+                    PromptResult nameRes = ed.GetString(opts);
+                    if (nameRes.Status != PromptStatus.OK || string.IsNullOrWhiteSpace(nameRes.StringResult))
+                    {
+                        ed.WriteMessage("\nSoil lookup cancelled.\n");
+                        return;
+                    }
+
+                    try
+                    {
+                        soil = SoilDatabase.Lookup(nameRes.StringResult);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        ed.WriteMessage($"\n{ex.Message}\n");
+                        return;
+                    }
+                }
             }
 
             var bmpOpts = new PromptKeywordOptions("\nEvaluate BMP suitability for [Bioretention/WetPond/Wetland]")
@@ -196,10 +231,27 @@ namespace HydroComplete.Civil3D.Commands
             else if (string.Equals(bmpType, "WetPond", StringComparison.OrdinalIgnoreCase))
                 bmpType = BmpType.WetPond;
 
-            SoilDatabase.BmpSuggestionResult suggestion = SoilDatabase.SuggestBmp(soil.Name, bmpType);
+            SoilDatabase.BmpSuggestionResult suggestion = SoilDatabase.SuggestBmp(soil, bmpType);
 
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
                 "\n--- HydroComplete: soil lookup ---"));
+            if (liveResolution != null)
+            {
+                ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                    "\n  Source: {0}{1}",
+                    liveResolution.Source,
+                    liveResolution.MapUnit.IsFallback ? " (fallback)" : ""));
+                if (!string.IsNullOrWhiteSpace(liveResolution.MapUnit.Warning))
+                    ed.WriteMessage("\n  Warning: " + liveResolution.MapUnit.Warning);
+                SsugroSurfaceHorizon? hz = liveResolution.MapUnit.SurfaceHorizon;
+                if (hz != null && hz.PctSand != null && hz.PctSilt != null && hz.PctClay != null)
+                {
+                    ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                        "\n  PSD: sand {0:0.#}%  silt {1:0.#}%  clay {2:0.#}%",
+                        hz.PctSand, hz.PctSilt, hz.PctClay));
+                }
+            }
+
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
                 "\n  {0} ({1})", soil.Name, soil.Key));
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,

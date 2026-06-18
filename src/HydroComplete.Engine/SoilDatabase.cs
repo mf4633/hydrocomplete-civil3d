@@ -65,9 +65,12 @@ namespace HydroComplete.Engine
         }
 
         /// <summary>Evaluate BMP suitability for a soil map unit and BMP type.</summary>
-        public static BmpSuggestionResult SuggestBmp(string soilName, string bmpType)
+        public static BmpSuggestionResult SuggestBmp(string soilName, string bmpType) =>
+            SuggestBmp(Lookup(soilName), bmpType);
+
+        /// <summary>Evaluate BMP suitability from resolved soil properties.</summary>
+        public static BmpSuggestionResult SuggestBmp(SoilProperties soil, string bmpType)
         {
-            SoilProperties soil = Lookup(soilName);
             string bmp = NormalizeBmpType(bmpType);
             BmpSuitability suitability;
             string rationale;
