@@ -54,7 +54,7 @@ Autodesk’s multi-target bundle pattern.
 | Item | Status | Notes |
 |---|---|---|
 | `SchemaVersion="1.0"` | ✅ Present | |
-| `AppVersion` matches release | ✅ `0.5.0` | Bump on each store upload |
+| `AppVersion` matches release | ✅ `0.6.1` | Bump on each store upload |
 | `Name` / `Description` | ✅ Present | Mirror `LISTING.md` copy |
 | `ProductCode` (GUID) | ✅ `{8d07b4c8-06cb-497d-832a-dcb5b095d9fa}` | Keep stable across versions |
 | `CompanyDetails` (Name, Url, Email) | ✅ Present | |
@@ -79,7 +79,7 @@ Autodesk’s multi-target bundle pattern.
 powershell -File verify-install.ps1   # after install.ps1 on a test machine
 ```
 
-- [ ] Civil 3D **2025 (R25.0)** and **2026 (R25.1)** each start with banner: `HydroComplete for Civil 3D 0.5.0 loaded`
+- [ ] Civil 3D **2025 (R25.0)** and **2026 (R25.1)** each start with banner: `HydroComplete for Civil 3D 0.6.1 loaded`
 - [ ] `verify-install.ps1` reports `Series: R25.0 OK` and `Series: R25.1 OK`
 - [ ] `HC_ABOUT` lists all commands
 - [ ] No duplicate bundle folders under `%APPDATA%\Autodesk\ApplicationPlugins\`
@@ -134,10 +134,10 @@ Copy from `LISTING.md`:
 - [ ] **Long description** (full markdown/HTML as allowed)
 - [ ] **Category:** Civil Engineering / Hydraulics / Productivity (pick best fit in portal)
 - [ ] **Supported products:** Civil 3D 2025 (R25.0), Civil 3D 2026 (R25.1)
-- [ ] **Version number:** 0.5.0
+- [ ] **Version number:** 0.6.1
 - [ ] **Keywords** — paste from `LISTING.md`
 - [ ] **Pricing** — set when model finalized (TBD / freemium per `LISTING.md`)
-- [ ] **Release notes** — summarize v0.5.0: HGL profile polyline on `HC-HGL-PROFILE`, catchment Q routing for capacity/HGL/reports, `HC_ACTIVATE` Pro licensing (`HC_LICENSE`, online + offline stub)
+- [ ] **Release notes** — summarize v0.6.1: tailwater-controlled HGL backwater, confluence routing fix, license denial hardening, Atlas 14 URL/timeout/PNW warning, Volume 12 ID/MT presets; plus v0.6.0 `HC_NETWORK`, catchment Q routing, Pro activation
 
 ---
 

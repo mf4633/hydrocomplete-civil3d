@@ -1,8 +1,8 @@
 # Autodesk App Store — Listing Copy
 
 **Product:** HydroComplete for Civil 3D  
-**Version at submission:** 0.5.0  
-**Last updated:** 2026-06-17
+**Version at submission:** 0.6.1  
+**Last updated:** 2026-06-18
 
 ---
 
@@ -59,11 +59,20 @@ Every engine result carries a `Steps` trace (label, value, units, formula) — t
 
 Learn more: [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d)
 
-### New in v0.5.0
+### New in v0.6.1
 
-- **HGL profile polyline** — After `HC_HGL` labels, draw a `Polyline3d` per network on `HC-HGL-PROFILE` with Z at computed upstream/downstream HGL (Yes/No prompt, default Yes).
-- **Catchment Q routing** — `HC_CAPACITY`, `HC_HGL`, and reports can route Rational peak flows through pipe topology so design *Q* varies by reach.
-- **Pro activation** — `HC_ACTIVATE` with online POST to hydrocomplete.com or offline `hc_live_*` stub; `HC_LICENSE` for status; `HC_REPORT_PDF` gated on Pro.
+- **Tailwater-controlled HGL** — `HC_HGL` anchors at outfall tailwater and steps upstream (correct storm-sewer gradeline direction); tailwater elevation prompt (default = outfall invert).
+- **Confluence flow routing fix** — Catchment Q accumulation uses topological (Kahn) order so trunk pipes below junctions carry the full tributary sum.
+- **License gate hardening** — Server `valid:false` now denies activation; offline stub only when the server is unreachable.
+- **Atlas 14 reliability** — Fixed NOAA PFDS URL; 8 s fetch timeout; explicit warning when geolocation falls back outside Atlas 14 coverage (e.g. Pacific NW).
+- **Atlas 14 Volume 12** — Idaho/Montana embedded presets added (25 presets total).
+
+### Also in v0.6.0
+
+- **`HC_NETWORK`** — Per-network pipe/structure summary table.
+- **HGL profile polyline** — `Polyline3d` on `HC-HGL-PROFILE` after `HC_HGL` labels.
+- **Catchment Q routing** — Per-pipe design *Q* through pipe topology for capacity, HGL, and reports.
+- **Pro activation** — `HC_ACTIVATE` online + offline stub; `HC_REPORT_PDF` gated on Pro.
 
 ---
 

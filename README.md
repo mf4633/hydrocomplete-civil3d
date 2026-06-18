@@ -5,7 +5,7 @@ drawing** — read pipe networks and catchments, compute on public-domain method
 and show every formula. This is the desktop companion behind
 [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d).
 
-Status: **v0.6.0** — see [User validation](#user-validation) below.
+Status: **v0.6.1** — see [User validation](#user-validation) below.
 
 **Autodesk App Store:** Listing copy, submission checklist, and screenshot shot list live in [`dist/app-store/`](dist/app-store/) (`LISTING.md`, `SUBMISSION_CHECKLIST.md`, `SCREENSHOTS.md`).
 
@@ -149,7 +149,7 @@ loads the plugin automatically.
 3. **Launch Civil 3D 2025 or 2026** from the Start menu (the full desktop app — not
    `accoreconsole`, not plain AutoCAD).
 4. Confirm the command line shows:
-   `HydroComplete for Civil 3D 0.6.0 loaded. Type HC_ABOUT for commands.`
+   `HydroComplete for Civil 3D 0.6.1 loaded. Type HC_ABOUT for commands.`
 
 Check install any time:
 ```
