@@ -33,6 +33,7 @@ namespace HydroComplete.Civil3D.Commands
             IReadOnlyList<ReadPipe> pipes)
         {
             var catchments = CatchmentReader.ReadAll(db, civilDoc, pipes);
+            ApplyDefaultTcFallback(catchments, pipes);
             if (catchments.Count == 0)
             {
                 double uniform = PromptDouble(ed, "\nUniform design flow Q (cfs)", 10.0);
@@ -141,6 +142,34 @@ namespace HydroComplete.Civil3D.Commands
             }
 
             return PromptDouble(ed, "\nUniform design flow Q (cfs)", 10.0);
+        }
+
+        private static void ApplyDefaultTcFallback(
+            IList<Catchment> catchments,
+            IReadOnlyList<ReadPipe> pipes)
+        {
+            if (catchments.Count == 0 || pipes.Count == 0) return;
+
+            bool anyDefault = false;
+            foreach (Catchment cm in catchments)
+            {
+                if (Math.Abs(cm.TcMinutes - CatchmentReader.DefaultTcMinutes) < 0.01)
+                {
+                    anyDefault = true;
+                    break;
+                }
+            }
+
+            if (!anyDefault) return;
+
+            double networkTc = Reading.NetworkTcEstimator.EstimateSystemTc(pipes);
+            if (networkTc <= 0) return;
+
+            foreach (Catchment cm in catchments)
+            {
+                if (Math.Abs(cm.TcMinutes - CatchmentReader.DefaultTcMinutes) < 0.01)
+                    cm.TcMinutes = networkTc;
+            }
         }
 
         private static string DescribeAssignment(CatchmentAssignmentMethod method)
