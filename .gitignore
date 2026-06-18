@@ -4,3 +4,5 @@ dist/HydroComplete.bundle/Contents/*.dll
 dist/HydroComplete-*.zip
 *.user
 .vs/
+
+_wip/

@@ -59,5 +59,66 @@ namespace HydroComplete.Engine.Tests
             // Adding exit/junction losses can only raise the upstream HGL.
             Assert.True(withMinor[0].HglUpstreamFt >= noMinor[0].HglUpstreamFt);
         }
+
+        [Fact]
+        public void Backwater_BendLoss_RaisesUpstreamHgl()
+        {
+            const double tw = 100.0;
+            var reaches = TwoReachMain();
+            reaches[0].DeflectionAngleDeg = 45.0;
+            reaches[0].HasContinuingOutflow = true;
+
+            var noBend = Hgl.SteadyBackwaterFromOutfall(reaches, tw, new HglProfileOptions());
+            var withBend = Hgl.SteadyBackwaterFromOutfall(reaches, tw, new HglProfileOptions
+            {
+                UseBendLoss = true,
+            });
+
+            Assert.True(withBend[0].HmFt > noBend[0].HmFt);
+            Assert.True(withBend[0].HglUpstreamFt > noBend[0].HglUpstreamFt);
+        }
+
+        [Fact]
+        public void Backwater_MomentumJunction_RaisesUpstreamHgl()
+        {
+            const double tw = 100.0;
+            const double q = 10.0;
+            var reaches = new List<NetworkReach>
+            {
+                new NetworkReach
+                {
+                    Name = "R1-in",
+                    LengthFt = 100,
+                    ManningN = 0.013,
+                    AreaFt2 = 0.75,
+                    HydRadiusFt = 0.35,
+                    FlowCfs = q,
+                    DiameterFt = 1.0,
+                    FlowDepthFt = 0.75,
+                    DownstreamInflowCount = 2,
+                    HasContinuingOutflow = true,
+                },
+                new NetworkReach
+                {
+                    Name = "R2-out",
+                    LengthFt = 100,
+                    ManningN = 0.013,
+                    AreaFt2 = 1.6,
+                    HydRadiusFt = 0.55,
+                    FlowCfs = q,
+                    DiameterFt = 2.0,
+                    FlowDepthFt = 0.80,
+                },
+            };
+
+            var noMomentum = Hgl.SteadyBackwaterFromOutfall(reaches, tw, new HglProfileOptions());
+            var withMomentum = Hgl.SteadyBackwaterFromOutfall(reaches, tw, new HglProfileOptions
+            {
+                UseMomentumJunction = true,
+            });
+
+            Assert.True(withMomentum[0].HmFt > noMomentum[0].HmFt);
+            Assert.True(withMomentum[0].HglUpstreamFt > noMomentum[0].HglUpstreamFt);
+        }
     }
 }

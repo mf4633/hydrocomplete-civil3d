@@ -272,7 +272,7 @@ namespace HydroComplete.Engine
             };
             client.DefaultRequestHeaders.TryAddWithoutValidation(
                 "User-Agent",
-                "HydroComplete/0.6.1 (NOAA Atlas 14 PFDS client)");
+                "HydroComplete/0.7.0 (NOAA Atlas 14 PFDS client)");
             return client;
         }
 

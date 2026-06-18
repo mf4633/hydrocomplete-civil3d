@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Autodesk.AutoCAD.Geometry;
 using HydroComplete.Engine;
 
 namespace HydroComplete.Civil3D.Reading
@@ -171,6 +172,16 @@ namespace HydroComplete.Civil3D.Reading
         {
             if (pipes == null) throw new ArgumentNullException(nameof(pipes));
 
+            var inflowCountByStructure = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            foreach (ReadPipe pipe in pipes)
+            {
+                if (pipe.DownstreamStructureId.IsNull) continue;
+
+                string structureKey = pipe.DownstreamStructureId.Handle.ToString();
+                inflowCountByStructure[structureKey] =
+                    inflowCountByStructure.GetValueOrDefault(structureKey) + 1;
+            }
+
             var reaches = new List<NetworkReach>(pipes.Count);
             for (int i = 0; i < pipes.Count; i++)
             {
@@ -180,17 +191,62 @@ namespace HydroComplete.Civil3D.Reading
                     ? ToReachNormalDepth(rp, designQ)
                     : ToReach(rp, designQ);
 
-                if (includeJunctionLosses && i < pipes.Count - 1)
+                if (!rp.DownstreamStructureId.IsNull)
+                {
+                    string structureKey = rp.DownstreamStructureId.Handle.ToString();
+                    if (inflowCountByStructure.TryGetValue(structureKey, out int inflowCount))
+                        reach.DownstreamInflowCount = inflowCount;
+                }
+
+                if (i < pipes.Count - 1)
                 {
                     ReadPipe next = pipes[i + 1];
-                    if (rp.DownstreamStructureId == next.UpstreamStructureId)
-                        reach.JunctionLossK = Hec22.DefaultManholeK;
+                    if (!rp.DownstreamStructureId.IsNull
+                        && rp.DownstreamStructureId == next.UpstreamStructureId)
+                    {
+                        reach.HasContinuingOutflow = true;
+                        reach.DeflectionAngleDeg = PlanDeflectionDegrees(rp, next);
+
+                        if (includeJunctionLosses)
+                            reach.JunctionLossK = Hec22.DefaultManholeK;
+                    }
                 }
 
                 reaches.Add(reach);
             }
 
             return reaches;
+        }
+
+        /// <summary>
+        /// Plan-view deflection between consecutive pipes at a shared structure (0° = straight-through).
+        /// </summary>
+        internal static double PlanDeflectionDegrees(ReadPipe incoming, ReadPipe outgoing)
+        {
+            (double inX, double inY) = PlanFlowDirection(incoming);
+            (double outX, double outY) = PlanFlowDirection(outgoing);
+
+            double dot = inX * outX + inY * outY;
+            dot = Math.Max(-1.0, Math.Min(1.0, dot));
+            return Math.Acos(dot) * 180.0 / Math.PI;
+        }
+
+        private static (double X, double Y) PlanFlowDirection(ReadPipe pipe)
+        {
+            Point3d upstream = pipe.UpstreamStructureId == pipe.StartStructureId
+                ? pipe.StartPoint
+                : pipe.EndPoint;
+            Point3d downstream = pipe.DownstreamStructureId == pipe.EndStructureId
+                ? pipe.EndPoint
+                : pipe.StartPoint;
+
+            double dx = downstream.X - upstream.X;
+            double dy = downstream.Y - upstream.Y;
+            double length = Math.Sqrt(dx * dx + dy * dy);
+            if (length < 1e-9)
+                return (1.0, 0.0);
+
+            return (dx / length, dy / length);
         }
 
         private static double ResolveDesignFlow(

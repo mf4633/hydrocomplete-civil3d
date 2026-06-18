@@ -5,7 +5,7 @@ drawing** — read pipe networks and catchments, compute on public-domain method
 and show every formula. This is the desktop companion behind
 [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d).
 
-Status: **v0.6.1** — see [User validation](#user-validation) below.
+Status: **v0.7.0** — Hydraflow-parity batch (validate, size, inlets, multi-RP). See [User validation](#user-validation) below.
 
 **Autodesk App Store:** Listing copy, submission checklist, and screenshot shot list live in [`dist/app-store/`](dist/app-store/) (`LISTING.md`, `SUBMISSION_CHECKLIST.md`, `SCREENSHOTS.md`).
 
@@ -149,7 +149,7 @@ loads the plugin automatically.
 3. **Launch Civil 3D 2025 or 2026** from the Start menu (the full desktop app — not
    `accoreconsole`, not plain AutoCAD).
 4. Confirm the command line shows:
-   `HydroComplete for Civil 3D 0.6.1 loaded. Type HC_ABOUT for commands.`
+   `HydroComplete for Civil 3D 0.7.0 loaded. Type HC_ABOUT for commands.`
 
 Check install any time:
 ```
@@ -169,9 +169,16 @@ before the one-time install above.
 | Command | Does |
 |---|---|
 | `HC_ABOUT` | List commands |
+| `HC_NETWORK` | Per-network pipe/structure summary |
 | `HC_PIPES` | Manning capacity + full-flow velocity for every pipe in every pipe network |
 | `HC_PIPES_WRITE` | Label Qfull/Vfull on layer `HC-CAPACITY` at each pipe midpoint |
-| `HC_HGL` | Steady HGL at design Q with optional HEC-22 junction/exit losses; labels on `HC-HGL`; optional 3D profile polyline on `HC-HGL-PROFILE` |
+| `HC_CAPACITY` | Design Q vs Q_full with d/D and surcharge flags |
+| `HC_CAPACITY_WRITE` | Label overloaded pipes on `HC-CAPACITY` |
+| `HC_SIZE` | Standard catalog pipe sizing (velocity, % full) — Hydraflow-style |
+| `HC_VALIDATE` | Design-criteria review: slope, capacity, velocity, cover, HGL flooding |
+| `HC_HGL` | Tailwater backwater HGL; optional HEC-22, momentum junction, bend losses; labels + profile polyline |
+| `HC_MULTIRP` | Per-pipe Q and d/D for 2/10/25/100-yr return periods |
+| `HC_INLETS` | HEC-22 grate-on-grade inlet interception check |
 | `HC_REPORT` | Formula-transparent HTML Manning + steady HGL report to `Documents\HydroComplete\` (free) |
 | `HC_REPORT_PDF` | Same report as PDF — **Pro** (requires license; use `HC_REPORT` for free HTML) |
 | `HC_RATIONAL` | Rational peak Q from catchments + NOAA Atlas 14 IDF preset (or custom a/b/c) |

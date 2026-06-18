@@ -31,6 +31,7 @@ namespace HydroComplete.Engine
                 FlowCfs = designFlowCfs,
                 RelativeDepth = 1.0,
                 FlowSurcharged = false,
+                FlowDepthFt = d,
             };
         }
 
@@ -71,6 +72,7 @@ namespace HydroComplete.Engine
                 FlowCfs = designFlowCfs,
                 RelativeDepth = nd.RelativeDepth,
                 FlowSurcharged = nd.Surcharged,
+                FlowDepthFt = nd.Surcharged ? d : nd.DepthFt,
                 VelHeadUpFt = vh,
                 VelHeadDownFt = vh,
             };

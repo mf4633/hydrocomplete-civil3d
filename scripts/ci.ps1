@@ -16,6 +16,7 @@ $expectedCommands = @(
     'HC_PIPES',
     'HC_PIPES_WRITE',
     'HC_RATIONAL',
+    'HC_INLETS',
     'HC_HGL',
     'HC_REPORT',
     'HC_REPORT_PDF',

@@ -48,6 +48,12 @@ namespace HydroComplete.Engine
         /// <summary>Runoff coefficient C (dimensionless, 0..1).</summary>
         public double RunoffC { get; set; }
 
+        /// <summary>
+        /// SCS curve number (30..98). When zero, <see cref="ScsRunoff"/> estimates CN from
+        /// <see cref="RunoffC"/>.
+        /// </summary>
+        public double CurveNumber { get; set; }
+
         /// <summary>Time of concentration, minutes (drives the design intensity).</summary>
         public double TcMinutes { get; set; }
 
@@ -162,6 +168,18 @@ namespace HydroComplete.Engine
 
         /// <summary>True when design Q exceeds the pipe's peak open-channel capacity.</summary>
         public bool FlowSurcharged { get; set; }
+
+        /// <summary>Normal-depth flow depth at the junction face, ft (for momentum losses).</summary>
+        public double FlowDepthFt { get; set; }
+
+        /// <summary>Number of pipes draining into the downstream structure.</summary>
+        public int DownstreamInflowCount { get; set; } = 1;
+
+        /// <summary>Plan deflection angle at the downstream structure, degrees (0 = straight-through).</summary>
+        public double DeflectionAngleDeg { get; set; }
+
+        /// <summary>True when an ordered downstream reach continues from the same structure.</summary>
+        public bool HasContinuingOutflow { get; set; }
     }
 
     /// <summary>Options for steady HGL profile stepping.</summary>
@@ -175,6 +193,18 @@ namespace HydroComplete.Engine
 
         /// <summary>Apply exit loss at the outfall pipe (typically K=1).</summary>
         public bool IncludeExitLoss { get; set; }
+
+        /// <summary>
+        /// Apply HEC-22 momentum-equation junction loss at multi-inflow manholes
+        /// (replaces K-based junction loss at those nodes).
+        /// </summary>
+        public bool UseMomentumJunction { get; set; }
+
+        /// <summary>
+        /// Apply HEC-22 bend/deflection losses from <see cref="NetworkReach.DeflectionAngleDeg"/>
+        /// or pre-set <see cref="NetworkReach.BendLossK"/>.
+        /// </summary>
+        public bool UseBendLoss { get; set; }
 
         public double ManholeLossK { get; set; } = Hec22.DefaultManholeK;
         public double EntranceLossK { get; set; } = Hec22.DefaultEntranceK;

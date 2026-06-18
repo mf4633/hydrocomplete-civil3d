@@ -135,48 +135,16 @@ namespace HydroComplete.Engine
                 if (velHeadUpFt <= 0 && flowCfs > 0)
                     velHeadUpFt = velHeadDownFt;
 
-                double hmTotal = 0.0;
-
-                if (options.IncludeEntranceLoss && idx == 0)
-                {
-                    double kEnt = reach.EntranceLossK > 0 ? reach.EntranceLossK : options.EntranceLossK;
-                    var hEnt = Hec22.MinorHeadLoss(kEnt, velHeadUpFt);
-                    hmTotal += hEnt.HeadLossFt;
-                    hglFt -= hEnt.HeadLossFt;
-                    eglFt -= hEnt.HeadLossFt;
-                }
+                double hmTotal = ComputeReachMinorLosses(
+                    reach, idx, reaches.Count, reaches, options,
+                    velHeadUpFt, velHeadDownFt, isFirst: idx == 0, isOutfall: idx == reaches.Count - 1);
 
                 var friction = ManningFrictionHeadLoss(flowCfs, n, areaFt2, hydRadiusFt, lengthFt);
                 var eglStep = EnergyGradeLineStep(
                     flowCfs, n, areaFt2, hydRadiusFt, lengthFt, velHeadUpFt, velHeadDownFt);
 
-                hglFt -= friction.HfFt;
-                eglFt -= eglStep.DeltaEglFt;
-
-                if (options.IncludeJunctionLosses)
-                {
-                    double junctionK = reach.JunctionLossK;
-                    if (reach.BendLossK > 0)
-                        junctionK += reach.BendLossK;
-
-                    if (junctionK > 0)
-                    {
-                        var hJunc = Hec22.MinorHeadLoss(junctionK, velHeadDownFt);
-                        hmTotal += hJunc.HeadLossFt;
-                        hglFt -= hJunc.HeadLossFt;
-                        eglFt -= hJunc.HeadLossFt;
-                    }
-                }
-
-                bool isOutfall = idx == reaches.Count - 1;
-                if (options.IncludeExitLoss && isOutfall)
-                {
-                    double kExit = reach.ExitLossK > 0 ? reach.ExitLossK : options.ExitLossK;
-                    var hExit = Hec22.MinorHeadLoss(kExit, velHeadDownFt);
-                    hmTotal += hExit.HeadLossFt;
-                    hglFt -= hExit.HeadLossFt;
-                    eglFt -= hExit.HeadLossFt;
-                }
+                hglFt -= friction.HfFt + hmTotal;
+                eglFt -= eglStep.DeltaEglFt + hmTotal;
 
                 cumLengthFt += lengthFt;
 
@@ -270,25 +238,9 @@ namespace HydroComplete.Engine
 
                 hf[idx] = ManningFrictionHeadLoss(flowCfs, n, areaFt2, hydRadiusFt, lengthFt).HfFt;
 
-                double hmTotal = 0.0;
-                if (options.IncludeEntranceLoss && idx == 0)
-                {
-                    double kEnt = reach.EntranceLossK > 0 ? reach.EntranceLossK : options.EntranceLossK;
-                    hmTotal += Hec22.MinorHeadLoss(kEnt, velHeadUpFt).HeadLossFt;
-                }
-                if (options.IncludeJunctionLosses)
-                {
-                    double junctionK = reach.JunctionLossK + (reach.BendLossK > 0 ? reach.BendLossK : 0.0);
-                    if (junctionK > 0)
-                        hmTotal += Hec22.MinorHeadLoss(junctionK, velHeadDownFt).HeadLossFt;
-                }
-                if (options.IncludeExitLoss && idx == count - 1)
-                {
-                    double kExit = reach.ExitLossK > 0 ? reach.ExitLossK : options.ExitLossK;
-                    hmTotal += Hec22.MinorHeadLoss(kExit, velHeadDownFt).HeadLossFt;
-                }
-
-                hm[idx] = hmTotal;
+                hm[idx] = ComputeReachMinorLosses(
+                    reach, idx, count, reaches, options,
+                    velHeadUpFt, velHeadDownFt, isFirst: idx == 0, isOutfall: idx == count - 1);
                 vhDown[idx] = velHeadDownFt;
                 cumLengthFt += lengthFt;
 
@@ -297,7 +249,7 @@ namespace HydroComplete.Engine
                     ReachIndex = idx,
                     CumLengthFt = cumLengthFt,
                     HfFt = hf[idx],
-                    HmFt = hmTotal,
+                    HmFt = hm[idx],
                     VelocityHeadFt = velHeadDownFt,
                     RelativeDepth = reach.RelativeDepth,
                     FlowSurcharged = reach.FlowSurcharged,
@@ -329,6 +281,107 @@ namespace HydroComplete.Engine
             }
 
             return new List<HglProfilePoint>(points);
+        }
+
+        private static double ComputeReachMinorLosses(
+            NetworkReach reach,
+            int reachIndex,
+            int reachCount,
+            IReadOnlyList<NetworkReach> reaches,
+            HglProfileOptions options,
+            double velHeadUpFt,
+            double velHeadDownFt,
+            bool isFirst,
+            bool isOutfall)
+        {
+            double hmTotal = 0.0;
+
+            if (options.IncludeEntranceLoss && isFirst)
+            {
+                double kEnt = reach.EntranceLossK > 0 ? reach.EntranceLossK : options.EntranceLossK;
+                hmTotal += Hec22.MinorHeadLoss(kEnt, velHeadUpFt).HeadLossFt;
+            }
+
+            bool useMomentumAtJunction = options.UseMomentumJunction
+                && reach.DownstreamInflowCount > 1
+                && reach.HasContinuingOutflow
+                && reachIndex < reachCount - 1;
+
+            if (options.IncludeJunctionLosses && !useMomentumAtJunction)
+            {
+                double junctionK = reach.JunctionLossK;
+                if (!options.UseBendLoss && reach.BendLossK > 0)
+                    junctionK += reach.BendLossK;
+
+                if (junctionK > 0)
+                    hmTotal += Hec22.MinorHeadLoss(junctionK, velHeadDownFt).HeadLossFt;
+            }
+
+            if (useMomentumAtJunction)
+            {
+                NetworkReach downstream = reaches[reachIndex + 1];
+                hmTotal += MomentumJunctionLossFt(reach, downstream);
+            }
+
+            if (options.UseBendLoss)
+            {
+                double bendK = reach.BendLossK > 0
+                    ? reach.BendLossK
+                    : reach.DeflectionAngleDeg > 0
+                        ? Hec22.BendLossK(reach.DeflectionAngleDeg)
+                        : 0.0;
+
+                if (bendK > 0)
+                    hmTotal += Hec22.MinorHeadLoss(bendK, velHeadDownFt).HeadLossFt;
+            }
+
+            if (options.IncludeExitLoss && isOutfall)
+            {
+                double kExit = reach.ExitLossK > 0 ? reach.ExitLossK : options.ExitLossK;
+                hmTotal += Hec22.MinorHeadLoss(kExit, velHeadDownFt).HeadLossFt;
+            }
+
+            return hmTotal;
+        }
+
+        private static double MomentumJunctionLossFt(NetworkReach upstream, NetworkReach downstream)
+        {
+            double dUp = upstream.DiameterFt ?? 0.0;
+            double dDown = downstream.DiameterFt ?? 0.0;
+            if (dUp <= 0 || dDown <= 0)
+                return 0.0;
+
+            double yUp = JunctionFaceDepthFt(upstream, dUp);
+            double yDown = JunctionFaceDepthFt(downstream, dDown);
+
+            var upLeg = new MomentumJunction.PipeLeg
+            {
+                DiameterFt = dUp,
+                DepthFt = yUp,
+                FlowCfs = upstream.FlowCfs,
+            };
+            var downLeg = new MomentumJunction.PipeLeg
+            {
+                DiameterFt = dDown,
+                DepthFt = yDown,
+                FlowCfs = downstream.FlowCfs,
+            };
+
+            return MomentumJunction.StraightThroughLoss(upLeg, downLeg).HglDropFt;
+        }
+
+        private static double JunctionFaceDepthFt(NetworkReach reach, double diameterFt)
+        {
+            if (reach.FlowDepthFt > 0)
+                return reach.FlowDepthFt;
+
+            if (reach.FlowSurcharged)
+                return diameterFt;
+
+            if (reach.RelativeDepth > 0)
+                return reach.RelativeDepth * diameterFt;
+
+            return diameterFt;
         }
     }
 }

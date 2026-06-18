@@ -30,22 +30,31 @@ namespace HydroComplete.Civil3D.Commands
         public void About()
         {
             Editor ed = Active().Editor;
-            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.6.1 ===");
+            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.7.0 ===");
             ed.WriteMessage("\n  HC_NETWORK       Per-network summary (pipes, length, inverts, diameters, structures)");
             ed.WriteMessage("\n  HC_PIPES         Manning capacity of every pipe-network pipe");
             ed.WriteMessage("\n  HC_PIPES_WRITE   Label Qfull/Vfull on layer HC-CAPACITY");
             ed.WriteMessage("\n  HC_CAPACITY      Design Q vs Q_full check (d/D, surcharge flag)");
             ed.WriteMessage("\n  HC_CAPACITY_WRITE Label overloaded pipes on layer HC-CAPACITY");
+            ed.WriteMessage("\n  HC_SIZE          Standard catalog pipe sizing (velocity, % full)");
+            ed.WriteMessage("\n  HC_VALIDATE      Design-criteria review (slope, capacity, velocity, cover, HGL)");
+            ed.WriteMessage("\n  HC_REVIEW        Design review + state regulatory compliance check");
+            ed.WriteMessage("\n  HC_SCS           SCS CN runoff from catchments");
+            ed.WriteMessage("\n  HC_UNIT_HYDRO    SCS unit hydrograph table output");
+            ed.WriteMessage("\n  HC_SEDIMENT      RUSLE/MUSLE soil loss from catchments");
+            ed.WriteMessage("\n  HC_WQV           Water quality volume calculation");
             ed.WriteMessage("\n  HC_HGL           Steady HGL (normal depth) + HEC-22 losses + HC-HGL labels + profile");
             ed.WriteMessage("\n  HC_REPORT      Export formula-transparent HTML Manning + HGL report (free)");
             ed.WriteMessage("\n  HC_REPORT_PDF  Export formula-transparent PDF Manning + HGL report (Pro)");
             ed.WriteMessage("\n  HC_RATIONAL    Rational Q from catchments + NOAA Atlas 14 IDF presets");
+            ed.WriteMessage("\n  HC_MULTIRP     Per-pipe Q and d/D for 2/10/25/100-yr return periods");
+            ed.WriteMessage("\n  HC_INLETS      HEC-22 grate-on-grade inlet interception (Q vs capacity)");
             ed.WriteMessage("\n  HC_ATLAS14     List Atlas 14 IDF presets + live PFDS fetch info");
             ed.WriteMessage("\n  HC_ACTIVATE    Activate Pro with email + beta token (hc_live_*)");
             ed.WriteMessage("\n  HC_LICENSE     Show Free/Pro license status and activation info");
             ed.WriteMessage("\n  HC_ABOUT       This list");
             ed.WriteMessage("\n  Pro features (PDF export) require a license — visit https://hydrocomplete.com/civil3d");
-            ed.WriteMessage("\n  Engine: Rational, SCS Tc, Manning, IDF, HEC-22 — public-domain, fully shown.\n");
+            ed.WriteMessage("\n  Engine: Rational, SCS/FAA Tc, Manning, multi-RP IDF, HEC-22, inlets — public-domain, fully shown.\n");
         }
 
         [CommandMethod("HC_ACTIVATE")]
@@ -347,11 +356,14 @@ namespace HydroComplete.Civil3D.Commands
 
             DesignFlowContext flow = DesignFlowResolver.Prompt(ed, doc.Database, civilDoc, pipes);
             bool useMinorLosses = PromptYesNo(ed, "\nInclude HEC-22 junction/exit losses", defaultYes: true);
+            bool useMomentumJunction = PromptYesNo(ed, "\nInclude momentum junction losses", defaultYes: false);
 
             var hglOptions = new HglProfileOptions
             {
                 IncludeJunctionLosses = useMinorLosses,
                 IncludeExitLoss = useMinorLosses,
+                UseMomentumJunction = useMomentumJunction,
+                UseBendLoss = useMinorLosses,
             };
 
             var networks = NetworkTopology.BuildOrderedNetworks(pipes);
@@ -360,6 +372,8 @@ namespace HydroComplete.Civil3D.Commands
             var surchargedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             string lossNote = useMinorLosses ? " + HEC-22" : "";
+            if (useMomentumJunction)
+                lossNote += " + momentum junction";
             string qNote = flow.IsRouted
                 ? $"routed Q, system total={flow.DesignFlowCfs:0.0} cfs"
                 : $"Q={flow.DesignFlowCfs:0.0} cfs";
@@ -546,6 +560,7 @@ namespace HydroComplete.Civil3D.Commands
             {
                 IncludeJunctionLosses = useMinorLosses,
                 IncludeExitLoss = useMinorLosses,
+                UseBendLoss = useMinorLosses,
             };
 
             var report = new HglReportData
