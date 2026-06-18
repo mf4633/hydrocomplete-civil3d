@@ -1,0 +1,90 @@
+{
+  "networkName": "SYN-5",
+  "idf": { "a": 100.0, "b": 10.0, "c": 0.8 },
+  "startHglFt": 105.0,
+  "catchments": [
+    {
+      "name": "C1",
+      "areaAcres": 1.0,
+      "runoffC": 0.5,
+      "tcMinutes": 10.0,
+      "outfallStructureId": "S1"
+    },
+    {
+      "name": "C2",
+      "areaAcres": 2.0,
+      "runoffC": 0.6,
+      "tcMinutes": 12.0,
+      "outfallStructureId": "S2"
+    },
+    {
+      "name": "C3",
+      "areaAcres": 1.5,
+      "runoffC": 0.55,
+      "tcMinutes": 15.0,
+      "outfallStructureId": "S4"
+    }
+  ],
+  "pipes": [
+    {
+      "pipeKey": "P1",
+      "pipeName": "P1",
+      "upstreamStructureId": "S1",
+      "downstreamStructureId": "S3",
+      "diameterFt": 2.0,
+      "lengthFt": 100.0,
+      "manningN": 0.013,
+      "slope": 0.01,
+      "startInvertFt": 100.0,
+      "endInvertFt": 99.0
+    },
+    {
+      "pipeKey": "P2",
+      "pipeName": "P2",
+      "upstreamStructureId": "S2",
+      "downstreamStructureId": "S3",
+      "diameterFt": 2.0,
+      "lengthFt": 80.0,
+      "manningN": 0.013,
+      "slope": 0.01,
+      "startInvertFt": 100.5,
+      "endInvertFt": 99.5
+    },
+    {
+      "pipeKey": "P3",
+      "pipeName": "P3",
+      "upstreamStructureId": "S3",
+      "downstreamStructureId": "S5",
+      "diameterFt": 2.5,
+      "lengthFt": 120.0,
+      "manningN": 0.013,
+      "slope": 0.008,
+      "startInvertFt": 99.0,
+      "endInvertFt": 98.0
+    },
+    {
+      "pipeKey": "P4",
+      "pipeName": "P4",
+      "upstreamStructureId": "S5",
+      "downstreamStructureId": "S6",
+      "diameterFt": 3.0,
+      "lengthFt": 150.0,
+      "manningN": 0.013,
+      "slope": 0.006,
+      "startInvertFt": 98.0,
+      "endInvertFt": 97.0
+    },
+    {
+      "pipeKey": "P5",
+      "pipeName": "P5",
+      "upstreamStructureId": "S4",
+      "downstreamStructureId": "S5",
+      "diameterFt": 2.0,
+      "lengthFt": 90.0,
+      "manningN": 0.013,
+      "slope": 0.01,
+      "startInvertFt": 99.5,
+      "endInvertFt": 98.5
+    }
+  ]
+}
