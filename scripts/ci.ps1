@@ -10,32 +10,16 @@ $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $manifest = Join-Path $root 'dist\HydroComplete.bundle\PackageContents.xml'
 
 $expectedSeries = @('R25.0', 'R25.1')
-$expectedCommands = @(
-    'HC_ABOUT',
-    'HC_NETWORK',
-    'HC_PIPES',
-    'HC_PIPES_WRITE',
-    'HC_RATIONAL',
-    'HC_INLETS',
-    'HC_NETWORK_EDIT',
-    'HC_PUMP',
-    'HC_COST',
-    'HC_BACKGROUND',
-    'HC_HGL',
-    'HC_PREPOST',
-    'HC_OPTIMIZE',
-    'HC_CULVERT',
-    'HC_PROFILE',
-    'HC_PROFILE_DXF',
-    'HC_REPORT',
-    'HC_REPORT_PDF',
-    'HC_ATLAS14',
-    'HC_ACTIVATE',
-    'HC_LICENSE',
-    'HC_CAPACITY',
-    'HC_CAPACITY_WRITE',
-    'HC_ANALYZE'
-)
+$net48BundleDll = Join-Path $root 'dist\HydroComplete.bundle\Contents\net48\HydroComplete.Civil3D.dll'
+$commandsDir = Join-Path $root 'src\HydroComplete.Civil3D\Commands'
+$commandPattern = '\[CommandMethod\("([^"]+)"\)\]'
+$expectedCommands = Get-ChildItem $commandsDir -Filter '*.cs' -Recurse |
+    ForEach-Object {
+        [regex]::Matches((Get-Content $_.FullName -Raw), $commandPattern) |
+            ForEach-Object { $_.Groups[1].Value }
+    } |
+    Where-Object { $_ -like 'HC_*' } |
+    Sort-Object -Unique
 
 function Invoke-Step {
     param(
@@ -63,6 +47,16 @@ function Test-BundleManifest {
         Write-Host "  Series $series : OK"
     }
 
+    if (Test-Path $net48BundleDll) {
+        if ($text -notmatch 'SeriesMin="R24.3"') {
+            throw 'PackageContents.xml missing ComponentEntry for R24.3 (net48 bundle present)'
+        }
+        Write-Host '  Series R24.3 : OK'
+    }
+    else {
+        Write-Host '  Series R24.3 : skipped (no net48 bundle staged)'
+    }
+
     foreach ($command in $expectedCommands) {
         if ($text -notmatch "Local=`"$command`"") {
             throw "PackageContents.xml missing command $command"
@@ -80,17 +74,24 @@ try {
         dotnet test 'HydroComplete.Civil3D.sln' -c $Configuration --no-restore
     }
 
-    $acadDir = if ($env:ACAD_DIR) { $env:ACAD_DIR } else { 'C:\Program Files\Autodesk\AutoCAD 2026\' }
-    $acadMgd = Join-Path $acadDir 'AcMgd.dll'
+    $net8AcadDir = if ($env:ACAD_DIR) { $env:ACAD_DIR } else { 'C:\Program Files\Autodesk\AutoCAD 2026\' }
+    $net48AcadDir = if ($env:ACAD_2024_DIR) { $env:ACAD_2024_DIR } else { 'C:\Program Files\Autodesk\AutoCAD 2024\' }
+    $acadMgd = Join-Path $net8AcadDir 'AcMgd.dll'
     if (Test-Path $acadMgd) {
-        Invoke-Step "dotnet build HydroComplete.Civil3D ($Configuration)" {
-            dotnet build 'src\HydroComplete.Civil3D\HydroComplete.Civil3D.csproj' -c $Configuration -p:AcadDir="$acadDir"
+        Invoke-Step "dotnet build HydroComplete.Civil3D net8 ($Configuration)" {
+            dotnet build 'src\HydroComplete.Civil3D\HydroComplete.Civil3D.csproj' -c $Configuration -p:BuildNet48=false -p:Net8AcadDir="$net8AcadDir"
         }
     }
     else {
         Write-Host ""
-        Write-Host "==> Skipping Civil3D build (AutoCAD not installed on this runner)"
+        Write-Host "==> Skipping Civil3D net8 build (AutoCAD 2025/2026 not installed on this runner)"
         Write-Host "    Expected: $acadMgd"
+    }
+
+    # net48 compiles offline via AutoCAD.NET 24.3.0 NuGet when AutoCAD 2024 is not installed.
+    Invoke-Step "dotnet build HydroComplete.Civil3D net48 ($Configuration)" {
+        dotnet build 'src\HydroComplete.Civil3D\HydroComplete.Civil3D.csproj' -c $Configuration -p:BuildNet48=true -p:Net48AcadDir="$net48AcadDir"
+        & (Join-Path $root 'scripts\build-net48.ps1') -Configuration $Configuration -Net48AcadDir $net48AcadDir
     }
 
     Invoke-Step 'Verify PackageContents.xml' {

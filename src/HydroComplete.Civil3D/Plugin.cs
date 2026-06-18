@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Autodesk.AutoCAD.Runtime;
 using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 
@@ -18,7 +18,9 @@ using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.BackgroundCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.CostCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.CulvertCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.GvfCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.HydrographCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.HydrographRouterCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.NetworkEditorCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.PeakControlCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.ProfileCommands))]
@@ -37,12 +39,12 @@ namespace HydroComplete.Civil3D
 
         public void Initialize()
         {
-            // Never throw out of Initialize — an exception here can abort the load.
+            // Never throw out of Initialize â€” an exception here can abort the load.
             try
             {
                 var doc = AcadApp.DocumentManager?.MdiActiveDocument;
                 doc?.Editor.WriteMessage(
-                    $"\n{ProductName} for Civil 3D 1.2.0 loaded. Type HC_ABOUT for commands.\n");
+                    $"\n{ProductName} for Civil 3D 1.3.0 loaded. Type HC_ABOUT for commands.\n");
             }
             catch
             {
@@ -50,7 +52,7 @@ namespace HydroComplete.Civil3D
 
             // The ribbon may not exist yet at load time, or the ribbon subsystem
             // may be entirely absent (e.g. AutoCAD core console / headless). Both
-            // are non-fatal — the HC_* commands still work without a ribbon.
+            // are non-fatal â€” the HC_* commands still work without a ribbon.
             try
             {
                 Ribbon.RibbonBuilder.TryAddRibbon();

@@ -1,11 +1,13 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    The Civil 3D add-in. Default target is net8.0-windows (Civil 3D 2025–2026).
-    Optional net48 build for Civil 3D 2024 when AutoCAD 2024 is installed:
-      dotnet build -p:BuildNet48=true -p:AcadDir="C:\Program Files\Autodesk\AutoCAD 2024\"
-    Override AcadDir / C3dDir for other releases, e.g.
-      dotnet build -p:AcadDir="C:\Program Files\Autodesk\AutoCAD 2025\"
+    The Civil 3D add-in. Default target is net8.0-windows (Civil 3D 2025â€“2026).
+    Optional net48 build for Civil 3D 2024 when BuildNet48=true:
+      dotnet build -p:BuildNet48=true
+      dotnet build -p:BuildNet48=true -p:Net48AcadDir="C:\Program Files\Autodesk\AutoCAD 2024\"
+    net48 compiles without a local CAD install via AutoCAD.NET 24.3.0 + Civil3D2024.Base NuGet.
+    Override Net8AcadDir (or legacy AcadDir) for other net8 releases, e.g.
+      dotnet build -p:Net8AcadDir="C:\Program Files\Autodesk\AutoCAD 2025\"
   -->
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
@@ -16,7 +18,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>HydroComplete.Civil3D</AssemblyName>
     <RootNamespace>HydroComplete.Civil3D</RootNamespace>
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
     <!-- AutoCAD loads the DLL into its own process; never copy the host
          assemblies (Private=false), but ship PDFsharp and other NuGet deps. -->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -32,20 +34,31 @@
     <TargetFramework></TargetFramework>
   </PropertyGroup>
 
-  <!-- Install locations for the host assemblies; override per Civil 3D version. -->
+  <!-- Per-target host install paths. AcadDir is a legacy alias for Net8AcadDir only. -->
   <PropertyGroup>
-    <AcadDir Condition="'$(AcadDir)' == ''">C:\Program Files\Autodesk\AutoCAD 2026\</AcadDir>
-    <C3dDir Condition="'$(C3dDir)' == ''">$(AcadDir)C3D\</C3dDir>
-    <AcaDir Condition="'$(AcaDir)' == ''">$(AcadDir)ACA\</AcaDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
-    <AcadDir Condition="'$(AcadDir)' == '' or $([System.String]::Copy('$(AcadDir)').Contains('2026'))">C:\Program Files\Autodesk\AutoCAD 2024\</AcadDir>
-    <C3dDir>$(AcadDir)C3D\</C3dDir>
-    <AcaDir>$(AcadDir)ACA\</AcaDir>
+    <Net8AcadDir Condition="'$(Net8AcadDir)' == '' and '$(AcadDir)' != ''">$(AcadDir)</Net8AcadDir>
+    <Net8AcadDir Condition="'$(Net8AcadDir)' == ''">C:\Program Files\Autodesk\AutoCAD 2026\</Net8AcadDir>
+    <Net48AcadDir Condition="'$(Net48AcadDir)' == ''">C:\Program Files\Autodesk\AutoCAD 2024\</Net48AcadDir>
   </PropertyGroup>
 
-  <ItemGroup>
-    <!-- Core AutoCAD managed API. Private=false: these live in the host, not our output. -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
+    <AcadDir>$(Net8AcadDir)</AcadDir>
+    <C3dDir>$(AcadDir)C3D\</C3dDir>
+    <AcaDir>$(AcadDir)ACA\</AcaDir>
+    <UseLocalAcadRefs Condition="'$(UseLocalAcadRefs)' == ''">true</UseLocalAcadRefs>
+    <UseLocalAcadRefs Condition="!Exists('$(AcadDir)AcMgd.dll')">false</UseLocalAcadRefs>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
+    <AcadDir>$(Net48AcadDir)</AcadDir>
+    <C3dDir>$(AcadDir)C3D\</C3dDir>
+    <AcaDir>$(AcadDir)ACA\</AcaDir>
+    <UseLocalAcadRefs Condition="'$(UseLocalAcadRefs)' == ''">true</UseLocalAcadRefs>
+    <UseLocalAcadRefs Condition="!Exists('$(AcadDir)AcMgd.dll')">false</UseLocalAcadRefs>
+  </PropertyGroup>
+
+  <!-- net8 / net48: file references when the host is installed locally. -->
+  <ItemGroup Condition="'$(UseLocalAcadRefs)' == 'true'">
     <Reference Include="AcMgd">
       <HintPath>$(AcadDir)AcMgd.dll</HintPath>
       <Private>false</Private>
@@ -58,35 +71,44 @@
       <HintPath>$(AcadDir)AcDbMgd.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <!-- Ribbon / UI (Autodesk.Windows). -->
     <Reference Include="AdWindows">
       <HintPath>$(AcadDir)AdWindows.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <!-- Civil 3D managed API (pipe networks, catchments, surfaces). -->
     <Reference Include="AeccDbMgd">
       <HintPath>$(C3dDir)AeccDbMgd.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <!-- AEC base: defines Entity, the base class of Civil 3D objects. -->
     <Reference Include="AecBaseMgd">
       <HintPath>$(AcaDir)AecBaseMgd.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
 
+  <!-- net48 without local CAD: compile-time API stubs from NuGet (Private=false via package). -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48' and '$(UseLocalAcadRefs)' != 'true'">
+    <!-- compile-only stubs; never copy host assemblies into bundle output -->
+    <PackageReference Include="AutoCAD.NET" Version="24.3.0">
+      <IncludeAssets>compile;build</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Civil3D2024.Base" Version="1.0.0">
+      <IncludeAssets>compile;build</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
   <ItemGroup>
-    <!-- Our portable engine ships alongside the plugin (Private=true is the default). -->
     <ProjectReference Include="..\HydroComplete.Engine\HydroComplete.Engine.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
-    <!-- MIT license — formula-transparent PDF Manning reports (Civil3D project only). -->
     <PackageReference Include="PDFsharp" Version="6.2.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-    <!-- PDFsharp 1.5 — net48-compatible; same PdfSharp.Drawing / PdfSharp.Pdf namespaces. -->
+    <!-- PDFsharp 1.5 â€” net48-compatible; same PdfSharp.Drawing / PdfSharp.Pdf namespaces. -->
     <PackageReference Include="PDFsharp" Version="1.50.5147" />
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
 
   <ItemGroup>

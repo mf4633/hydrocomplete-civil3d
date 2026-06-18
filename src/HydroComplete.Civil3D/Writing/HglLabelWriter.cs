@@ -27,7 +27,7 @@ namespace HydroComplete.Civil3D.Writing
             Database db,
             IReadOnlyList<ReadPipe> pipes,
             IReadOnlyDictionary<string, double> midpointHglFt,
-            IReadOnlySet<string>? surchargedKeys = null)
+            ICollection<string>? surchargedKeys = null)
         {
             if (db == null) throw new ArgumentNullException(nameof(db));
             if (pipes == null) throw new ArgumentNullException(nameof(pipes));

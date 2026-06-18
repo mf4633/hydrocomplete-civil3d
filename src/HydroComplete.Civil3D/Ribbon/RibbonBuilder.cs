@@ -65,6 +65,7 @@ namespace HydroComplete.Civil3D.Ribbon
             source.Items.Add(MakeButton("Pre/Post\nPeaks", "HC_PREPOST", "Pre/post-development peak flow comparison across state storm suite."));
             source.Items.Add(MakeButton("BMP\nOptimize", "HC_OPTIMIZE", "Top 3 lowest-cost BMP treatment trains meeting state removal targets."));
             source.Items.Add(MakeButton("Culvert\nHW", "HC_CULVERT", "FHWA HDS-5 culvert headwater from pipe or manual geometry."));
+            source.Items.Add(MakeButton("GVF\nProfile", "HC_GVF", "Gradually varied flow water surface profile (Standard Step, trapezoidal channel)."));
             source.Items.Add(MakeButton("Chainage\nProfile", "HC_PROFILE", "Invert, crown, and optional HGL vs chainage on HC-PROFILE-* layers."));
             source.Items.Add(MakeButton("Profile\nDXF", "HC_PROFILE_DXF", "Export invert, crown, and optional HGL profile to DXF."));
             source.Items.Add(MakeButton("HTML\nReport", "HC_REPORT", "Export formula-transparent Manning + HGL HTML report."));
@@ -77,6 +78,7 @@ namespace HydroComplete.Civil3D.Ribbon
             source.Items.Add(MakeButton("Pump\nStation", "HC_PUMP", "Pump duty-point check: system head vs pump curve."));
             source.Items.Add(MakeButton("Pipe\nCost", "HC_COST", "Roll up pipe costs from diameter catalog ($/LF)."));
             source.Items.Add(MakeButton("Background\nMap", "HC_BACKGROUND", "Attach georeferenced raster image on HC-BACKGROUND."));
+            source.Items.Add(MakeButton("Route\nHydro", "HC_ROUTE_HYDRO", "Route catchment hydrographs through the pipe network with junction superposition."));
             source.Items.Add(MakeButton("LandXML\nExport", "HC_LANDXML", "Export pipe network to LandXML 1.2."));
             source.Items.Add(MakeButton("LandXML\nImport", "HC_LANDXML_IMPORT", "Import LandXML 1.2 and compare to drawing."));
             source.Items.Add(MakeButton("Atlas 14\nIDF", "HC_ATLAS14", "List NOAA Atlas 14 IDF presets by city."));

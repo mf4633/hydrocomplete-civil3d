@@ -483,7 +483,7 @@ namespace HydroComplete.Civil3D.Commands
                 return Array.Empty<string>();
 
             var chain = new List<string>();
-            foreach (string token in res.StringResult.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            foreach (string token in res.StringResult.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
             {
                 string key = NormalizeBmpKey(token.Trim());
                 if (!string.IsNullOrEmpty(key))
@@ -497,7 +497,7 @@ namespace HydroComplete.Civil3D.Commands
         {
             if (string.IsNullOrWhiteSpace(token)) return "";
 
-            string lower = token.ToLowerInvariant().Replace(" ", "-", StringComparison.Ordinal);
+            string lower = token.ToLowerInvariant().Replace(" ", "-");
             switch (lower)
             {
                 case "bioretention":

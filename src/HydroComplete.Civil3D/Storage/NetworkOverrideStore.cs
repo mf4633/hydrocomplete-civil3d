@@ -69,7 +69,7 @@ namespace HydroComplete.Civil3D.Storage
             byte[] hash;
             using (var sha = SHA256.Create())
                 hash = sha.ComputeHash(Encoding.UTF8.GetBytes(key.ToLowerInvariant()));
-            string id = Convert.ToHexString(hash).Substring(0, 16);
+            string id = BitConverter.ToString(hash).Replace("-", string.Empty).Substring(0, 16).ToLowerInvariant();
             return Path.Combine(StoreFolder, $"overrides-{id}.json");
         }
     }

@@ -239,7 +239,7 @@ namespace HydroComplete.Civil3D.Writing
             double rowHeight)
         {
             y = EnsureSpace(document, ref page, ref activeGfx, y, rowHeight + 4);
-            var font = new XFont("Segoe UI", 9, XFontStyleEx.Bold);
+            var font = PdfFonts.Bold("Segoe UI", 9);
             double x = MarginLeft;
             double tableWidth = Sum(colWidths);
 
@@ -293,7 +293,7 @@ namespace HydroComplete.Civil3D.Writing
             string text)
         {
             y = EnsureSpace(document, ref page, ref activeGfx, y, 28);
-            var font = new XFont("Segoe UI", 16, XFontStyleEx.Bold);
+            var font = PdfFonts.Bold("Segoe UI", 16);
             activeGfx.DrawString(text, font, XBrushes.Black,
                 new XRect(MarginLeft, y, ContentWidth, 24), XStringFormats.TopLeft);
             return y + 28;
@@ -308,7 +308,7 @@ namespace HydroComplete.Civil3D.Writing
             string text)
         {
             y = EnsureSpace(document, ref page, ref activeGfx, y, 22);
-            var font = new XFont("Segoe UI", 12, XFontStyleEx.Bold);
+            var font = PdfFonts.Bold("Segoe UI", 12);
             activeGfx.DrawString(text, font, XBrushes.Black,
                 new XRect(MarginLeft, y, ContentWidth, 18), XStringFormats.TopLeft);
             return y + 22;
@@ -322,7 +322,7 @@ namespace HydroComplete.Civil3D.Writing
             double y,
             string text)
         {
-            var font = new XFont("Segoe UI", 10, XFontStyleEx.Bold);
+            var font = PdfFonts.Bold("Segoe UI", 10);
             activeGfx.DrawString(text, font, XBrushes.Black,
                 new XRect(MarginLeft, y, ContentWidth, 16), XStringFormats.TopLeft);
             return y + 16;
@@ -365,7 +365,7 @@ namespace HydroComplete.Civil3D.Writing
             double y)
         {
             var font = new XFont("Segoe UI", 9);
-            var bold = new XFont("Segoe UI", 9, XFontStyleEx.Bold);
+            var bold = PdfFonts.Bold("Segoe UI", 9);
             double boxHeight = 72;
             y = EnsureSpace(document, ref page, ref activeGfx, y, boxHeight);
 
@@ -415,6 +415,19 @@ namespace HydroComplete.Civil3D.Writing
             double total = 0;
             foreach (double v in values) total += v;
             return total;
+        }
+    }
+
+    /// <summary>PDFsharp 6.x uses XFontStyleEx; 1.5 (net48) uses XFontStyle.</summary>
+    internal static class PdfFonts
+    {
+        public static XFont Bold(string family, double size)
+        {
+#if NET8_0_OR_GREATER
+            return new XFont(family, size, XFontStyleEx.Bold);
+#else
+            return new XFont(family, size, XFontStyle.Bold);
+#endif
         }
     }
 }

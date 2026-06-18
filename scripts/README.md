@@ -66,6 +66,32 @@ If CI is unavailable, run `.\scripts\ci.ps1` locally before tagging a release.
 
 Related managed DLLs resolved from `$(AcadDir)` and `$(AcadDir)C3D\`.
 
+## App Store preflight (`app-store-preflight.ps1`)
+
+Validates bundle readiness before Publisher upload:
+
+- `PackageIcon.png` exists in `Contents/`
+- Every `[CommandMethod("HC_*")]` in source appears in `PackageContents.xml` (and vice versa)
+- Version strings match across csproj, manifest, `Plugin.cs`, `verify-install.ps1`, and `LISTING.md`
+- Release zip structure (when `dist/HydroComplete-{version}.zip` exists)
+- R24.3 manifest entry required only when `Contents/net48/` is present
+
+```powershell
+.\scripts\app-store-preflight.ps1
+```
+
+Exits **0** on success, **non-zero** on failure. Run before `release.ps1` on each submission.
+
+## Version bump (`bump-version.ps1`)
+
+Syncs release version across csproj, manifest, startup banner, and listing copy:
+
+```powershell
+.\scripts\bump-version.ps1 -Version 1.2.0
+```
+
+Updates: `HydroComplete.Civil3D.csproj`, `HydroComplete.Engine.csproj`, `PackageContents.xml` `AppVersion`, `Plugin.cs` banner, `verify-install.ps1`, `LISTING.md`, and `HC_ABOUT` header.
+
 ## Release (`release.ps1`)
 
 Builds Release, refreshes `dist/HydroComplete.bundle/Contents/` DLLs, and zips the bundle for Autodesk App Store upload.

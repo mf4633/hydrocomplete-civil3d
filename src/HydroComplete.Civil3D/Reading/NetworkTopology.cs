@@ -178,8 +178,9 @@ namespace HydroComplete.Civil3D.Reading
                 if (pipe.DownstreamStructureId.IsNull) continue;
 
                 string structureKey = pipe.DownstreamStructureId.Handle.ToString();
-                inflowCountByStructure[structureKey] =
-                    inflowCountByStructure.GetValueOrDefault(structureKey) + 1;
+                if (!inflowCountByStructure.TryGetValue(structureKey, out int inflowCount))
+                    inflowCount = 0;
+                inflowCountByStructure[structureKey] = inflowCount + 1;
             }
 
             var reaches = new List<NetworkReach>(pipes.Count);

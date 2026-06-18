@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -30,7 +30,7 @@ namespace HydroComplete.Civil3D.Commands
         public void About()
         {
             Editor ed = Active().Editor;
-            ed.WriteMessage("\n=== HydroComplete for Civil 3D 1.2.0 ===");
+            ed.WriteMessage("\n=== HydroComplete for Civil 3D 1.3.0 ===");
             ed.WriteMessage("\n  HC_NETWORK       Per-network summary (pipes, length, inverts, diameters, structures)");
             ed.WriteMessage("\n  HC_PIPES         Manning capacity of every pipe-network pipe (circular, box, arch)");
             ed.WriteMessage("\n  HC_PIPES_WRITE   Label Qfull/Vfull on layer HC-CAPACITY");
@@ -52,19 +52,21 @@ namespace HydroComplete.Civil3D.Commands
             ed.WriteMessage("\n  HC_PREPOST       Pre/post-development peak comparison (SCS UH, multi-storm state depths)");
             ed.WriteMessage("\n  HC_OPTIMIZE      BMP treatment-train cost optimizer (top 3 chains)");
             ed.WriteMessage("\n  HC_CULVERT       Culvert headwater (FHWA HDS-5 inlet/outlet control)");
-            ed.WriteMessage("\n  HC_PROFILE       Chainage profile plot (invert, crown, optional HGL) — modal options dialog");
+            ed.WriteMessage("\n  HC_GVF           Gradually varied flow profile (Standard Step, trapezoidal channel)");
+            ed.WriteMessage("\n  HC_PROFILE       Chainage profile plot (invert, crown, optional HGL) â€” modal options dialog");
             ed.WriteMessage("\n  HC_PROFILE_DXF   Export chainage profile to DXF (invert, crown, optional HGL)");
             ed.WriteMessage("\n  HC_REPORT      Export formula-transparent HTML Manning + HGL report (free)");
             ed.WriteMessage("\n  HC_REPORT_PDF  Export formula-transparent PDF Manning + HGL report (Pro)");
             ed.WriteMessage("\n  HC_RATIONAL    Rational Q from catchments + NOAA Atlas 14 IDF presets");
             ed.WriteMessage("\n  HC_MULTIRP     Per-pipe Q and d/D for 2/10/25/100-yr return periods");
             ed.WriteMessage("\n  HC_TC          TR-55 segmented time-of-concentration worksheet");
-            ed.WriteMessage("\n  HC_INLETS      HEC-22 inlet check (grate / sag / curb opening) — modal options dialog");
+            ed.WriteMessage("\n  HC_INLETS      HEC-22 inlet check (grate / sag / curb opening) â€” modal options dialog");
             ed.WriteMessage("\n  HC_NETWORK_EDIT  Edit pipe Q and Manning n overrides (saved per drawing)");
             ed.WriteMessage("\n  HC_PUMP          Pump station duty-point check (curve vs system head)");
             ed.WriteMessage("\n  HC_COST          Pipe cost roll-up from diameter catalog ($/LF)");
             ed.WriteMessage("\n  HC_BACKGROUND    Attach georeferenced raster on HC-BACKGROUND layer");
             ed.WriteMessage("\n  HC_HYDROGRAPH    Synthetic hydrograph ordinates (SCS, Clark, Snyder)");
+            ed.WriteMessage("\n  HC_ROUTE_HYDRO   Route catchment hydrographs through pipe network (lag + junction superposition)");
             ed.WriteMessage("\n  HC_BIORETENTION  Bioretention routing with underdrain/outlet");
             ed.WriteMessage("\n  HC_WETLAND       Wetland detention routing");
             ed.WriteMessage("\n  HC_SOIL          NRCS soil group lookup by map unit");
@@ -74,8 +76,8 @@ namespace HydroComplete.Civil3D.Commands
             ed.WriteMessage("\n  HC_ACTIVATE    Activate Pro with email + beta token (hc_live_*)");
             ed.WriteMessage("\n  HC_LICENSE     Show Free/Pro license status and activation info");
             ed.WriteMessage("\n  HC_ABOUT       This list");
-            ed.WriteMessage("\n  Pro features (PDF export) require a license — visit https://hydrocomplete.com/civil3d");
-            ed.WriteMessage("\n  Engine: Rational, TR-55 Tc, Manning (circular/box/arch), detention, BMP/WQV, LandXML, HEC-22 — fully shown.\n");
+            ed.WriteMessage("\n  Pro features (PDF export) require a license â€” visit https://hydrocomplete.com/civil3d");
+            ed.WriteMessage("\n  Engine: Rational, TR-55 Tc, Manning (circular/box/arch), GVF, detention, BMP/WQV, LandXML, HEC-22 â€” fully shown.\n");
         }
 
         [CommandMethod("HC_ACTIVATE")]
@@ -83,8 +85,8 @@ namespace HydroComplete.Civil3D.Commands
         {
             Editor ed = Active().Editor;
             ed.WriteMessage("\n=== HydroComplete Pro Activation ===");
-            ed.WriteMessage("\n  Enter your beta email and token (format: hc_live_…).");
-            ed.WriteMessage("\n  You may paste both on one line: email@domain.com hc_live_…\n");
+            ed.WriteMessage("\n  Enter your beta email and token (format: hc_live_â€¦).");
+            ed.WriteMessage("\n  You may paste both on one line: email@domain.com hc_live_â€¦\n");
 
             string email;
             string token;
@@ -194,11 +196,11 @@ namespace HydroComplete.Civil3D.Commands
                 string invertRange = summary.HasPipes
                     ? string.Format(CultureInfo.InvariantCulture,
                         "{0,8:0.00} - {1,8:0.00}", summary.MinInvertFt, summary.MaxInvertFt)
-                    : "       —";
+                    : "       â€”";
                 string diaRange = summary.HasPipes
                     ? string.Format(CultureInfo.InvariantCulture,
                         "{0,5:0.00} - {1,5:0.00}", summary.MinDiameterFt, summary.MaxDiameterFt)
-                    : "    —";
+                    : "    â€”";
 
                 ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
                     "\n{0,-22} {1,5}  {2,7}  {3,10:0.0}  {4}  {5}",
@@ -732,7 +734,7 @@ namespace HydroComplete.Civil3D.Commands
 
         /// <summary>
         /// Default outfall tailwater = the downstream invert of the most-downstream
-        /// (outfall) pipe — i.e. a free outfall at the pipe invert. The HGL profile
+        /// (outfall) pipe â€” i.e. a free outfall at the pipe invert. The HGL profile
         /// is anchored here and stepped upstream.
         /// </summary>
         private static double OutfallTailwaterFt(NetworkTopology.OrderedNetwork net)

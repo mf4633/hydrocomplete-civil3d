@@ -31,10 +31,10 @@ namespace HydroComplete.Civil3D.Writing
         public static string EscapeHtml(string s)
         {
             return s
-                .Replace("&", "&amp;", StringComparison.Ordinal)
-                .Replace("<", "&lt;", StringComparison.Ordinal)
-                .Replace(">", "&gt;", StringComparison.Ordinal)
-                .Replace("\"", "&quot;", StringComparison.Ordinal);
+                .Replace("&", "&amp;")
+                .Replace("<", "&lt;")
+                .Replace(">", "&gt;")
+                .Replace("\"", "&quot;");
         }
 
         public static string Trim(string s, int max)

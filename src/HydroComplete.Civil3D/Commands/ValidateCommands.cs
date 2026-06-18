@@ -180,7 +180,7 @@ namespace HydroComplete.Civil3D.Commands
                     ? NetworkTopology.BuildReaches(net.OrderedPipes, flow.PipeFlowCfs, includeJunctionLosses: true)
                     : NetworkTopology.BuildReaches(net.OrderedPipes, flow.DesignFlowCfs, includeJunctionLosses: true);
 
-                double tailwater = net.OrderedPipes[^1].DownstreamInvertFt;
+                double tailwater = net.OrderedPipes[net.OrderedPipes.Count - 1].DownstreamInvertFt;
                 List<HglProfilePoint> profile = Hgl.SteadyBackwaterFromOutfall(reaches, tailwater, hglOptions);
 
                 for (int i = 0; i < net.OrderedPipes.Count && i < profile.Count; i++)

@@ -9,8 +9,8 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Push-Location $root
 try {
-    Write-Host "Building HydroComplete.Civil3D ($Configuration)..."
-    dotnet build "src\HydroComplete.Civil3D\HydroComplete.Civil3D.csproj" -c $Configuration
+    Write-Host "Building HydroComplete.Civil3D ($Configuration, net8 + net48)..."
+    dotnet build "src\HydroComplete.Civil3D\HydroComplete.Civil3D.csproj" -c $Configuration -p:BuildNet48=true
 
     $out = "src\HydroComplete.Civil3D\bin\$Configuration\net8.0-windows"
     $eng = "src\HydroComplete.Engine\bin\$Configuration\netstandard2.0"
@@ -31,7 +31,11 @@ try {
         Copy-Item (Join-Path $net48Out 'HydroComplete.Civil3D.dll') $net48Contents -Force
         Copy-Item (Join-Path $eng 'HydroComplete.Engine.dll') $net48Contents -Force
         Get-ChildItem $net48Out -Filter '*.dll' |
-            Where-Object { $_.Name -notmatch '^HydroComplete\.' } |
+            Where-Object {
+                $_.Name -notmatch '^HydroComplete\.' -and
+                $_.Name -notmatch '^(Ac|Aec|Ad)' -and
+                $_.Name -notmatch '^acdbmgdbrep\.dll$'
+            } |
             Copy-Item -Destination $net48Contents -Force
         Write-Host "net48 bundle copied to Contents/net48 (Civil 3D 2024)"
     }
