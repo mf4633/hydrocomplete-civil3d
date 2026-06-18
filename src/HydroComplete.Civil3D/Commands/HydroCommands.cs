@@ -377,9 +377,8 @@ namespace HydroComplete.Civil3D.Commands
                     ? NetworkTopology.BuildReaches(net.OrderedPipes, flow.PipeFlowCfs, useMinorLosses)
                     : NetworkTopology.BuildReaches(net.OrderedPipes, flow.DesignFlowCfs, useMinorLosses);
 
-                double startHgl = net.MaxUpstreamInvertFt + 1.0;
-                var profile = Hgl.SteadyNetworkHglProfile(reaches, startHgl, hglOptions);
-                double hglUs = startHgl;
+                double tailwater = PromptTailwater(ed, net);
+                var profile = Hgl.SteadyBackwaterFromOutfall(reaches, tailwater, hglOptions);
 
                 for (int i = 0; i < net.OrderedPipes.Count && i < profile.Count; i++)
                 {
@@ -387,6 +386,7 @@ namespace HydroComplete.Civil3D.Commands
                     HglProfilePoint point = profile[i];
                     string reachName = reaches[i].Name;
 
+                    double hglUs = point.HglUpstreamFt;
                     double hglDs = point.HglFt;
                     double hglMid = 0.5 * (hglUs + hglDs);
                     allMidHgl[reachName] = hglMid;
@@ -427,8 +427,6 @@ namespace HydroComplete.Civil3D.Commands
                             dOverD,
                             surcharged ? "*" : ""));
                     }
-
-                    hglUs = hglDs;
                 }
             }
 
@@ -565,20 +563,20 @@ namespace HydroComplete.Civil3D.Commands
                     ? NetworkTopology.BuildReaches(net.OrderedPipes, flow.PipeFlowCfs, useMinorLosses)
                     : NetworkTopology.BuildReaches(net.OrderedPipes, flow.DesignFlowCfs, useMinorLosses);
 
-                double startHgl = net.MaxUpstreamInvertFt + 1.0;
-                var profile = Hgl.SteadyNetworkHglProfile(reaches, startHgl, hglOptions);
+                double tailwater = OutfallTailwaterFt(net);
+                var profile = Hgl.SteadyBackwaterFromOutfall(reaches, tailwater, hglOptions);
 
                 var netReport = new HglNetworkReport
                 {
                     NetworkName = net.NetworkName,
-                    StartHglFt = startHgl,
+                    StartHglFt = tailwater,
                 };
 
-                double hglUs = startHgl;
                 for (int i = 0; i < net.OrderedPipes.Count && i < profile.Count; i++)
                 {
                     ReadPipe rp = net.OrderedPipes[i];
                     HglProfilePoint point = profile[i];
+                    double hglUs = point.HglUpstreamFt;
 
                     netReport.Rows.Add(new HglPipeReportRow
                     {
@@ -593,8 +591,6 @@ namespace HydroComplete.Civil3D.Commands
                         RelativeDepth = reaches[i].RelativeDepth,
                         FlowSurcharged = reaches[i].FlowSurcharged,
                     });
-
-                    hglUs = point.HglFt;
                 }
 
                 report.Networks.Add(netReport);
@@ -696,6 +692,33 @@ namespace HydroComplete.Civil3D.Commands
         {
             if (string.IsNullOrEmpty(s)) return "";
             return s.Length <= max ? s : s.Substring(0, max - 1) + "~";
+        }
+
+        /// <summary>
+        /// Default outfall tailwater = the downstream invert of the most-downstream
+        /// (outfall) pipe — i.e. a free outfall at the pipe invert. The HGL profile
+        /// is anchored here and stepped upstream.
+        /// </summary>
+        private static double OutfallTailwaterFt(NetworkTopology.OrderedNetwork net)
+        {
+            return net.OrderedPipes.Count > 0
+                ? net.OrderedPipes[net.OrderedPipes.Count - 1].DownstreamInvertFt
+                : 0.0;
+        }
+
+        private static double PromptTailwater(Editor ed, NetworkTopology.OrderedNetwork net)
+        {
+            double outfallInvert = OutfallTailwaterFt(net);
+            var opts = new PromptDoubleOptions(
+                $"\nOutfall tailwater HGL elevation for '{net.NetworkName}'")
+            {
+                DefaultValue = outfallInvert,
+                UseDefaultValue = true,
+                AllowNegative = true,
+                AllowZero = true,
+            };
+            PromptDoubleResult res = ed.GetDouble(opts);
+            return res.Status == PromptStatus.OK ? res.Value : outfallInvert;
         }
     }
 }

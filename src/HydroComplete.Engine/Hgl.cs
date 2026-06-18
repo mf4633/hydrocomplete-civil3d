@@ -215,5 +215,120 @@ namespace HydroComplete.Engine
 
             return profile;
         }
+
+        /// <summary>
+        /// Tailwater-controlled steady HGL profile. Reaches are ordered upstream→
+        /// downstream (last reach is the outfall). The HGL is anchored at the outfall
+        /// tailwater elevation and stepped UPSTREAM, accumulating friction + HEC-22
+        /// minor losses — i.e. HGL_up = HGL_down + h_f + h_m. This is the standard
+        /// storm-sewer gradeline direction (the downstream tailwater controls), unlike
+        /// the downstream-stepping <c>SteadyNetworkHglProfile</c> which assumes a known
+        /// upstream stage.
+        /// Each returned point carries both <see cref="HglProfilePoint.HglUpstreamFt"/>
+        /// and <see cref="HglProfilePoint.HglFt"/> (downstream end), in upstream→downstream order.
+        /// </summary>
+        public static List<HglProfilePoint> SteadyBackwaterFromOutfall(
+            IReadOnlyList<NetworkReach> reaches, double tailwaterHglFt, HglProfileOptions? options)
+        {
+            if (reaches == null) throw new ArgumentNullException(nameof(reaches));
+            options ??= new HglProfileOptions();
+
+            int count = reaches.Count;
+            var points = new HglProfilePoint[count];
+            if (count == 0)
+                return new List<HglProfilePoint>();
+
+            // Pass 1 (upstream→downstream): per-reach loss magnitudes and cumulative length.
+            var hf = new double[count];
+            var hm = new double[count];
+            var vhDown = new double[count];
+            double cumLengthFt = 0.0;
+
+            for (int idx = 0; idx < count; idx++)
+            {
+                NetworkReach reach = reaches[idx];
+                if (reach == null) throw new ArgumentException("Reach must not be null.", nameof(reaches));
+
+                double lengthFt = reach.LengthFt;
+                double n = reach.ManningN;
+                double areaFt2 = reach.AreaFt2;
+                double hydRadiusFt = reach.HydRadiusFt;
+                double flowCfs = reach.FlowCfs;
+
+                if (lengthFt <= 0) throw new ArgumentOutOfRangeException(nameof(reaches), "Length must be > 0.");
+                if (n <= 0) throw new ArgumentOutOfRangeException(nameof(reaches), "Manning n must be > 0.");
+                if (areaFt2 <= 0) throw new ArgumentOutOfRangeException(nameof(reaches), "Area must be > 0.");
+                if (hydRadiusFt <= 0) throw new ArgumentOutOfRangeException(nameof(reaches), "Hydraulic radius must be > 0.");
+                if (flowCfs < 0) throw new ArgumentOutOfRangeException(nameof(reaches), "Flow must be >= 0.");
+
+                double velHeadDownFt = reach.VelHeadDownFt;
+                if (velHeadDownFt <= 0 && flowCfs > 0)
+                    velHeadDownFt = Hec22.VelocityHeadFromFlow(flowCfs, areaFt2);
+                double velHeadUpFt = reach.VelHeadUpFt;
+                if (velHeadUpFt <= 0 && flowCfs > 0)
+                    velHeadUpFt = velHeadDownFt;
+
+                hf[idx] = ManningFrictionHeadLoss(flowCfs, n, areaFt2, hydRadiusFt, lengthFt).HfFt;
+
+                double hmTotal = 0.0;
+                if (options.IncludeEntranceLoss && idx == 0)
+                {
+                    double kEnt = reach.EntranceLossK > 0 ? reach.EntranceLossK : options.EntranceLossK;
+                    hmTotal += Hec22.MinorHeadLoss(kEnt, velHeadUpFt).HeadLossFt;
+                }
+                if (options.IncludeJunctionLosses)
+                {
+                    double junctionK = reach.JunctionLossK + (reach.BendLossK > 0 ? reach.BendLossK : 0.0);
+                    if (junctionK > 0)
+                        hmTotal += Hec22.MinorHeadLoss(junctionK, velHeadDownFt).HeadLossFt;
+                }
+                if (options.IncludeExitLoss && idx == count - 1)
+                {
+                    double kExit = reach.ExitLossK > 0 ? reach.ExitLossK : options.ExitLossK;
+                    hmTotal += Hec22.MinorHeadLoss(kExit, velHeadDownFt).HeadLossFt;
+                }
+
+                hm[idx] = hmTotal;
+                vhDown[idx] = velHeadDownFt;
+                cumLengthFt += lengthFt;
+
+                points[idx] = new HglProfilePoint
+                {
+                    ReachIndex = idx,
+                    CumLengthFt = cumLengthFt,
+                    HfFt = hf[idx],
+                    HmFt = hmTotal,
+                    VelocityHeadFt = velHeadDownFt,
+                    RelativeDepth = reach.RelativeDepth,
+                    FlowSurcharged = reach.FlowSurcharged,
+                };
+            }
+
+            // Pass 2 (downstream→upstream): anchor at tailwater, accumulate losses upstream.
+            double hglDs = tailwaterHglFt;
+            for (int idx = count - 1; idx >= 0; idx--)
+            {
+                double hglUs = hglDs + hf[idx] + hm[idx];
+                HglProfilePoint point = points[idx];
+
+                point.HglFt = hglDs;
+                point.HglUpstreamFt = hglUs;
+                point.EglFt = hglDs + vhDown[idx];
+                point.DeltaEglFt = hf[idx] + hm[idx];
+
+                NetworkReach reach = reaches[idx];
+                if (!string.IsNullOrEmpty(reach.Name))
+                    point.Steps.Add(new CalcStep("reach", idx, "-", reach.Name));
+                point.Steps.Add(new CalcStep("HGL_ds", hglDs, "ft", "tailwater / downstream node"));
+                point.Steps.Add(new CalcStep("h_f", hf[idx], "ft", "friction over reach"));
+                if (hm[idx] > 0)
+                    point.Steps.Add(new CalcStep("h_m", hm[idx], "ft", "HEC-22 minor losses"));
+                point.Steps.Add(new CalcStep("HGL_us", hglUs, "ft", "HGL_ds + h_f + h_m (backwater)"));
+
+                hglDs = hglUs; // upstream node of this reach is the downstream node of the next reach up
+            }
+
+            return new List<HglProfilePoint>(points);
+        }
     }
 }

@@ -145,7 +145,7 @@ namespace HydroComplete.Civil3D.Writing
                 y = DrawSubheading(activeGfx, ref page, ref activeGfx, document, y, net.NetworkName);
                 y = DrawBodyText(activeGfx, ref page, ref activeGfx, document, y,
                     string.Format(CultureInfo.InvariantCulture,
-                        "Start HGL = {0:0.00} ft (max upstream invert + 1.0 ft freeboard).",
+                        "Outfall tailwater HGL = {0:0.00} ft (profile stepped upstream, friction + HEC-22 minor losses).",
                         net.StartHglFt));
 
                 string[] headers = { "Pipe", "d/D", "hf (ft)", "hm (ft)", "HGL_US (ft)", "HGL_DS (ft)", "SURCH" };

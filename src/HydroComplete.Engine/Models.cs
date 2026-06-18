@@ -189,8 +189,15 @@ namespace HydroComplete.Engine
         /// <summary>Cumulative distance from profile start, ft.</summary>
         public double CumLengthFt { get; set; }
 
-        /// <summary>Hydraulic grade line elevation, ft.</summary>
+        /// <summary>Hydraulic grade line elevation at the downstream end of the reach, ft.</summary>
         public double HglFt { get; set; }
+
+        /// <summary>
+        /// Hydraulic grade line elevation at the upstream end of the reach, ft.
+        /// Set by the tailwater-controlled backwater profile; for the legacy
+        /// downstream-stepping profile this is left 0 and the caller carries it.
+        /// </summary>
+        public double HglUpstreamFt { get; set; }
 
         /// <summary>Energy grade line elevation, ft.</summary>
         public double EglFt { get; set; }

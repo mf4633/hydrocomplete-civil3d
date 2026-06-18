@@ -163,7 +163,7 @@ namespace HydroComplete.Civil3D.Writing
                 if (net.Rows.Count == 0) continue;
 
                 sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
-                    "<h3>{0}</h3><p>Start HGL = {1:0.00} ft (max upstream invert + 1.0 ft freeboard).</p>",
+                    "<h3>{0}</h3><p>Outfall tailwater HGL = {1:0.00} ft (profile stepped upstream from the outfall, adding friction + HEC-22 minor losses).</p>",
                     ReportWriterCommon.EscapeHtml(ReportWriterCommon.Trim(net.NetworkName, 64)), net.StartHglFt));
 
                 sb.AppendLine("<table><thead><tr>");
