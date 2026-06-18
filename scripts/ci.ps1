@@ -19,6 +19,7 @@ $expectedCommands = @(
     'HC_REPORT',
     'HC_REPORT_PDF',
     'HC_ATLAS14',
+    'HC_ACTIVATE',
     'HC_LICENSE',
     'HC_CAPACITY',
     'HC_CAPACITY_WRITE'

@@ -1,13 +1,13 @@
 using System;
 using System.IO;
-using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
+using HydroComplete.Engine;
 
 namespace HydroComplete.Civil3D.Auth
 {
     /// <summary>
-    /// Pro-feature gate skeleton. Validates a local license file or dev bypass;
-    /// online validation against hydrocomplete.com is not wired yet.
+    /// Pro-feature gate. Validates a local license file, dev bypass, or online activation.
     /// </summary>
     public static class LicenseGate
     {
@@ -18,21 +18,18 @@ namespace HydroComplete.Civil3D.Auth
             "HydroComplete",
             "license.json");
 
-        private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-        };
+        private static readonly LicenseActivator Activator = new LicenseActivator();
 
         /// <summary>
         /// True when Pro is enabled via dev bypass, a valid local license file, or
-        /// (future) successful online validation.
+        /// successful online/offline-stub activation.
         /// </summary>
         public static bool IsProEnabled()
         {
             if (IsDevBypassEnabled())
                 return true;
 
-            return TryReadLicense(LicensePath, out _);
+            return LicenseActivator.TryReadLicense(LicensePath, out _);
         }
 
         /// <summary>Human-readable license tier for HC_LICENSE.</summary>
@@ -41,73 +38,99 @@ namespace HydroComplete.Civil3D.Auth
             if (IsDevBypassEnabled())
                 return "Pro (dev bypass: HYDROCOMPLETE_PRO=1)";
 
-            if (TryReadLicense(LicensePath, out var license))
+            if (LicenseActivator.TryReadLicense(LicensePath, out var license))
             {
                 if (DateTimeOffset.TryParse(license.Expires, out var expires))
                     return $"Pro (licensed to {license.Email}, expires {expires:yyyy-MM-dd})";
                 return $"Pro (licensed to {license.Email})";
             }
 
+            if (LicenseActivator.TryReadLicenseMetadata(LicensePath, out var expired))
+            {
+                if (DateTimeOffset.TryParse(expired.Expires, out var expires))
+                    return $"Expired (was {expired.Email}, expired {expires:yyyy-MM-dd})";
+            }
+
             return "Free";
+        }
+
+        /// <summary>How the current license was last validated.</summary>
+        public static string GetValidationModeLabel()
+        {
+            if (IsDevBypassEnabled())
+                return "dev-bypass";
+
+            if (!LicenseActivator.TryReadLicenseMetadata(LicensePath, out var license))
+                return "none";
+
+            if (!string.IsNullOrWhiteSpace(license.ValidationMode))
+                return license.ValidationMode;
+
+            return "local-file";
+        }
+
+        /// <summary>Last online/offline validation timestamp for HC_LICENSE.</summary>
+        public static string GetLastValidatedLabel()
+        {
+            if (IsDevBypassEnabled())
+                return "n/a (dev bypass)";
+
+            if (!LicenseActivator.TryReadLicenseMetadata(LicensePath, out var license)
+                || string.IsNullOrWhiteSpace(license.LastValidated))
+            {
+                return "never";
+            }
+
+            if (DateTimeOffset.TryParse(license.LastValidated, out var validated))
+                return validated.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+
+            return license.LastValidated;
+        }
+
+        /// <summary>Whether the stored license used online validation vs offline stub.</summary>
+        public static string GetOnlineOfflineLabel()
+        {
+            if (IsDevBypassEnabled())
+                return "offline (environment bypass)";
+
+            string mode = GetValidationModeLabel();
+            if (string.Equals(mode, "online", StringComparison.OrdinalIgnoreCase))
+                return "online (server validated)";
+            if (string.Equals(mode, "offline-stub", StringComparison.OrdinalIgnoreCase))
+                return "offline (local beta stub)";
+            if (string.Equals(mode, "none", StringComparison.OrdinalIgnoreCase))
+                return "offline (no license)";
+            return "offline (local file)";
         }
 
         /// <summary>Path to the local license file (%APPDATA%\HydroComplete\license.json).</summary>
         public static string GetLicenseFilePath() => LicensePath;
 
-        /// <summary>
-        /// Placeholder for future hydrocomplete.com API token validation.
-        /// </summary>
-        public static Task<bool> ValidateOnlineAsync()
+        /// <summary>Activate Pro with email + token; writes license.json on success.</summary>
+        public static Task<LicenseActivationResult> ActivateAsync(
+            string email,
+            string token,
+            CancellationToken cancellationToken = default)
         {
-            // TODO: POST license token to hydrocomplete.com API and refresh license.json
-            return Task.FromResult(false);
+            return Activator.ActivateAsync(email, token, LicensePath, cancellationToken);
+        }
+
+        /// <summary>
+        /// Re-validate the stored license against hydrocomplete.com when online;
+        /// refreshes license.json on success or offline-stub fallback.
+        /// </summary>
+        public static async Task<bool> ValidateOnlineAsync(CancellationToken cancellationToken = default)
+        {
+            LicenseActivationResult result = await Activator
+                .RefreshAsync(LicensePath, cancellationToken)
+                .ConfigureAwait(false);
+            return result.Success;
         }
 
         private static bool IsDevBypassEnabled()
         {
             string? val = Environment.GetEnvironmentVariable("HYDROCOMPLETE_PRO");
             return string.Equals(val, "1", StringComparison.Ordinal);
-        }
-
-        private static bool TryReadLicense(string path, out LicenseRecord license)
-        {
-            license = new LicenseRecord();
-            if (!File.Exists(path))
-                return false;
-
-            try
-            {
-                string json = File.ReadAllText(path);
-                var record = JsonSerializer.Deserialize<LicenseRecord>(json, JsonOptions);
-                if (record == null
-                    || string.IsNullOrWhiteSpace(record.Email)
-                    || string.IsNullOrWhiteSpace(record.Token)
-                    || string.IsNullOrWhiteSpace(record.Expires))
-                {
-                    return false;
-                }
-
-                if (!DateTimeOffset.TryParse(record.Expires, out var expires))
-                    return false;
-
-                if (expires <= DateTimeOffset.UtcNow)
-                    return false;
-
-                license = record;
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        /// <summary>license.json schema: { "email", "token", "expires" (ISO-8601) }.</summary>
-        private sealed class LicenseRecord
-        {
-            public string Email { get; set; } = "";
-            public string Token { get; set; } = "";
-            public string Expires { get; set; } = "";
         }
     }
 }
