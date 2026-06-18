@@ -9,7 +9,7 @@ Target resolution: **1920×1080** (or Publisher portal minimum). Save as PNG.
 
 ## Before you shoot
 
-1. Run `install.ps1` so the bundle auto-loads (banner shows v0.4.0).
+1. Run `install.ps1` so the bundle auto-loads (banner shows v0.5.0).
 2. Open the test DWG with pipe networks visible in plan.
 3. Set a clean visual style: light background, pipe network color distinct, labels readable.
 4. Hide unrelated palettes if they clutter the frame; keep the Civil 3D ribbon visible in at least one shot.
@@ -25,7 +25,7 @@ Target resolution: **1920×1080** (or Publisher portal minimum). Save as PNG.
 | Field | Detail |
 |---|---|
 | **What to show** | Full Civil 3D window with **HydroComplete › Analysis** ribbon tab active |
-| **Buttons visible** | Pipes, Write Labels, Design Capacity, Write Overload, HGL, Rational, Report, PDF Report, Atlas 14, About (per `RibbonBuilder.cs`) |
+| **Buttons visible** | Pipe Capacity, Write Capacity, Design Capacity, Write Overload, HGL Profile, HTML Report, PDF Report, Rational Q, Atlas 14 IDF, Activate Pro, License, About (per `RibbonBuilder.cs`) |
 | **Caption** | *HydroComplete Analysis commands on a dedicated ribbon tab — no memorizing HC_* names.* |
 | **Tips** | Zoom drawing so a pipe network is visible behind the ribbon; confirms in-product integration |
 
@@ -70,7 +70,7 @@ Target resolution: **1920×1080** (or Publisher portal minimum). Save as PNG.
 
 ---
 
-## Shot 5 — HC_HGL Normal-Depth Profile
+## Shot 5 — HC_HGL Normal-Depth Profile + Labels
 
 **File name:** `05-hc-hgl-profile.png`
 
@@ -80,6 +80,32 @@ Target resolution: **1920×1080** (or Publisher portal minimum). Save as PNG.
 | **Data visible** | Command table: `HGL_US`, `HGL_DS`, `HGL_mid`, `h_m`, `d/D`, `SURCH`; caption/subtitle mentions *normal depth*; labels on layer **HC-HGL** in plan or profile |
 | **Caption** | *Steady hydraulic grade line at design Q using Manning normal depth — HEC-22 losses optional.* |
 | **Tips** | Include HEC-22 losses (*Yes* at prompt). If catchments exist, use catchment-driven Q; otherwise prompted design Q. Profile view strongly preferred for this shot |
+
+---
+
+## Shot 5a — HC_HGL Profile Polyline (v0.5.0)
+
+**File name:** `05a-hc-hgl-profile-polyline.png`
+
+| Field | Detail |
+|---|---|
+| **What to show** | Civil 3D profile or 3D view after `HC_HGL` with **Draw HGL profile polyline** = **Yes** (default) |
+| **Data visible** | Magenta `Polyline3d` on layer **HC-HGL-PROFILE**; vertices at pipe upstream/downstream ends with Z = computed HGL; command summary line *Wrote HGL profile polyline(s) for N network(s)* |
+| **Caption** | *HGL profile polyline written to HC-HGL-PROFILE — 3D trace at pipe ends from computed upstream/downstream HGL.* |
+| **Tips** | Thaw/isolate `HC-HGL-PROFILE`. Run `HC_HGL` after labels; accept default **Yes** at polyline prompt. Profile view best shows Z alignment with pipe inverts |
+
+---
+
+## Shot 5b — Routed Catchment Q (v0.5.0)
+
+**File name:** `05b-hc-routed-q.png`
+
+| Field | Detail |
+|---|---|
+| **What to show** | Command output from `HC_CAPACITY` or `HC_HGL` on a drawing **with catchments** after **Route catchment flows** = **Yes** |
+| **Data visible** | Routed summary: *Routed catchment flows (outlet structures, N catchments, total Q=… cfs)*; per-catchment lines with `Q=… cfs -> struct …`; table header shows *routed Q, system total=… cfs*; per-pipe `Q(cfs)` column varies by reach |
+| **Caption** | *Catchment flows routed through the pipe network — per-pipe design Q instead of a single uniform value.* |
+| **Tips** | Requires catchment objects linked to structures. Accept default **Yes** at *Route catchment flows*; pick Atlas 14 preset or `auto`. Skip if test DWG has no catchments (see Shot 10) |
 
 ---
 
@@ -118,7 +144,20 @@ Target resolution: **1920×1080** (or Publisher portal minimum). Save as PNG.
 | **What to show** | PDF viewer (or print preview) of the report from `HC_REPORT_PDF` with Pro license active |
 | **Data visible** | Same step-by-step traces as HTML; HydroComplete branding; Manning + HGL sections |
 | **Caption** | *Sealable PDF export — Pro unlocks formula-transparent reports for review packages.* |
-| **Tips** | Set `HYDROCOMPLETE_PRO=1` for dev capture, or activate via `HC_LICENSE`. Crop viewer chrome; show one full calculation step block |
+| **Tips** | Activate via `HC_ACTIVATE` first, or set `HYDROCOMPLETE_PRO=1` for dev capture. Crop viewer chrome; show one full calculation step block |
+
+---
+
+## Shot 8a — HC_ACTIVATE Pro Activation (v0.5.0)
+
+**File name:** `08a-hc-activate.png`
+
+| Field | Detail |
+|---|---|
+| **What to show** | Command line after successful `HC_ACTIVATE` (email + `hc_live_*` beta token prompts) |
+| **Data visible** | Activation success message; license written to `%APPDATA%\HydroComplete\license.json`; optional follow-up `HC_LICENSE` showing **Pro**, validation mode (`online` or `offline-stub`), and last validated timestamp |
+| **Caption** | *Activate Pro with email and beta token — online validation or offline stub unlocks PDF export.* |
+| **Tips** | Capture activation prompt sequence or split frame: `HC_ACTIVATE` output + `HC_LICENSE` status. Redact email/token in store upload if needed |
 
 ---
 

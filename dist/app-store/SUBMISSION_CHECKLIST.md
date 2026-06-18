@@ -54,14 +54,14 @@ Autodesk’s multi-target bundle pattern.
 | Item | Status | Notes |
 |---|---|---|
 | `SchemaVersion="1.0"` | ✅ Present | |
-| `AppVersion` matches release | ✅ `0.3.0` | Bump on each store upload |
+| `AppVersion` matches release | ✅ `0.5.0` | Bump on each store upload |
 | `Name` / `Description` | ✅ Present | Mirror `LISTING.md` copy |
 | `ProductCode` (GUID) | ✅ `{8d07b4c8-06cb-497d-832a-dcb5b095d9fa}` | Keep stable across versions |
 | `CompanyDetails` (Name, Url, Email) | ✅ Present | |
 | `RuntimeRequirements` OS/Platform/Series | ✅ `Win64` / `Civil3D` / **R25.0 + R25.1** | Two `ComponentEntry` blocks; same `Contents/*.dll` (both .NET 8) |
 | `ComponentEntry` `ModuleName` path | ✅ `./Contents/HydroComplete.Civil3D.dll` | File must exist in zip |
 | `LoadOnAutoCADStartup` | ✅ `True` | |
-| `Commands` block (Local + Global) | ✅ All 7 `HC_*` commands listed | |
+| `Commands` block (Local + Global) | ✅ All 12 `HC_*` commands listed | `HC_ABOUT`, `HC_PIPES`, `HC_PIPES_WRITE`, `HC_CAPACITY`, `HC_CAPACITY_WRITE`, `HC_RATIONAL`, `HC_HGL`, `HC_REPORT`, `HC_REPORT_PDF`, `HC_ATLAS14`, `HC_ACTIVATE`, `HC_LICENSE` |
 | `AssemblyMappings` for Engine.dll | ✅ Present | Required for split assembly |
 | **Bundle icon** | ✅ Present | `Icon="./Contents/PackageIcon.png"` — 96×96 PNG in `Contents/` |
 | **Help file URL** | ✅ Present | `HelpFile="https://hydrocomplete.com/civil3d"` on `ApplicationPackage` |
@@ -79,7 +79,7 @@ Autodesk’s multi-target bundle pattern.
 powershell -File verify-install.ps1   # after install.ps1 on a test machine
 ```
 
-- [ ] Civil 3D **2025 (R25.0)** and **2026 (R25.1)** each start with banner: `HydroComplete for Civil 3D 0.3.1 loaded`
+- [ ] Civil 3D **2025 (R25.0)** and **2026 (R25.1)** each start with banner: `HydroComplete for Civil 3D 0.5.0 loaded`
 - [ ] `verify-install.ps1` reports `Series: R25.0 OK` and `Series: R25.1 OK`
 - [ ] `HC_ABOUT` lists all commands
 - [ ] No duplicate bundle folders under `%APPDATA%\Autodesk\ApplicationPlugins\`
@@ -113,8 +113,11 @@ Capture at **1920×1080** or Autodesk's current minimum (check Publisher portal)
 | 2 | **Manning capacity** — Full-flow Q and velocity for every pipe in the network | `HC_PIPES` command-line output |
 | 3 | **Plan labels** — Capacity annotations written back on layer HC-CAPACITY | `HC_PIPES_WRITE` plan view |
 | 4 | **Hydraulic grade line** — Steady HGL with HEC-22 losses labeled on HC-HGL | `HC_HGL` plan + profile |
-| 5 | **Formula-transparent report** — Step-by-step Manning calcs in HTML export | `HC_REPORT` → browser |
-| 6 | **Atlas 14 IDF presets** — 18 embedded NOAA city curves, no manual a/b/c | `HC_ATLAS14` command output |
+| 5 | **HGL profile polyline** — 3D trace on HC-HGL-PROFILE at pipe US/DS HGL | `HC_HGL` profile / 3D view |
+| 6 | **Routed catchment Q** — Per-pipe design Q through pipe network topology | `HC_CAPACITY` or `HC_HGL` with catchments |
+| 7 | **Formula-transparent report** — Step-by-step Manning calcs in HTML export | `HC_REPORT` → browser |
+| 8 | **Pro activation** — Email + beta token unlocks PDF export | `HC_ACTIVATE` + `HC_LICENSE` |
+| 9 | **Atlas 14 IDF presets** — Live PFDS or 18 embedded NOAA city curves | `HC_ATLAS14` or `HC_RATIONAL` |
 
 - [ ] All screenshots free of client-identifying project data (or use anonymized sample DWG)
 - [ ] Captions written per table above
@@ -131,10 +134,10 @@ Copy from `LISTING.md`:
 - [ ] **Long description** (full markdown/HTML as allowed)
 - [ ] **Category:** Civil Engineering / Hydraulics / Productivity (pick best fit in portal)
 - [ ] **Supported products:** Civil 3D 2025 (R25.0), Civil 3D 2026 (R25.1)
-- [ ] **Version number:** 0.3.0
+- [ ] **Version number:** 0.5.0
 - [ ] **Keywords** — paste from `LISTING.md`
 - [ ] **Pricing** — set when model finalized (TBD / freemium per `LISTING.md`)
-- [ ] **Release notes** — summarize v0.3.0: Atlas 14 presets, HEC-22 HGL losses, HTML reports
+- [ ] **Release notes** — summarize v0.5.0: HGL profile polyline on `HC-HGL-PROFILE`, catchment Q routing for capacity/HGL/reports, `HC_ACTIVATE` Pro licensing (`HC_LICENSE`, online + offline stub)
 
 ---
 

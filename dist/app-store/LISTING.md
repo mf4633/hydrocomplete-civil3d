@@ -1,7 +1,7 @@
 # Autodesk App Store — Listing Copy
 
 **Product:** HydroComplete for Civil 3D  
-**Version at submission:** 0.4.0  
+**Version at submission:** 0.5.0  
 **Last updated:** 2026-06-17
 
 ---
@@ -30,12 +30,13 @@ Built by a practicing PE for the everyday sizing and reporting work Civil 3D eng
 
 ### What it does
 
-- **Design capacity check** — Compare design *Q* to full-barrel Manning capacity for every pipe; see *Q*<sub>des</sub>/*Q*<sub>full</sub>, *d*/*D*, and surcharge flags (`HC_CAPACITY`, `HC_CAPACITY_WRITE`).
+- **Design capacity check** — Compare design *Q* to full-barrel Manning capacity for every pipe; see *Q*<sub>des</sub>/*Q*<sub>full</sub>, *d*/*D*, and surcharge flags (`HC_CAPACITY`, `HC_CAPACITY_WRITE`). When catchments exist, optionally **route catchment flows** through the pipe network so each pipe gets its tributary *Q* instead of a single uniform value.
 - **Manning capacity** — Full-barrel flow, normal depth, peak velocity, and surcharge flags for every pipe in every pipe network (`HC_PIPES`, `HC_PIPES_WRITE`).
-- **Normal-depth hydraulic grade line** — Steady HGL at design *Q* using Manning normal depth (partial flow + velocity head), with optional HEC-22 junction and exit minor losses; labels on layer `HC-HGL` (`HC_HGL`).
+- **Normal-depth hydraulic grade line** — Steady HGL at design *Q* using Manning normal depth (partial flow + velocity head), with optional HEC-22 junction and exit minor losses; plan labels on layer `HC-HGL`; optional **3D profile polyline** on layer `HC-HGL-PROFILE` at pipe upstream/downstream ends (`HC_HGL`). Routed catchment *Q* supported when catchments are present.
 - **Rational peak flows** — `Q = C·i·A` from catchment geometry with composite runoff coefficients (`HC_RATIONAL`).
 - **Live NOAA Atlas 14 IDF** — PFDS intensity–duration–frequency fetch from drawing geolocation (30-day cache); 18 embedded US city presets as offline fallback (`HC_ATLAS14`, `HC_RATIONAL`).
-- **Formula-transparent reports** — HTML export with step-by-step calculation traces to `Documents\HydroComplete\` (`HC_REPORT`); sealable PDF export with Pro (`HC_REPORT_PDF`).
+- **Formula-transparent reports** — HTML export with step-by-step calculation traces to `Documents\HydroComplete\` (`HC_REPORT`); sealable PDF export with Pro (`HC_REPORT_PDF`). Reports reflect routed per-pipe *Q* when catchment routing is used.
+- **Pro activation** — Activate with email and beta token (`hc_live_*`) via online validation or offline stub; `HC_LICENSE` shows tier and last check (`HC_ACTIVATE`, `HC_LICENSE`).
 - **Ribbon integration** — **HydroComplete › Analysis** tab exposes the same commands as the command line.
 
 ### Why HydroComplete
@@ -58,23 +59,26 @@ Every engine result carries a `Steps` trace (label, value, units, formula) — t
 
 Learn more: [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d)
 
-### Coming in v0.5.0
+### New in v0.5.0
 
-- Online license validation against hydrocomplete.com (replacing local `license.json` stub)
-- Account sync for Pro entitlements across web app and Civil 3D add-in
+- **HGL profile polyline** — After `HC_HGL` labels, draw a `Polyline3d` per network on `HC-HGL-PROFILE` with Z at computed upstream/downstream HGL (Yes/No prompt, default Yes).
+- **Catchment Q routing** — `HC_CAPACITY`, `HC_HGL`, and reports can route Rational peak flows through pipe topology so design *Q* varies by reach.
+- **Pro activation** — `HC_ACTIVATE` with online POST to hydrocomplete.com or offline `hc_live_*` stub; `HC_LICENSE` for status; `HC_REPORT_PDF` gated on Pro.
 
 ---
 
 ## Key Features (bullet list for store UI)
 
-- **Design capacity overload check** — Design *Q* vs *Q*<sub>full</sub> with *d*/*D* and surcharge flags; label overloaded pipes on `HC-CAPACITY`
+- **Design capacity overload check** — Design *Q* vs *Q*<sub>full</sub> with *d*/*D* and surcharge flags; optional routed catchment *Q* per pipe; label overloaded pipes on `HC-CAPACITY`
 - **Manning pipe capacity** — Full-flow *Q*, velocity, normal depth, and surcharge flags for all pipes in pipe networks
-- **Normal-depth HGL** — Steady profile at design *Q* with HEC-22 junction/exit losses; plan labels on `HC-HGL`
+- **Normal-depth HGL** — Steady profile at design *Q* with HEC-22 junction/exit losses; plan labels on `HC-HGL`; 3D profile polyline on `HC-HGL-PROFILE`
+- **Catchment Q routing** — Route Rational peak flows through pipe networks for per-reach design *Q* in capacity, HGL, and reports
 - **Rational method** — Peak runoff from catchment areas with composite *C* and IDF intensity
 - **Live NOAA Atlas 14 IDF** — PFDS fetch from drawing geolocation; 18 embedded city presets offline
 - **Formula transparency** — Every number traceable to its equation and inputs; HTML report export (free)
 - **PDF Pro export** — Sealable formula-transparent Manning + HGL PDF (`HC_REPORT_PDF`)
-- **Drawing write-back** — MText capacity and HGL labels on `HC-CAPACITY` and `HC-HGL`
+- **Pro activation** — Email + beta token activation with online or offline validation (`HC_ACTIVATE`, `HC_LICENSE`)
+- **Drawing write-back** — MText capacity and HGL labels on `HC-CAPACITY` and `HC-HGL`; HGL profile polylines on `HC-HGL-PROFILE`
 - **Auto-load bundle** — One-time install; loads on Civil 3D startup (no NETLOAD for end users)
 - **Audited engine** — Shared `HydroComplete.Engine` assembly unit-tested off the CAD machine
 
@@ -110,8 +114,8 @@ Learn more: [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d)
 
 - **Planned approach:** Freemium or tiered licensing aligned with [hydrocomplete.com](https://hydrocomplete.com) web app subscriptions.
 - **Early access:** Engineers on the [Civil 3D waitlist](https://hydrocomplete.com/civil3d) may receive introductory pricing before public store listing.
-- **Free tier:** Core Manning, capacity checks, normal-depth HGL, HTML reports (`HC_REPORT`), and command-line access.
-- **Pro tier:** PDF export (`HC_REPORT_PDF`); future account sync and online license validation (v0.5.0).
+- **Free tier:** Core Manning, capacity checks, normal-depth HGL (labels + profile polyline), routed catchment *Q*, HTML reports (`HC_REPORT`), and command-line access.
+- **Pro tier:** PDF export (`HC_REPORT_PDF`); activate via `HC_ACTIVATE` (online validation or offline `hc_live_*` stub).
 
 *Update this section before final Publisher submission.*
 
