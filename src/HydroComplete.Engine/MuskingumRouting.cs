@@ -47,12 +47,20 @@ namespace HydroComplete.Engine
             if (dtHours <= 0) throw new ArgumentOutOfRangeException(nameof(dtHours));
 
             double denom = 2.0 * kHours * (1.0 - x) + dtHours;
+            double c0 = (-2.0 * kHours * x + dtHours) / denom;
+            if (c0 < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(dtHours),
+                    $"Timestep must satisfy dt >= 2*K*X ({2.0 * kHours * x:0.####} hr) for Muskingum stability.");
+            }
+
             return new Coefficients
             {
                 KHours = kHours,
                 X = x,
                 DtHours = dtHours,
-                C0 = (-2.0 * kHours * x + dtHours) / denom,
+                C0 = c0,
                 C1 = (2.0 * kHours * x + dtHours) / denom,
                 C2 = (2.0 * kHours * (1.0 - x) - dtHours) / denom,
             };
@@ -72,15 +80,31 @@ namespace HydroComplete.Engine
             var result = new RoutingResult { Coefficients = coeffs };
 
             double o1 = inflowCfs[0];
-            result.Points.Add(new HydrographPoint { TimeHours = 0.0, InflowCfs = inflowCfs[0], OutflowCfs = o1 });
 
-            for (int i = 1; i < inflowCfs.Count; i++)
+            for (int i = 0; i < inflowCfs.Count; i++)
             {
-                double i1 = inflowCfs[i - 1];
+                double i1 = i > 0 ? inflowCfs[i - 1] : 0.0;
                 double i2 = inflowCfs[i];
                 double o2 = Math.Max(0.0, coeffs.C0 * i2 + coeffs.C1 * i1 + coeffs.C2 * o1);
                 result.Points.Add(new HydrographPoint { TimeHours = i * dtHours, InflowCfs = i2, OutflowCfs = o2 });
                 o1 = o2;
+            }
+
+            // Route zero inflow until outflow drains (mass balance / tail attenuation).
+            int tailStep = inflowCfs.Count;
+            int maxTail = 2000;
+            while (o1 > 1e-6 && maxTail-- > 0)
+            {
+                double i1 = result.Points[result.Points.Count - 1].InflowCfs;
+                double o2 = Math.Max(0.0, coeffs.C0 * 0.0 + coeffs.C1 * i1 + coeffs.C2 * o1);
+                result.Points.Add(new HydrographPoint
+                {
+                    TimeHours = tailStep * dtHours,
+                    InflowCfs = 0.0,
+                    OutflowCfs = o2,
+                });
+                o1 = o2;
+                tailStep++;
             }
 
             result.PeakInflowCfs = inflowCfs.Max();

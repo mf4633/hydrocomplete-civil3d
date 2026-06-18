@@ -32,7 +32,7 @@ namespace HydroComplete.Engine.Tests
             var g = ChannelHydraulics.TrapezoidalGeometry(4.0, 2.0, 1.0);
             Assert.Equal(6.0, g.AreaFt2, 3);
             Assert.Equal(8.472, g.WettedPerimeterFt, 2);
-            Assert.Equal(10.0, g.TopWidthFt, 3);
+            Assert.Equal(8.0, g.TopWidthFt, 3);
         }
 
         [Fact]

@@ -179,14 +179,14 @@ namespace HydroComplete.Civil3D.Commands
             {
                 AllowNone = true,
             };
-            foreach (string code in StateCompliance.AvailableStateCodes())
-                opts.Keywords.Add(code);
+            foreach (string stateCode in StateCompliance.AvailableStateCodes())
+                opts.Keywords.Add(stateCode);
             opts.Keywords.Add(StateCompliance.DefaultCode);
             opts.Keywords.Default = "NC";
 
             PromptResult res = ed.GetKeywords(opts);
-            string code = res.Status == PromptStatus.OK ? res.StringResult : "NC";
-            return StateCompliance.Get(code);
+            string selected = res.Status == PromptStatus.OK ? res.StringResult : "NC";
+            return StateCompliance.Get(selected);
         }
 
         private static double PromptRainfall(Editor ed, double defaultIn, string message)

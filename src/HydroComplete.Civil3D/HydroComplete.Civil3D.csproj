@@ -16,7 +16,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>HydroComplete.Civil3D</AssemblyName>
     <RootNamespace>HydroComplete.Civil3D</RootNamespace>
-    <Version>0.7.0</Version>
+    <Version>0.8.0</Version>
     <!-- AutoCAD loads the DLL into its own process; never copy the host
          assemblies (Private=false), but ship PDFsharp and other NuGet deps. -->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -73,8 +73,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Commands\ReviewCommands.cs" />
-    <Compile Remove="Commands\StormwaterCommands.cs" />
     <Compile Remove="Writing\ComplianceReportData.cs" />
   </ItemGroup>
 

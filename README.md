@@ -5,7 +5,7 @@ drawing** — read pipe networks and catchments, compute on public-domain method
 and show every formula. This is the desktop companion behind
 [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d).
 
-Status: **v0.7.0** — Hydraflow-parity batch (validate, size, inlets, multi-RP). See [User validation](#user-validation) below.
+Status: **v0.8.0** — Hydraflow parity batch 2 (TR-55 Tc, sag/curb inlets, box pipes, LandXML, compliance). See [User validation](#user-validation) below.
 
 **Autodesk App Store:** Listing copy, submission checklist, and screenshot shot list live in [`dist/app-store/`](dist/app-store/) (`LISTING.md`, `SUBMISSION_CHECKLIST.md`, `SCREENSHOTS.md`).
 
@@ -27,7 +27,7 @@ not yet re-tested after the listed fix.
 | HydroComplete ribbon tab | *pending* | Not explicitly confirmed in session |
 | `HC_RATIONAL` (with catchments) | *pending* | No catchment objects in test drawing |
 | Waitlist page `hydrocomplete.com/civil3d` | *deploy only* | HTTP 200 deployed; signup flow not user-tested |
-| Engine unit tests | **validated** | `dotnet test` — 112 pass, 1 skip (2026-06-18) |
+| Engine unit tests | **validated** | `dotnet test` — 242 pass, 1 skip (2026-06-18, v0.8.0) |
 | `HC_HGL` tailwater backwater (engine) | **validated** | `Hgl.SteadyBackwaterFromOutfall` anchors at outfall tailwater, steps upstream (`HglBackwaterTests`) |
 | `HC_HGL` (labels + profile in Civil 3D) | *pending re-test* | v0.6.0 — tailwater prompt at outfall; labels on `HC-HGL`, polyline on `HC-HGL-PROFILE`; close C3D → `install.ps1` → run on `C-STORM` |
 | `HC_HGL` (normal-depth + HEC-22 losses) | *pending re-test* | Superseded directionally by tailwater backwater; confirm command table + surcharge flags still match hand check |

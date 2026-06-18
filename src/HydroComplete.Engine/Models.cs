@@ -89,13 +89,33 @@ namespace HydroComplete.Engine
         public string DownstreamStructureId { get; set; } = "";
     }
 
-    /// <summary>A circular gravity pipe segment for Manning capacity / normal-depth checks.</summary>
+    /// <summary>Cross-section shape for gravity pipe segments.</summary>
+    public enum PipeShape
+    {
+        /// <summary>Circular pipe; use <see cref="PipeSegment.DiameterFt"/>.</summary>
+        Circular,
+
+        /// <summary>Rectangular box conduit; use <see cref="PipeSegment.WidthFt"/> and
+        /// <see cref="PipeSegment.HeightFt"/>.</summary>
+        Box,
+    }
+
+    /// <summary>A gravity pipe segment (circular or box) for Manning capacity / normal-depth checks.</summary>
     public sealed class PipeSegment
     {
         public string Name { get; set; } = "";
 
-        /// <summary>Inside diameter, feet.</summary>
+        /// <summary>Cross-section shape. Default is circular.</summary>
+        public PipeShape Shape { get; set; } = PipeShape.Circular;
+
+        /// <summary>Inside diameter, feet (circular pipes).</summary>
         public double DiameterFt { get; set; }
+
+        /// <summary>Inside width, feet (box conduits).</summary>
+        public double WidthFt { get; set; }
+
+        /// <summary>Inside height, feet (box conduits).</summary>
+        public double HeightFt { get; set; }
 
         /// <summary>Slope, ft/ft (rise over run, positive downstream).</summary>
         public double Slope { get; set; }

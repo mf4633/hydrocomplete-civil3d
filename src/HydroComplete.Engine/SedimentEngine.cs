@@ -5,7 +5,7 @@ namespace HydroComplete.Engine
 {
     /// <summary>
     /// SEDCAD4 sediment/erosion facade. Civil 3D commands use <see cref="Rusle"/>; full site
-    /// analysis uses <see cref="Rusle.SoilLoss"/>, <see cref="Musle.SingleStorm"/>, and BMP classes.
+    /// analysis uses <see cref="RusleAnalysis.SoilLoss"/>, <see cref="Musle.SingleStorm"/>, and BMP classes.
     /// </summary>
     public static class SedimentEngine
     {

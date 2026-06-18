@@ -54,5 +54,31 @@ namespace HydroComplete.Engine.Tests
             Assert.Equal(expected, composite.TcMinutes, 2);
             Assert.NotEmpty(composite.Steps);
         }
+
+        [Fact]
+        public void FromTr55Segments_IncludesChannelSegment()
+        {
+            var segments = new List<TimeOfConcentration.TcSegment>
+            {
+                new TimeOfConcentration.TcSegment
+                {
+                    Name = "Channel",
+                    Type = "channel",
+                    LengthFt = 200.0,
+                    Slope = 0.005,
+                    BottomWidthFt = 2.0,
+                    SideSlopeZ = 1.0,
+                    DepthFt = 1.0,
+                    ManningN = 0.013,
+                },
+            };
+
+            var composite = TimeOfConcentration.FromTr55Segments(segments);
+            var flow = ChannelHydraulics.FlowAtDepth(2.0, 1.0, 1.0, 0.013, 0.005);
+            double expectedMin = 200.0 / flow.VelocityFps / 60.0;
+
+            Assert.Equal(expectedMin, composite.TcMinutes, 2);
+            Assert.Contains(composite.Steps, s => s.Label == "Tt[Channel]");
+        }
     }
 }

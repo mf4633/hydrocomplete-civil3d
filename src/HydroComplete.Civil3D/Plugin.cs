@@ -5,6 +5,15 @@ using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 // Register the extension entry point and the command class with AutoCAD.
 [assembly: ExtensionApplication(typeof(HydroComplete.Civil3D.Plugin))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.HydroCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.InletCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.LandXmlCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.MultiRpCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.ReviewCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.SizingCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.StormwaterCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.TcCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.ValidateCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.AdvancedStormwaterCommands))]
 
 namespace HydroComplete.Civil3D
 {
@@ -23,7 +32,7 @@ namespace HydroComplete.Civil3D
             {
                 var doc = AcadApp.DocumentManager?.MdiActiveDocument;
                 doc?.Editor.WriteMessage(
-                    $"\n{ProductName} for Civil 3D 0.7.0 loaded. Type HC_ABOUT for commands.\n");
+                    $"\n{ProductName} for Civil 3D 0.8.0 loaded. Type HC_ABOUT for commands.\n");
             }
             catch
             {

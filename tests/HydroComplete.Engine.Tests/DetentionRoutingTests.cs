@@ -56,14 +56,17 @@ namespace HydroComplete.Engine.Tests
         [Fact]
         public void RiserDischarge_UsesLesserOfWeirAndOrifice()
         {
-            // Low head: weir controls; high head: orifice controls
+            // Governing discharge is always min(weir around perimeter, orifice through barrel)
             double lowHead = OutletStructures.RiserDischargeCfs(0.6, 2.75, 12.0, 0.5);
-            double qWeir = OutletStructures.SharpCrestedWeirDischargeCfs(2.75, Math.PI, 0.5);
-            Assert.Equal(qWeir, lowHead, 2);
+            double qWeirLow = OutletStructures.SharpCrestedWeirDischargeCfs(2.75, Math.PI, 0.5);
+            double qOrificeLow = OutletStructures.OrificeDischargeCfs(0.6, 12.0, 0.5);
+            Assert.Equal(Math.Min(qWeirLow, qOrificeLow), lowHead, 2);
 
             double highHead = OutletStructures.RiserDischargeCfs(0.6, 2.75, 12.0, 10.0);
-            double qOrifice = OutletStructures.OrificeDischargeCfs(0.6, 12.0, 10.0);
-            Assert.Equal(qOrifice, highHead, 2);
+            double qWeirHigh = OutletStructures.SharpCrestedWeirDischargeCfs(2.75, Math.PI, 10.0);
+            double qOrificeHigh = OutletStructures.OrificeDischargeCfs(0.6, 12.0, 10.0);
+            Assert.Equal(Math.Min(qWeirHigh, qOrificeHigh), highHead, 2);
+            Assert.Equal(qOrificeHigh, highHead, 2);
         }
 
         [Fact]
@@ -93,8 +96,9 @@ namespace HydroComplete.Engine.Tests
                 new StageStorage.ElevationAreaPoint { ElevationFt = 2.0, AreaFt2 = 3000.0 },
             }).Points;
 
+            // Between elev 0 (S=0) and elev 2 (S=4000), storage is linear in elevation
             double storage = StageStorage.InterpolateStorage(1.0, table);
-            Assert.Equal(1000.0, storage, 0);
+            Assert.Equal(2000.0, storage, 0);
         }
 
         [Fact]

@@ -10,7 +10,8 @@ namespace HydroComplete.Engine.Tests
         public void LsFactor_FivePercentSlope_MatchesHandCalc()
         {
             double ls = RusleAnalysis.LsFactor(100.0, 5.0);
-            Assert.Equal(0.643, ls, 2);
+            // m=0.5 at exactly 5% slope; L=(100/72.6)^0.5, S=10.8*sin(atan(0.05))+0.03
+            Assert.Equal(0.668, ls, 2);
         }
 
         [Fact]
@@ -39,8 +40,8 @@ namespace HydroComplete.Engine.Tests
             Assert.Equal(180.0, r.R, 0);
             Assert.Equal(0.38, r.K, 2);
             Assert.Equal(0.90, r.C, 2);
-            Assert.Equal(39.5, r.SoilLossPerAcreTonsYr, 0);
-            Assert.Equal(79.0, r.TotalSoilLossTonsYr, 0);
+            Assert.Equal(41.1, r.SoilLossPerAcreTonsYr, 1);
+            Assert.Equal(82.3, r.TotalSoilLossTonsYr, 1);
             Assert.Contains(r.Steps, s => s.Label == "A");
         }
 
@@ -67,7 +68,7 @@ namespace HydroComplete.Engine.Tests
         {
             var r = Musle.SingleStorm(1.0, 10.0, k: 0.38, ls: 1.0, c: 0.90, p: 1.00);
             Assert.Equal(10.0, r.Qqp, 2);
-            Assert.Equal(115.3, r.SedimentYieldTons, 0);
+            Assert.Equal(118.0, r.SedimentYieldTons, 0);
             Assert.NotEmpty(r.Steps);
         }
 

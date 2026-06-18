@@ -13,7 +13,7 @@ using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 
 namespace HydroComplete.Civil3D.Commands
 {
-    /// <summary>HEC-22 grate-on-grade inlet interception checks (HC_INLETS).</summary>
+    /// <summary>HEC-22 inlet interception checks — grate-on-grade, sag, curb opening (HC_INLETS).</summary>
     public sealed class InletCommands
     {
         private sealed class InletRow
@@ -30,9 +30,13 @@ namespace HydroComplete.Civil3D.Commands
             Editor ed = doc.Editor;
             CivilDocument civilDoc = CivilApplication.ActiveDocument;
 
-            double grateLengthFt = PromptDouble(ed, "\nGrate length L (ft)", 5.0);
+            InletCapacity.InletType inletType = PromptInletType(ed);
+            double grateLengthFt = PromptDouble(ed, "\nInlet length L (ft)", 5.0);
             double flowDepthFt = PromptDouble(ed, "Gutter flow depth d (ft)", 0.15);
             double gutterSlope = PromptDouble(ed, "Gutter slope S (ft/ft)", 0.005);
+            double curbOpeningHeightFt = 0.0;
+            if (inletType == InletCapacity.InletType.CurbOpening)
+                curbOpeningHeightFt = PromptDouble(ed, "Curb opening height a (ft)", 0.5);
 
             var catchments = CatchmentReader.ReadAll(doc.Database, civilDoc);
             var pipes = PipeNetworkReader.ReadAll(doc.Database, civilDoc);
@@ -45,20 +49,19 @@ namespace HydroComplete.Civil3D.Commands
                 return;
             }
 
-            double capacity = InletCapacity.GrateCapacityCfs(grateLengthFt, flowDepthFt, gutterSlope);
+            double capacity = InletCapacity.CapacityCfs(
+                inletType, grateLengthFt, flowDepthFt, gutterSlope, curbOpeningHeightFt);
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
-                "\n--- HydroComplete: HEC-22 grate-on-grade inlet check ({0} location(s)) ---",
-                rows.Count));
-            ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
-                "\n  Grate L={0:0.##} ft  d={1:0.###} ft  S={2:0.####}  ->  Q_cap={3:0.00} cfs",
-                grateLengthFt, flowDepthFt, gutterSlope, capacity));
+                "\n--- HydroComplete: HEC-22 {0} inlet check ({1} location(s)) ---",
+                InletTypeLabel(inletType), rows.Count));
+            WriteCapacitySummary(ed, inletType, grateLengthFt, flowDepthFt, gutterSlope, curbOpeningHeightFt, capacity);
             ed.WriteMessage("\n  Location              Structure           Q_des(cfs)  Q_cap(cfs)  PASS");
 
             int passCount = 0;
             foreach (InletRow row in rows)
             {
                 InletCapacity.InletCheck check = InletCapacity.CheckInlet(
-                    row.DesignQCfs, grateLengthFt, flowDepthFt, gutterSlope);
+                    row.DesignQCfs, inletType, grateLengthFt, flowDepthFt, gutterSlope, curbOpeningHeightFt);
                 if (check.Ok) passCount++;
 
                 string structure = string.IsNullOrWhiteSpace(row.Structure) ? "—" : row.Structure;
@@ -73,8 +76,90 @@ namespace HydroComplete.Civil3D.Commands
 
             int failCount = rows.Count - passCount;
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
-                "\n  {0} pass, {1} fail.  Formula: Q_cap = Cw*L*d^1.5*sqrt(S), Cw={2:0.#} (HEC-22).\n",
-                passCount, failCount, InletCapacity.CompositeGutterCw));
+                "\n  {0} pass, {1} fail.  {2}\n",
+                passCount, failCount, FormulaNote(inletType)));
+        }
+
+        private static InletCapacity.InletType PromptInletType(Editor ed)
+        {
+            var opts = new PromptKeywordOptions("\nInlet type [Grate/Sag/Curb]")
+            {
+                AllowNone = true,
+            };
+            opts.Keywords.Add("Grate");
+            opts.Keywords.Add("Sag");
+            opts.Keywords.Add("Curb");
+            opts.Keywords.Default = "Grate";
+            PromptResult res = ed.GetKeywords(opts);
+            if (res.Status != PromptStatus.OK)
+                return InletCapacity.InletType.GrateOnGrade;
+
+            if (string.Equals(res.StringResult, "Sag", StringComparison.OrdinalIgnoreCase))
+                return InletCapacity.InletType.Sag;
+            if (string.Equals(res.StringResult, "Curb", StringComparison.OrdinalIgnoreCase))
+                return InletCapacity.InletType.CurbOpening;
+            return InletCapacity.InletType.GrateOnGrade;
+        }
+
+        private static string InletTypeLabel(InletCapacity.InletType inletType)
+        {
+            switch (inletType)
+            {
+                case InletCapacity.InletType.Sag:
+                    return "sag grate";
+                case InletCapacity.InletType.CurbOpening:
+                    return "curb-opening";
+                default:
+                    return "grate-on-grade";
+            }
+        }
+
+        private static void WriteCapacitySummary(
+            Editor ed,
+            InletCapacity.InletType inletType,
+            double lengthFt,
+            double flowDepthFt,
+            double gutterSlope,
+            double curbOpeningHeightFt,
+            double capacity)
+        {
+            switch (inletType)
+            {
+                case InletCapacity.InletType.Sag:
+                    ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                        "\n  Type=Sag  L={0:0.##} ft  d={1:0.###} ft  ->  Q_cap={2:0.00} cfs",
+                        lengthFt, flowDepthFt, capacity));
+                    break;
+                case InletCapacity.InletType.CurbOpening:
+                    ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                        "\n  Type=Curb  L={0:0.##} ft  a={1:0.###} ft  d={2:0.###} ft  S={3:0.####}  ->  Q_cap={4:0.00} cfs",
+                        lengthFt, curbOpeningHeightFt, flowDepthFt, gutterSlope, capacity));
+                    break;
+                default:
+                    ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                        "\n  Type=Grate  L={0:0.##} ft  d={1:0.###} ft  S={2:0.####}  ->  Q_cap={3:0.00} cfs",
+                        lengthFt, flowDepthFt, gutterSlope, capacity));
+                    break;
+            }
+        }
+
+        private static string FormulaNote(InletCapacity.InletType inletType)
+        {
+            switch (inletType)
+            {
+                case InletCapacity.InletType.Sag:
+                    return string.Format(CultureInfo.InvariantCulture,
+                        "Formula: Q_cap = Cw*L*d^1.5, Cw={0:0.##} (HEC-22 Eq. 4-26 sag grate).",
+                        InletCapacity.SagGrateCw);
+                case InletCapacity.InletType.CurbOpening:
+                    return string.Format(CultureInfo.InvariantCulture,
+                        "Formula: Q_cap = Cw*a*L*d^1.5*sqrt(S), Cw={0:0.#} (HEC-22 curb opening).",
+                        InletCapacity.CurbOpeningCw);
+                default:
+                    return string.Format(CultureInfo.InvariantCulture,
+                        "Formula: Q_cap = Cw*L*d^1.5*sqrt(S), Cw={0:0.#} (HEC-22 grate-on-grade).",
+                        InletCapacity.CompositeGutterCw);
+            }
         }
 
         private static List<InletRow> BuildInletRows(

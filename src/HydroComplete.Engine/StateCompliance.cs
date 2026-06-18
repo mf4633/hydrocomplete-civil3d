@@ -50,156 +50,24 @@ namespace HydroComplete.Engine
         public bool VolumeControlRequired { get; init; }
     }
 
-    /// <summary>Lookup table for NC, SC, VA, FL, TX, CA, NY and generic defaults.</summary>
-    public static class StateCompliance
+    /// <summary>
+    /// Lookup table for all 50 US states, DC, PR, VI, and generic EPA defaults.
+    /// Data is generated in StateComplianceData.cs from StateConfigurations.js.
+    /// </summary>
+    public static partial class StateCompliance
     {
         public const string DefaultCode = "DEFAULT";
 
-        private static readonly Dictionary<string, StateComplianceConfig> Configs =
-            new Dictionary<string, StateComplianceConfig>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["NC"] = new StateComplianceConfig
-                {
-                    Code = "NC",
-                    Name = "North Carolina",
-                    RegulatoryBody = "NCDEQ (DEMLR)",
-                    DesignStormInches = 1.0,
-                    WqVolumeFactorInches = 1.0,
-                    PeakAttenuationPercent = 100.0,
-                    DrawdownMinHours = 48.0,
-                    DrawdownMaxHours = 120.0,
-                    TssRemovalPercent = 85.0,
-                    TnRemovalPercent = 30.0,
-                    TpRemovalPercent = 30.0,
-                    RoadwayTssRemovalPercent = 80.0,
-                    TolerableSoilLossTonsPerAcYr = 5.0,
-                    DefaultRFactor = 170.0,
-                    VolumeControlRequired = true,
-                },
-                ["SC"] = new StateComplianceConfig
-                {
-                    Code = "SC",
-                    Name = "South Carolina",
-                    RegulatoryBody = "SC DHEC",
-                    DesignStormInches = 1.5,
-                    WqVolumeFactorInches = 1.5,
-                    PeakAttenuationPercent = 100.0,
-                    DrawdownMinHours = 48.0,
-                    DrawdownMaxHours = 72.0,
-                    TssRemovalPercent = 80.0,
-                    TnRemovalPercent = 25.0,
-                    TpRemovalPercent = 25.0,
-                    TolerableSoilLossTonsPerAcYr = 5.0,
-                    DefaultRFactor = 190.0,
-                    VolumeControlRequired = false,
-                },
-                ["VA"] = new StateComplianceConfig
-                {
-                    Code = "VA",
-                    Name = "Virginia",
-                    RegulatoryBody = "VA DEQ",
-                    DesignStormInches = 1.0,
-                    WqVolumeFactorInches = 1.0,
-                    PeakAttenuationPercent = 100.0,
-                    DrawdownMinHours = 48.0,
-                    DrawdownMaxHours = 72.0,
-                    TssRemovalPercent = 80.0,
-                    TnRemovalPercent = 0.0,
-                    TpRemovalPercent = 50.0,
-                    TolerableSoilLossTonsPerAcYr = 5.0,
-                    DefaultRFactor = 180.0,
-                    VolumeControlRequired = true,
-                },
-                ["FL"] = new StateComplianceConfig
-                {
-                    Code = "FL",
-                    Name = "Florida",
-                    RegulatoryBody = "FDEP",
-                    DesignStormInches = 1.0,
-                    WqVolumeFactorInches = 1.0,
-                    PeakAttenuationPercent = 100.0,
-                    DrawdownMinHours = 48.0,
-                    DrawdownMaxHours = 72.0,
-                    TssRemovalPercent = 80.0,
-                    TnRemovalPercent = 50.0,
-                    TpRemovalPercent = 50.0,
-                    TolerableSoilLossTonsPerAcYr = 5.0,
-                    DefaultRFactor = 230.0,
-                    VolumeControlRequired = true,
-                },
-                ["TX"] = new StateComplianceConfig
-                {
-                    Code = "TX",
-                    Name = "Texas",
-                    RegulatoryBody = "TCEQ",
-                    DesignStormInches = 1.5,
-                    WqVolumeFactorInches = 1.5,
-                    PeakAttenuationPercent = 100.0,
-                    DrawdownMinHours = 48.0,
-                    DrawdownMaxHours = 72.0,
-                    TssRemovalPercent = 80.0,
-                    TnRemovalPercent = 30.0,
-                    TpRemovalPercent = 30.0,
-                    TolerableSoilLossTonsPerAcYr = 5.0,
-                    DefaultRFactor = 175.0,
-                    VolumeControlRequired = false,
-                },
-                ["CA"] = new StateComplianceConfig
-                {
-                    Code = "CA",
-                    Name = "California",
-                    RegulatoryBody = "SWRCB / Regional Water Boards",
-                    DesignStormInches = 0.75,
-                    WqVolumeFactorInches = 0.75,
-                    PeakAttenuationPercent = 100.0,
-                    DrawdownMinHours = 48.0,
-                    DrawdownMaxHours = 72.0,
-                    TssRemovalPercent = 80.0,
-                    TnRemovalPercent = 25.0,
-                    TpRemovalPercent = 30.0,
-                    TolerableSoilLossTonsPerAcYr = 5.0,
-                    DefaultRFactor = 30.0,
-                    VolumeControlRequired = true,
-                },
-                ["NY"] = new StateComplianceConfig
-                {
-                    Code = "NY",
-                    Name = "New York",
-                    RegulatoryBody = "NYSDEC",
-                    DesignStormInches = 1.0,
-                    WqVolumeFactorInches = 1.0,
-                    PeakAttenuationPercent = 100.0,
-                    DrawdownMinHours = 48.0,
-                    DrawdownMaxHours = 72.0,
-                    TssRemovalPercent = 80.0,
-                    TnRemovalPercent = 30.0,
-                    TpRemovalPercent = 40.0,
-                    RoadwayTssRemovalPercent = 40.0,
-                    TolerableSoilLossTonsPerAcYr = 5.0,
-                    DefaultRFactor = 100.0,
-                    VolumeControlRequired = true,
-                },
-                [DefaultCode] = new StateComplianceConfig
-                {
-                    Code = DefaultCode,
-                    Name = "United States (EPA default)",
-                    RegulatoryBody = "U.S. EPA",
-                    DesignStormInches = 1.0,
-                    WqVolumeFactorInches = 1.0,
-                    PeakAttenuationPercent = 100.0,
-                    DrawdownMinHours = 48.0,
-                    DrawdownMaxHours = 72.0,
-                    TssRemovalPercent = 80.0,
-                    TnRemovalPercent = 25.0,
-                    TpRemovalPercent = 25.0,
-                    TolerableSoilLossTonsPerAcYr = 5.0,
-                    DefaultRFactor = 180.0,
-                    VolumeControlRequired = true,
-                },
-            };
+        private static readonly Lazy<Dictionary<string, StateComplianceConfig>> ConfigsLazy =
+            new Lazy<Dictionary<string, StateComplianceConfig>>(BuildConfigs);
+
+        private static Dictionary<string, StateComplianceConfig> Configs => ConfigsLazy.Value;
 
         /// <summary>Returns the config for <paramref name="stateCode"/> or DEFAULT.</summary>
-        public static StateComplianceConfig Get(string stateCode)
+        public static StateComplianceConfig Get(string stateCode) => GetConfig(stateCode);
+
+        /// <summary>Returns the config for <paramref name="stateCode"/> or DEFAULT.</summary>
+        public static StateComplianceConfig GetConfig(string stateCode)
         {
             if (string.IsNullOrWhiteSpace(stateCode))
                 return Configs[DefaultCode];

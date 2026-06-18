@@ -1,7 +1,7 @@
 # Autodesk App Store — Listing Copy
 
 **Product:** HydroComplete for Civil 3D  
-**Version at submission:** 0.6.1  
+**Version at submission:** 0.8.0  
 **Last updated:** 2026-06-18
 
 ---
@@ -58,6 +58,22 @@ Rational method · Kirpich & NRCS time of concentration · IDF intensity `i = a/
 Every engine result carries a `Steps` trace (label, value, units, formula) — the same "show your work" data behind HydroComplete's web app and sealable reports.
 
 Learn more: [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d)
+
+### New in v0.8.0
+
+- **`HC_TC`** — TR-55 segmented time-of-concentration worksheet (sheet / shallow / channel segments).
+- **HEC-22 inlets** — `HC_INLETS` supports grate-on-grade, sag, and curb-opening inlet types.
+- **Box conduit Manning** — Rectangular pipe hydraulics (partial flow, normal depth) in engine.
+- **`HC_LANDXML`** — Export pipe network geometry and hydraulics to LandXML 1.2.
+- **State compliance** — `HC_REVIEW`, `HC_SCS`, `HC_SEDIMENT`, `HC_WQV` enabled; detention/BMP commands (`HC_DETENTION`, `HC_BMP_SIZE`, `HC_WQ_TRAIN`, `HC_SEDIMENT_BASIN`).
+- **Command registration fix** — All `HC_*` command classes registered for reliable auto-load.
+
+### Also in v0.7.0
+
+- **`HC_VALIDATE`** — Design-criteria review (slope, capacity, velocity, cover, HGL flooding).
+- **`HC_SIZE`** — Standard catalog pipe sizing.
+- **`HC_MULTIRP`** — Per-pipe Q and d/D for 2/10/25/100-yr storms.
+- **HGL junction losses** — Optional momentum junction + bend losses in `HC_HGL`.
 
 ### New in v0.6.1
 

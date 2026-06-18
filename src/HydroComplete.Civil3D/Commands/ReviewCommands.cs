@@ -8,6 +8,7 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.Civil.ApplicationServices;
 using HydroComplete.Civil3D.Reading;
+using HydroComplete.Civil3D.Writing;
 using HydroComplete.Engine;
 using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 
@@ -159,14 +160,14 @@ namespace HydroComplete.Civil3D.Commands
             {
                 AllowNone = true,
             };
-            foreach (string code in StateCompliance.AvailableStateCodes())
-                opts.Keywords.Add(code);
+            foreach (string stateCode in StateCompliance.AvailableStateCodes())
+                opts.Keywords.Add(stateCode);
             opts.Keywords.Add(StateCompliance.DefaultCode);
             opts.Keywords.Default = "NC";
 
             PromptResult res = ed.GetKeywords(opts);
-            string code = res.Status == PromptStatus.OK ? res.StringResult : "NC";
-            return StateCompliance.Get(code);
+            string selected = res.Status == PromptStatus.OK ? res.StringResult : "NC";
+            return StateCompliance.Get(selected);
         }
 
         private static string PromptDevelopmentType(Editor ed)

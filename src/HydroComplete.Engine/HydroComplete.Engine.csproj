@@ -22,28 +22,15 @@
     <NoWarn>CS1591</NoWarn>
     <AssemblyName>HydroComplete.Engine</AssemblyName>
     <RootNamespace>HydroComplete.Engine</RootNamespace>
-    <Version>0.7.0</Version>
+    <Version>0.8.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
 
-  <!-- WIP web-engine port (parallel session); excluded until build-clean -->
   <ItemGroup>
     <Compile Remove="_wip/**" />
-    <Compile Remove="BmpLibrary.cs" />
-    <Compile Remove="ComplianceChecker.cs" />
-    <Compile Remove="DetentionRouting.cs" />
-    <Compile Remove="Musle.cs" />
-    <Compile Remove="OutletStructures.cs" />
-    <Compile Remove="Rusle.cs" />
-    <Compile Remove="SedimentEngine.cs" />
-    <Compile Remove="SedimentSettling.cs" />
-    <Compile Remove="SedimentStructures.cs" />
-    <Compile Remove="StageStorage.cs" />
-    <Compile Remove="StateCompliance.cs" />
-    <Compile Remove="WaterQualityEngine.cs" />
   </ItemGroup>
 
 </Project>

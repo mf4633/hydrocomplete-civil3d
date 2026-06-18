@@ -229,7 +229,7 @@ namespace HydroComplete.Engine
             {
                 using var request = new HttpRequestMessage(HttpMethod.Post, _validateUrl);
                 request.Content = new StringContent(body, Encoding.UTF8, "application/json");
-                request.Headers.TryAddWithoutValidation("User-Agent", "HydroComplete-Civil3D/0.7.0");
+                request.Headers.TryAddWithoutValidation("User-Agent", "HydroComplete-Civil3D/0.8.0");
 
                 using HttpClient client = _httpClientFactory();
                 using HttpResponseMessage response = await client

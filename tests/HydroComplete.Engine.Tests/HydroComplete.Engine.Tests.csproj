@@ -20,14 +20,8 @@
   <ItemGroup>
     <None Include="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
     <Compile Remove="_wip/**" />
-    <Compile Remove="ChannelHydraulicsTests.cs" />
-    <Compile Remove="ComplianceCheckerTests.cs" />
-    <Compile Remove="DetentionRoutingTests.cs" />
+    <!-- Muskingum C0 stability edge cases; engine enabled, tests pending routing fix -->
     <Compile Remove="MuskingumRoutingTests.cs" />
-    <Compile Remove="ScsRunoffTests.cs" />
-    <Compile Remove="SedimentEngineTests.cs" />
-    <Compile Remove="StormHyetographTests.cs" />
-    <Compile Remove="WaterQualityEngineTests.cs" />
   </ItemGroup>
 
 </Project>

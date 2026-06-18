@@ -176,6 +176,60 @@ namespace HydroComplete.Engine.Tests
             Assert.Equal(75.0, combined!.Value, 1);
         }
 
+        [Fact]
+        public void EmbeddedStateCount_Is53Jurisdictions()
+        {
+            Assert.Equal(53, StateCompliance.EmbeddedStateCount);
+            Assert.Equal(53, StateCompliance.AvailableStateCodes().Count);
+        }
+
+        [Fact]
+        public void Md_Requires40PercentTnAndTp()
+        {
+            StateComplianceConfig md = StateCompliance.GetConfig("MD");
+            Assert.Equal(40.0, md.TnRemovalPercent, 1);
+            Assert.Equal(40.0, md.TpRemovalPercent, 1);
+            Assert.True(md.VolumeControlRequired);
+
+            var results = PassingWaterQuality(tn: 35, tp: 35);
+            ComplianceReport report = ComplianceChecker.CheckCompliance(results, "MD", "residential");
+            Assert.Equal(ComplianceStatus.Fail, FindCriterion(report, "TN Removal")!.Status);
+            Assert.Equal(ComplianceStatus.Fail, FindCriterion(report, "TP Removal")!.Status);
+        }
+
+        [Fact]
+        public void Nj_Requires50PercentNutrients()
+        {
+            StateComplianceConfig nj = StateCompliance.GetConfig("NJ");
+            Assert.Equal(1.25, nj.DesignStormInches, 2);
+            Assert.Equal(50.0, nj.TnRemovalPercent, 1);
+            Assert.Equal(50.0, nj.TpRemovalPercent, 1);
+        }
+
+        [Fact]
+        public void Ga_Uses12InchWaterQualityStorm()
+        {
+            StateComplianceConfig ga = StateCompliance.GetConfig("GA");
+            Assert.Equal(1.2, ga.DesignStormInches, 2);
+            Assert.Equal(1.2, ga.WqVolumeFactorInches, 2);
+        }
+
+        [Fact]
+        public void Hi_UsesStricterTolerableSoilLoss()
+        {
+            StateComplianceConfig hi = StateCompliance.GetConfig("HI");
+            Assert.Equal(3.0, hi.TolerableSoilLossTonsPerAcYr, 1);
+            Assert.Equal(300.0, hi.DefaultRFactor, 1);
+        }
+
+        [Fact]
+        public void Ak_UsesHalfInchDesignStorm()
+        {
+            StateComplianceConfig ak = StateCompliance.GetConfig("AK");
+            Assert.Equal(0.5, ak.DesignStormInches, 2);
+            Assert.Equal(15.0, ak.DefaultRFactor, 1);
+        }
+
         private static ComplianceCriterion? FindCriterion(ComplianceReport report, string name)
         {
             foreach (ComplianceCriterion c in report.Criteria)

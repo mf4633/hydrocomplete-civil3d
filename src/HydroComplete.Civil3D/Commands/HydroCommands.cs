@@ -30,9 +30,9 @@ namespace HydroComplete.Civil3D.Commands
         public void About()
         {
             Editor ed = Active().Editor;
-            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.7.0 ===");
+            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.8.0 ===");
             ed.WriteMessage("\n  HC_NETWORK       Per-network summary (pipes, length, inverts, diameters, structures)");
-            ed.WriteMessage("\n  HC_PIPES         Manning capacity of every pipe-network pipe");
+            ed.WriteMessage("\n  HC_PIPES         Manning capacity of every pipe-network pipe (circular + box)");
             ed.WriteMessage("\n  HC_PIPES_WRITE   Label Qfull/Vfull on layer HC-CAPACITY");
             ed.WriteMessage("\n  HC_CAPACITY      Design Q vs Q_full check (d/D, surcharge flag)");
             ed.WriteMessage("\n  HC_CAPACITY_WRITE Label overloaded pipes on layer HC-CAPACITY");
@@ -43,18 +43,24 @@ namespace HydroComplete.Civil3D.Commands
             ed.WriteMessage("\n  HC_UNIT_HYDRO    SCS unit hydrograph table output");
             ed.WriteMessage("\n  HC_SEDIMENT      RUSLE/MUSLE soil loss from catchments");
             ed.WriteMessage("\n  HC_WQV           Water quality volume calculation");
+            ed.WriteMessage("\n  HC_DETENTION     Detention pond routing (Modified Puls, SCS UH inflow, orifice/weir outlets)");
+            ed.WriteMessage("\n  HC_BMP_SIZE      WQV-based BMP sizing (bioretention, wet pond, sand filter, swale)");
+            ed.WriteMessage("\n  HC_WQ_TRAIN      BMP treatment train with EMC pollutant loads from catchments");
+            ed.WriteMessage("\n  HC_SEDIMENT_BASIN Sediment basin design from peak Q (NCDEQ surface-area method)");
             ed.WriteMessage("\n  HC_HGL           Steady HGL (normal depth) + HEC-22 losses + HC-HGL labels + profile");
             ed.WriteMessage("\n  HC_REPORT      Export formula-transparent HTML Manning + HGL report (free)");
             ed.WriteMessage("\n  HC_REPORT_PDF  Export formula-transparent PDF Manning + HGL report (Pro)");
             ed.WriteMessage("\n  HC_RATIONAL    Rational Q from catchments + NOAA Atlas 14 IDF presets");
             ed.WriteMessage("\n  HC_MULTIRP     Per-pipe Q and d/D for 2/10/25/100-yr return periods");
-            ed.WriteMessage("\n  HC_INLETS      HEC-22 grate-on-grade inlet interception (Q vs capacity)");
+            ed.WriteMessage("\n  HC_TC          TR-55 segmented time-of-concentration worksheet");
+            ed.WriteMessage("\n  HC_INLETS      HEC-22 inlet check (grate / sag / curb opening)");
+            ed.WriteMessage("\n  HC_LANDXML     Export pipe network to LandXML 1.2");
             ed.WriteMessage("\n  HC_ATLAS14     List Atlas 14 IDF presets + live PFDS fetch info");
             ed.WriteMessage("\n  HC_ACTIVATE    Activate Pro with email + beta token (hc_live_*)");
             ed.WriteMessage("\n  HC_LICENSE     Show Free/Pro license status and activation info");
             ed.WriteMessage("\n  HC_ABOUT       This list");
             ed.WriteMessage("\n  Pro features (PDF export) require a license — visit https://hydrocomplete.com/civil3d");
-            ed.WriteMessage("\n  Engine: Rational, SCS/FAA Tc, Manning, multi-RP IDF, HEC-22, inlets — public-domain, fully shown.\n");
+            ed.WriteMessage("\n  Engine: Rational, TR-55 Tc, Manning (circular+box), detention, BMP/WQV, LandXML, HEC-22 — fully shown.\n");
         }
 
         [CommandMethod("HC_ACTIVATE")]
