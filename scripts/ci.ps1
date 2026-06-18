@@ -65,11 +65,21 @@ function Test-BundleManifest {
 Push-Location $root
 try {
     Invoke-Step "dotnet test ($Configuration)" {
-        dotnet test 'HydroComplete.Civil3D.sln' -c $Configuration --no-restore:$false
+        dotnet restore 'HydroComplete.Civil3D.sln'
+        dotnet test 'HydroComplete.Civil3D.sln' -c $Configuration --no-restore
     }
 
-    Invoke-Step "dotnet build HydroComplete.Civil3D ($Configuration)" {
-        dotnet build 'src\HydroComplete.Civil3D\HydroComplete.Civil3D.csproj' -c $Configuration
+    $acadDir = if ($env:ACAD_DIR) { $env:ACAD_DIR } else { 'C:\Program Files\Autodesk\AutoCAD 2026\' }
+    $acadMgd = Join-Path $acadDir 'AcMgd.dll'
+    if (Test-Path $acadMgd) {
+        Invoke-Step "dotnet build HydroComplete.Civil3D ($Configuration)" {
+            dotnet build 'src\HydroComplete.Civil3D\HydroComplete.Civil3D.csproj' -c $Configuration -p:AcadDir="$acadDir"
+        }
+    }
+    else {
+        Write-Host ""
+        Write-Host "==> Skipping Civil3D build (AutoCAD not installed on this runner)"
+        Write-Host "    Expected: $acadMgd"
     }
 
     Invoke-Step 'Verify PackageContents.xml' {
