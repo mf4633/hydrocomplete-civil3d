@@ -12,6 +12,7 @@ $manifest = Join-Path $root 'dist\HydroComplete.bundle\PackageContents.xml'
 $expectedSeries = @('R25.0', 'R25.1')
 $expectedCommands = @(
     'HC_ABOUT',
+    'HC_NETWORK',
     'HC_PIPES',
     'HC_PIPES_WRITE',
     'HC_RATIONAL',

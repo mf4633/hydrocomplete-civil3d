@@ -42,6 +42,24 @@ namespace HydroComplete.Civil3D.Reading
         public Point3d EndPoint { get; set; }
     }
 
+    /// <summary>Per-network roll-up of pipe and structure counts from the drawing.</summary>
+    public sealed class NetworkSummary
+    {
+        public string NetworkName { get; set; } = "";
+        public int PipeCount { get; set; }
+        public int StructureCount { get; set; }
+        public double TotalLengthFt { get; set; }
+        public double MinInvertFt { get; set; } = double.PositiveInfinity;
+        public double MaxInvertFt { get; set; } = double.NegativeInfinity;
+        public double MinDiameterFt { get; set; } = double.PositiveInfinity;
+        public double MaxDiameterFt { get; set; } = double.NegativeInfinity;
+
+        public bool HasPipes =>
+            PipeCount > 0
+            && !double.IsPositiveInfinity(MinInvertFt)
+            && !double.IsNegativeInfinity(MaxInvertFt);
+    }
+
     /// <summary>
     /// Reads circular gravity pipes out of the active drawing's Civil 3D pipe
     /// networks and maps them onto the engine's <see cref="PipeSegment"/> model.
@@ -117,6 +135,59 @@ namespace HydroComplete.Civil3D.Reading
             }
 
             return pipes;
+        }
+
+        /// <summary>
+        /// Summarizes every pipe network: pipe count, total length, invert and
+        /// diameter ranges, and structure count.
+        /// </summary>
+        public static List<NetworkSummary> ReadNetworkSummaries(Database db, CivilDocument civilDoc)
+        {
+            if (db == null) throw new ArgumentNullException(nameof(db));
+            if (civilDoc == null) throw new ArgumentNullException(nameof(civilDoc));
+
+            var summaries = new List<NetworkSummary>();
+            ObjectIdCollection networkIds = civilDoc.GetPipeNetworkIds();
+
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+                foreach (ObjectId nid in networkIds)
+                {
+                    if (!(tr.GetObject(nid, OpenMode.ForRead) is Network net)) continue;
+
+                    var summary = new NetworkSummary
+                    {
+                        NetworkName = net.Name ?? "",
+                        StructureCount = net.GetStructureIds().Count,
+                    };
+
+                    foreach (ObjectId pid in net.GetPipeIds())
+                    {
+                        if (!(tr.GetObject(pid, OpenMode.ForRead) is Pipe pipe)) continue;
+
+                        double startInvert = InvertAt(pipe.StartPoint, pipe.InnerDiameterOrWidth);
+                        double endInvert = InvertAt(pipe.EndPoint, pipe.InnerDiameterOrWidth);
+                        double diameterFt = pipe.InnerDiameterOrWidth;
+
+                        double lengthFt = pipe.Length2D;
+                        if (lengthFt <= 0)
+                            lengthFt = pipe.Length3D;
+
+                        summary.PipeCount++;
+                        summary.TotalLengthFt += lengthFt;
+                        summary.MinInvertFt = Math.Min(summary.MinInvertFt, Math.Min(startInvert, endInvert));
+                        summary.MaxInvertFt = Math.Max(summary.MaxInvertFt, Math.Max(startInvert, endInvert));
+                        summary.MinDiameterFt = Math.Min(summary.MinDiameterFt, diameterFt);
+                        summary.MaxDiameterFt = Math.Max(summary.MaxDiameterFt, diameterFt);
+                    }
+
+                    summaries.Add(summary);
+                }
+
+                tr.Commit();
+            }
+
+            return summaries;
         }
 
         /// <summary>

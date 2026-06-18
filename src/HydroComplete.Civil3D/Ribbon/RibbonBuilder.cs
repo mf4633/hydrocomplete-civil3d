@@ -44,6 +44,7 @@ namespace HydroComplete.Civil3D.Ribbon
             var panel = new RibbonPanel { Source = source };
             _tab.Panels.Add(panel);
 
+            source.Items.Add(MakeButton("Network\nSummary", "HC_NETWORK", "Per-network pipe count, length, invert/diameter range, and structure count."));
             source.Items.Add(MakeButton("Pipe\nCapacity", "HC_PIPES", "Manning capacity of every pipe in the drawing's pipe networks."));
             source.Items.Add(MakeButton("Write\nCapacity", "HC_PIPES_WRITE", "Label Qfull and Vfull on layer HC-CAPACITY."));
             source.Items.Add(MakeButton("Design\nCapacity", "HC_CAPACITY", "Design Q vs Q_full check with d/D and surcharge flag."));

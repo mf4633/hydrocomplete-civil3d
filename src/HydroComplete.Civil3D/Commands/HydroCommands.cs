@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -29,7 +30,8 @@ namespace HydroComplete.Civil3D.Commands
         public void About()
         {
             Editor ed = Active().Editor;
-            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.5.0 ===");
+            ed.WriteMessage("\n=== HydroComplete for Civil 3D 0.6.0 ===");
+            ed.WriteMessage("\n  HC_NETWORK       Per-network summary (pipes, length, inverts, diameters, structures)");
             ed.WriteMessage("\n  HC_PIPES         Manning capacity of every pipe-network pipe");
             ed.WriteMessage("\n  HC_PIPES_WRITE   Label Qfull/Vfull on layer HC-CAPACITY");
             ed.WriteMessage("\n  HC_CAPACITY      Design Q vs Q_full check (d/D, surcharge flag)");
@@ -136,6 +138,49 @@ namespace HydroComplete.Civil3D.Commands
         public void Atlas14List()
         {
             IdfPrompts.WriteAtlas14List(Active().Editor);
+        }
+
+        [CommandMethod("HC_NETWORK")]
+        public void NetworkSummary()
+        {
+            Document doc = Active();
+            Editor ed = doc.Editor;
+            CivilDocument civilDoc = CivilApplication.ActiveDocument;
+
+            var summaries = PipeNetworkReader.ReadNetworkSummaries(doc.Database, civilDoc);
+            if (summaries.Count == 0)
+            {
+                ed.WriteMessage("\nNo pipe networks found in this drawing.\n");
+                return;
+            }
+
+            ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                "\n--- HydroComplete: pipe network summary ({0} network(s)) ---",
+                summaries.Count));
+            ed.WriteMessage("\nNetwork                 Pipes  Structs  Length(ft)   Invert(ft) min-max      Dia(ft) min-max");
+
+            foreach (var summary in summaries.OrderBy(s => s.NetworkName, StringComparer.OrdinalIgnoreCase))
+            {
+                string invertRange = summary.HasPipes
+                    ? string.Format(CultureInfo.InvariantCulture,
+                        "{0,8:0.00} - {1,8:0.00}", summary.MinInvertFt, summary.MaxInvertFt)
+                    : "       —";
+                string diaRange = summary.HasPipes
+                    ? string.Format(CultureInfo.InvariantCulture,
+                        "{0,5:0.00} - {1,5:0.00}", summary.MinDiameterFt, summary.MaxDiameterFt)
+                    : "    —";
+
+                ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                    "\n{0,-22} {1,5}  {2,7}  {3,10:0.0}  {4}  {5}",
+                    Trim(summary.NetworkName, 22),
+                    summary.PipeCount,
+                    summary.StructureCount,
+                    summary.TotalLengthFt,
+                    invertRange,
+                    diaRange));
+            }
+
+            ed.WriteMessage("\n");
         }
 
         [CommandMethod("HC_PIPES")]
@@ -421,7 +466,8 @@ namespace HydroComplete.Civil3D.Commands
             string reportPath = HtmlReportWriter.Write(drawingName, pipes, capacities, hglData, capacityData);
             ed.WriteMessage($"\n--- HydroComplete: HTML report written ---");
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
-                "\n  Manning capacity + steady HGL (Q={0:0.0} cfs) -> {1}\n", hglData.DesignFlowCfs, reportPath));
+                "\n  Manning capacity + steady HGL (Q={0:0.0} cfs) -> {1}", hglData.DesignFlowCfs, reportPath));
+            OfferOpenReport(ed, reportPath);
         }
 
         [CommandMethod("HC_REPORT_PDF")]
@@ -444,7 +490,8 @@ namespace HydroComplete.Civil3D.Commands
             string reportPath = PdfReportWriter.Write(drawingName, pipes, capacities, hglData, capacityData);
             ed.WriteMessage($"\n--- HydroComplete: PDF report written ---");
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
-                "\n  Manning capacity + steady HGL (Q={0:0.0} cfs) -> {1}\n", hglData.DesignFlowCfs, reportPath));
+                "\n  Manning capacity + steady HGL (Q={0:0.0} cfs) -> {1}", hglData.DesignFlowCfs, reportPath));
+            OfferOpenReport(ed, reportPath);
         }
 
         private static bool TryBuildHydraulicReport(
@@ -609,6 +656,26 @@ namespace HydroComplete.Civil3D.Commands
             Document doc = AcadApp.DocumentManager.MdiActiveDocument;
             if (doc == null) throw new InvalidOperationException("No active drawing.");
             return doc;
+        }
+
+        private static void OfferOpenReport(Editor ed, string reportPath)
+        {
+            if (!PromptYesNo(ed, "\nOpen report now?", defaultYes: true))
+            {
+                ed.WriteMessage("\n");
+                return;
+            }
+
+            try
+            {
+                Process.Start(new ProcessStartInfo(reportPath) { UseShellExecute = true });
+            }
+            catch (System.Exception ex)
+            {
+                ed.WriteMessage($"\n  Could not open report: {ex.Message}");
+            }
+
+            ed.WriteMessage("\n");
         }
 
         private static bool PromptYesNo(Editor ed, string message, bool defaultYes)
