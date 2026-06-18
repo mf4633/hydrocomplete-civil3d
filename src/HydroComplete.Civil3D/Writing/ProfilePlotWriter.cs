@@ -296,6 +296,54 @@ namespace HydroComplete.Civil3D.Writing
             EnsureLayer(db, tr, HglLayer, 6);      // magenta
         }
 
+        public static ProfileDxfWriter.ProfileDxfData ToDxfData(ProfilePlotData plot)
+        {
+            if (plot == null) throw new ArgumentNullException(nameof(plot));
+
+            var dxf = new ProfileDxfWriter.ProfileDxfData { NetworkName = plot.NetworkName };
+
+            foreach (Point2d pt in plot.InvertPoints)
+            {
+                dxf.InvertPoints.Add(new ProfileDxfWriter.ProfilePoint
+                {
+                    ChainageFt = pt.X,
+                    ElevationFt = pt.Y,
+                });
+            }
+
+            foreach (Point2d pt in plot.CrownPoints)
+            {
+                dxf.CrownPoints.Add(new ProfileDxfWriter.ProfilePoint
+                {
+                    ChainageFt = pt.X,
+                    ElevationFt = pt.Y,
+                });
+            }
+
+            foreach (Point2d pt in plot.HglPoints)
+            {
+                dxf.HglPoints.Add(new ProfileDxfWriter.ProfilePoint
+                {
+                    ChainageFt = pt.X,
+                    ElevationFt = pt.Y,
+                });
+            }
+
+            foreach (ProfileStation station in plot.Stations)
+            {
+                dxf.Stations.Add(new ProfileDxfWriter.ProfileStation
+                {
+                    ChainageFt = station.ChainageFt,
+                    StructureName = station.StructureName,
+                    InvertFt = station.InvertFt,
+                    CrownFt = station.CrownFt,
+                    HglFt = station.HglFt,
+                });
+            }
+
+            return dxf;
+        }
+
         private static void EnsureLayer(Database db, Transaction tr, string name, short aciColor)
         {
             LayerTable lt = (LayerTable)tr.GetObject(db.LayerTableId, OpenMode.ForRead);

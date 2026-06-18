@@ -1,7 +1,7 @@
 # Autodesk App Store — Listing Copy
 
 **Product:** HydroComplete for Civil 3D  
-**Version at submission:** 1.0.0
+**Version at submission:** 1.1.0
 **Last updated:** 2026-06-18
 
 ---
@@ -59,7 +59,12 @@ Every engine result carries a `Steps` trace (label, value, units, formula) — t
 
 Learn more: [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d)
 
-### New in v1.0.0
+### New in v1.1.0
+
+- **`HC_PROFILE_DXF`** — Export chainage profile (invert, crown, optional HGL) to ASCII DXF for external CAD review.
+- **App Store manifest** — Registers `HC_PROFILE`, `HC_PROFILE_DXF`, `HC_TC`, `HC_LANDXML`, and `HC_LANDXML_IMPORT`.
+
+### Also in v1.0.0
 
 - **`HC_LANDXML_IMPORT` write** — Optional Yes/No prompt creates Civil 3D pipe-network geometry from LandXML (structures, pipes, catalog parts).
 - **Box/arch pipe read** — `HC_PIPES` and `HC_LANDXML` export detect rectangular and arch cross-sections from Civil 3D parts.

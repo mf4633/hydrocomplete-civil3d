@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -116,6 +117,111 @@ namespace HydroComplete.Civil3D.Commands
             foreach (string err in write.Errors)
                 ed.WriteMessage($"\n  {err}");
             ed.WriteMessage("\n");
+        }
+
+        [CommandMethod("HC_PROFILE_DXF")]
+        public void ExportProfileDxf()
+        {
+            Document doc = Active();
+            Editor ed = doc.Editor;
+            CivilDocument civilDoc = CivilApplication.ActiveDocument;
+
+            var pipes = PipeNetworkReader.ReadAll(doc.Database, civilDoc);
+            if (pipes.Count == 0)
+            {
+                ed.WriteMessage("\nNo pipe networks found in this drawing.\n");
+                return;
+            }
+
+            var networks = NetworkTopology.BuildOrderedNetworks(pipes);
+            if (networks.Count == 0)
+            {
+                ed.WriteMessage("\nNo ordered pipe networks found in this drawing.\n");
+                return;
+            }
+
+            NetworkTopology.OrderedNetwork? net = PromptNetwork(ed, networks);
+            if (net == null || net.OrderedPipes.Count == 0)
+            {
+                ed.WriteMessage("\nProfile DXF export cancelled or network has no pipes.\n");
+                return;
+            }
+
+            double horizScale = PromptDouble(ed, "\nHorizontal scale (ft chainage per drawing ft)", 20.0);
+            double vertScale = PromptDouble(ed, "Vertical scale (ft elevation per drawing ft)", 20.0);
+            double defaultDatum = ProfilePlotWriter.DefaultDatumFt(net);
+            double datum = PromptDatum(ed, defaultDatum);
+            bool includeHgl = PromptYesNo(ed, "\nInclude HGL", defaultYes: false);
+
+            Dictionary<string, ProfilePlotWriter.HglPipeEnds>? pipeHglEnds = null;
+            if (includeHgl)
+            {
+                pipeHglEnds = ComputeHglEnds(ed, doc.Database, civilDoc, pipes, net);
+                if (pipeHglEnds == null)
+                {
+                    ed.WriteMessage("\nHGL computation cancelled; exporting invert/crown only.\n");
+                    includeHgl = false;
+                }
+            }
+
+            string drawingName = ReportWriterCommon.SanitizeFileName(
+                Path.GetFileNameWithoutExtension(doc.Name));
+            string netSlug = ReportWriterCommon.SanitizeFileName(net.NetworkName);
+            Directory.CreateDirectory(ReportWriterCommon.OutputFolder);
+            string defaultPath = Path.Combine(
+                ReportWriterCommon.OutputFolder,
+                $"{drawingName}_{netSlug}_profile.dxf");
+
+            string outputPath = PromptOutputPath(ed, defaultPath);
+            if (string.IsNullOrWhiteSpace(outputPath))
+            {
+                ed.WriteMessage("\nProfile DXF export cancelled.\n");
+                return;
+            }
+
+            ProfilePlotWriter.ProfilePlotData plotData = ProfilePlotWriter.BuildPlotData(net, pipeHglEnds);
+            ProfileDxfWriter.ProfileDxfData dxfData = ProfilePlotWriter.ToDxfData(plotData);
+            var dxfOptions = new ProfileDxfWriter.ProfileDxfOptions
+            {
+                DatumElevationFt = datum,
+                HorizontalScale = horizScale,
+                VerticalScale = vertScale,
+                IncludeHgl = includeHgl,
+                TextHeight = Math.Max(0.05, 2.0 / Math.Max(vertScale, 1e-6)),
+            };
+
+            ProfileDxfWriter.Write(outputPath, dxfData, dxfOptions);
+
+            ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                "\n--- HydroComplete: profile DXF export ---\n  Network: {0}\n  Stations: {1}\n  H={2:0.##} V={3:0.##} ft/dwg-ft  datum={4:0.00} ft\n  File: {5}\n",
+                net.NetworkName,
+                plotData.Stations.Count,
+                horizScale,
+                vertScale,
+                datum,
+                outputPath));
+            ed.WriteMessage("\n  Layers: HC-PROFILE-INVERT, HC-PROFILE-CROWN");
+            if (includeHgl)
+                ed.WriteMessage(", HC-PROFILE-HGL");
+            ed.WriteMessage("\n");
+        }
+
+        private static string PromptOutputPath(Editor ed, string defaultPath)
+        {
+            var opts = new PromptStringOptions("\nProfile DXF output file path")
+            {
+                DefaultValue = defaultPath,
+                UseDefaultValue = true,
+                AllowSpaces = true,
+            };
+            PromptResult res = ed.GetString(opts);
+            if (res.Status != PromptStatus.OK)
+                return "";
+
+            string path = string.IsNullOrWhiteSpace(res.StringResult) ? defaultPath : res.StringResult.Trim();
+            if (!path.EndsWith(".dxf", StringComparison.OrdinalIgnoreCase))
+                path += ".dxf";
+            return path;
         }
 
         private static Dictionary<string, ProfilePlotWriter.HglPipeEnds>? ComputeHglEnds(

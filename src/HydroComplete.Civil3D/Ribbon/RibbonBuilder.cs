@@ -62,6 +62,7 @@ namespace HydroComplete.Civil3D.Ribbon
             source.Items.Add(MakeButton("Sediment\nBasin", "HC_SEDIMENT_BASIN", "NCDEQ sediment basin sizing from peak Q and RUSLE yield."));
             source.Items.Add(MakeButton("HGL\nProfile", "HC_HGL", "Steady HGL profile polyline on HC-HGL-PROFILE and labels on HC-HGL."));
             source.Items.Add(MakeButton("Chainage\nProfile", "HC_PROFILE", "Invert, crown, and optional HGL vs chainage on HC-PROFILE-* layers."));
+            source.Items.Add(MakeButton("Profile\nDXF", "HC_PROFILE_DXF", "Export invert, crown, and optional HGL profile to DXF."));
             source.Items.Add(MakeButton("HTML\nReport", "HC_REPORT", "Export formula-transparent Manning + HGL HTML report."));
             source.Items.Add(MakeButton("PDF\nReport", "HC_REPORT_PDF", "Export formula-transparent Manning + HGL PDF report."));
             source.Items.Add(MakeButton("Rational\nQ", "HC_RATIONAL", "Rational peak flow from catchments + Atlas 14 IDF."));

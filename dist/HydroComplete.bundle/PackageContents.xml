@@ -9,7 +9,7 @@
   is required before adding SeriesMin/Max R24.3 — see README "Civil 3D 2024 compatibility".
 -->
 <ApplicationPackage SchemaVersion="1.0"
-                    AppVersion="1.0.0"
+                    AppVersion="1.1.0"
                     Name="HydroComplete for Civil 3D"
                     Description="Stormwater analysis driven straight from your Civil 3D drawing — Rational, SCS Tc, Manning, IDF with full formula transparency."
                     ProductCode="{8d07b4c8-06cb-497d-832a-dcb5b095d9fa}"
@@ -51,6 +51,11 @@
         <Command Local="HC_MULTIRP" Global="HC_MULTIRP" />
         <Command Local="HC_INLETS" Global="HC_INLETS" />
         <Command Local="HC_HGL" Global="HC_HGL" />
+        <Command Local="HC_PROFILE" Global="HC_PROFILE" />
+        <Command Local="HC_PROFILE_DXF" Global="HC_PROFILE_DXF" />
+        <Command Local="HC_TC" Global="HC_TC" />
+        <Command Local="HC_LANDXML" Global="HC_LANDXML" />
+        <Command Local="HC_LANDXML_IMPORT" Global="HC_LANDXML_IMPORT" />
         <Command Local="HC_REPORT" Global="HC_REPORT" />
         <Command Local="HC_REPORT_PDF" Global="HC_REPORT_PDF" />
         <Command Local="HC_ATLAS14" Global="HC_ATLAS14" />
@@ -92,6 +97,11 @@
         <Command Local="HC_MULTIRP" Global="HC_MULTIRP" />
         <Command Local="HC_INLETS" Global="HC_INLETS" />
         <Command Local="HC_HGL" Global="HC_HGL" />
+        <Command Local="HC_PROFILE" Global="HC_PROFILE" />
+        <Command Local="HC_PROFILE_DXF" Global="HC_PROFILE_DXF" />
+        <Command Local="HC_TC" Global="HC_TC" />
+        <Command Local="HC_LANDXML" Global="HC_LANDXML" />
+        <Command Local="HC_LANDXML_IMPORT" Global="HC_LANDXML_IMPORT" />
         <Command Local="HC_REPORT" Global="HC_REPORT" />
         <Command Local="HC_REPORT_PDF" Global="HC_REPORT_PDF" />
         <Command Local="HC_ATLAS14" Global="HC_ATLAS14" />

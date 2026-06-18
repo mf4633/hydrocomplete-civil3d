@@ -30,7 +30,7 @@ namespace HydroComplete.Civil3D.Commands
         public void About()
         {
             Editor ed = Active().Editor;
-            ed.WriteMessage("\n=== HydroComplete for Civil 3D 1.0.0 ===");
+            ed.WriteMessage("\n=== HydroComplete for Civil 3D 1.1.0 ===");
             ed.WriteMessage("\n  HC_NETWORK       Per-network summary (pipes, length, inverts, diameters, structures)");
             ed.WriteMessage("\n  HC_PIPES         Manning capacity of every pipe-network pipe (circular, box, arch)");
             ed.WriteMessage("\n  HC_PIPES_WRITE   Label Qfull/Vfull on layer HC-CAPACITY");
@@ -49,6 +49,7 @@ namespace HydroComplete.Civil3D.Commands
             ed.WriteMessage("\n  HC_SEDIMENT_BASIN Sediment basin design from peak Q (NCDEQ surface-area method)");
             ed.WriteMessage("\n  HC_HGL           Steady HGL (normal depth) + HEC-22 losses + HC-HGL labels + plan profile");
             ed.WriteMessage("\n  HC_PROFILE       Chainage profile plot (invert, crown, optional HGL)");
+            ed.WriteMessage("\n  HC_PROFILE_DXF   Export chainage profile to DXF (invert, crown, optional HGL)");
             ed.WriteMessage("\n  HC_REPORT      Export formula-transparent HTML Manning + HGL report (free)");
             ed.WriteMessage("\n  HC_REPORT_PDF  Export formula-transparent PDF Manning + HGL report (Pro)");
             ed.WriteMessage("\n  HC_RATIONAL    Rational Q from catchments + NOAA Atlas 14 IDF presets");
