@@ -9,6 +9,10 @@ namespace HydroComplete.Civil3D.Writing
     public sealed class CapacityReportData
     {
         public double DesignFlowCfs { get; set; }
+
+        /// <summary>True when design Q varies by pipe (routed catchment flows).</summary>
+        public bool IsRouted { get; set; }
+
         public List<CapacityPipeRow> Rows { get; } = new List<CapacityPipeRow>();
     }
 
@@ -28,23 +32,40 @@ namespace HydroComplete.Civil3D.Writing
     public static class CapacityReportBuilder
     {
         public static CapacityReportData Build(IReadOnlyList<ReadPipe> pipes, double designFlowCfs)
+            => Build(pipes, designFlowCfs, pipeFlowCfs: null);
+
+        public static CapacityReportData Build(
+            IReadOnlyList<ReadPipe> pipes,
+            double designFlowCfs,
+            IReadOnlyDictionary<string, double>? pipeFlowCfs)
         {
             if (pipes == null) throw new ArgumentNullException(nameof(pipes));
-            if (designFlowCfs <= 0) throw new ArgumentOutOfRangeException(nameof(designFlowCfs));
 
-            var report = new CapacityReportData { DesignFlowCfs = designFlowCfs };
+            bool routed = pipeFlowCfs != null && pipeFlowCfs.Count > 0;
+            if (!routed && designFlowCfs <= 0)
+                throw new ArgumentOutOfRangeException(nameof(designFlowCfs));
+
+            var report = new CapacityReportData
+            {
+                DesignFlowCfs = designFlowCfs,
+                IsRouted = routed,
+            };
+
             foreach (ReadPipe rp in pipes)
             {
                 try
                 {
+                    double q = ResolveDesignFlow(rp, designFlowCfs, pipeFlowCfs);
+                    if (q <= 0) continue;
+
                     var cap = Manning.Capacity(rp.Segment);
-                    var nd = Manning.NormalDepth(rp.Segment, designFlowCfs);
+                    var nd = Manning.NormalDepth(rp.Segment, q);
                     report.Rows.Add(new CapacityPipeRow
                     {
                         Pipe = rp,
                         Capacity = cap,
                         NormalDepth = nd,
-                        DesignFlowCfs = designFlowCfs,
+                        DesignFlowCfs = q,
                     });
                 }
                 catch (System.Exception)
@@ -54,6 +75,21 @@ namespace HydroComplete.Civil3D.Writing
             }
 
             return report;
+        }
+
+        private static double ResolveDesignFlow(
+            ReadPipe rp,
+            double uniformDesignFlowCfs,
+            IReadOnlyDictionary<string, double>? pipeFlowCfs)
+        {
+            if (pipeFlowCfs == null)
+                return uniformDesignFlowCfs;
+
+            string key = rp.PipeId.Handle.ToString();
+            if (pipeFlowCfs.TryGetValue(key, out double routed) && routed > 0)
+                return routed;
+
+            return uniformDesignFlowCfs;
         }
     }
 }

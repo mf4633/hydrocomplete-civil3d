@@ -187,12 +187,18 @@ namespace HydroComplete.Civil3D.Commands
                 return;
             }
 
-            double designQ = PromptDesignFlow(ed, doc, civilDoc);
-            var report = CapacityReportBuilder.Build(pipes, designQ);
+            DesignFlowContext flow = DesignFlowResolver.Prompt(ed, doc.Database, civilDoc, pipes);
+            var report = CapacityReportBuilder.Build(
+                pipes, flow.DesignFlowCfs, flow.PipeFlowCfs);
+
+            string qHeader = report.IsRouted
+                ? string.Format(CultureInfo.InvariantCulture,
+                    "routed Q, system total={0:0.0} cfs", flow.DesignFlowCfs)
+                : string.Format(CultureInfo.InvariantCulture, "Q={0:0.0} cfs", flow.DesignFlowCfs);
 
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
-                "\n--- HydroComplete: design capacity check (Q={0:0.0} cfs, {1} pipes) ---",
-                designQ, report.Rows.Count));
+                "\n--- HydroComplete: design capacity check ({0}, {1} pipes) ---",
+                qHeader, report.Rows.Count));
             ed.WriteMessage("\nNetwork / Pipe            Q_full   Q_des   Q_des/Q   d/D   SURCH");
 
             foreach (CapacityPipeRow row in report.Rows)
@@ -201,7 +207,7 @@ namespace HydroComplete.Civil3D.Commands
                 ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
                     "\n{0,-24} {1,6:0.0}  {2,6:0.0}  {3,7:0.00}  {4,5:0.00}  {5,5}",
                     Trim(rp.NetworkName + "/" + rp.PipeName, 24),
-                    row.QFullCfs, designQ, row.FlowRatio, row.RelativeDepth,
+                    row.QFullCfs, row.DesignFlowCfs, row.FlowRatio, row.RelativeDepth,
                     row.Surcharged ? "*" : ""));
             }
 
@@ -224,12 +230,13 @@ namespace HydroComplete.Civil3D.Commands
                 return;
             }
 
-            double designQ = PromptDesignFlow(ed, doc, civilDoc);
+            DesignFlowContext flow = DesignFlowResolver.Prompt(ed, doc.Database, civilDoc, pipes);
             bool overloadOnly = PromptYesNo(ed,
                 "\nLabel overloaded pipes only (No = label all pipes, dim OK)",
                 defaultYes: true);
 
-            var report = CapacityReportBuilder.Build(pipes, designQ);
+            var report = CapacityReportBuilder.Build(
+                pipes, flow.DesignFlowCfs, flow.PipeFlowCfs);
             var write = PipeNetworkWriter.WriteDesignCapacity(doc.Database, report.Rows, overloadOnly);
 
             string mode = overloadOnly ? "overloaded" : "all";
@@ -293,7 +300,7 @@ namespace HydroComplete.Civil3D.Commands
                 return;
             }
 
-            double designQ = PromptDesignFlow(ed, doc, civilDoc);
+            DesignFlowContext flow = DesignFlowResolver.Prompt(ed, doc.Database, civilDoc, pipes);
             bool useMinorLosses = PromptYesNo(ed, "\nInclude HEC-22 junction/exit losses", defaultYes: true);
 
             var hglOptions = new HglProfileOptions
@@ -308,15 +315,22 @@ namespace HydroComplete.Civil3D.Commands
             var surchargedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             string lossNote = useMinorLosses ? " + HEC-22" : "";
-            ed.WriteMessage($"\n--- HydroComplete: steady HGL{lossNote} (Q={designQ:0.0} cfs, normal depth) ---");
-            ed.WriteMessage("\nNetwork                 Pipe              HGL_US(ft)  HGL_DS(ft)  HGL_mid(ft)  h_m(ft)  d/D    SURCH");
+            string qNote = flow.IsRouted
+                ? $"routed Q, system total={flow.DesignFlowCfs:0.0} cfs"
+                : $"Q={flow.DesignFlowCfs:0.0} cfs";
+            ed.WriteMessage($"\n--- HydroComplete: steady HGL{lossNote} ({qNote}, normal depth) ---");
+            if (flow.IsRouted)
+                ed.WriteMessage("\nNetwork                 Pipe              Q(cfs)  HGL_US(ft)  HGL_DS(ft)  HGL_mid(ft)  h_m(ft)  d/D    SURCH");
+            else
+                ed.WriteMessage("\nNetwork                 Pipe              HGL_US(ft)  HGL_DS(ft)  HGL_mid(ft)  h_m(ft)  d/D    SURCH");
 
             foreach (var net in networks)
             {
                 if (net.OrderedPipes.Count == 0) continue;
 
-                var reaches = NetworkTopology.BuildReaches(
-                    net.OrderedPipes, designQ, useMinorLosses);
+                List<NetworkReach> reaches = flow.IsRouted && flow.PipeFlowCfs != null
+                    ? NetworkTopology.BuildReaches(net.OrderedPipes, flow.PipeFlowCfs, useMinorLosses)
+                    : NetworkTopology.BuildReaches(net.OrderedPipes, flow.DesignFlowCfs, useMinorLosses);
 
                 double startHgl = net.MaxUpstreamInvertFt + 1.0;
                 var profile = Hgl.SteadyNetworkHglProfile(reaches, startHgl, hglOptions);
@@ -347,13 +361,27 @@ namespace HydroComplete.Civil3D.Commands
                         ? "SURCH"
                         : reaches[i].RelativeDepth.ToString("0.00", CultureInfo.InvariantCulture);
 
-                    ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
-                        "\n{0,-22} {1,-16} {2,10:0.00}  {3,10:0.00}  {4,10:0.00}  {5,8:0.00}  {6,5}  {7,5}",
-                        Trim(net.NetworkName, 22),
-                        Trim(rp.PipeName, 16),
-                        hglUs, hglDs, hglMid, point.HmFt,
-                        dOverD,
-                        surcharged ? "*" : ""));
+                    if (flow.IsRouted)
+                    {
+                        ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                            "\n{0,-22} {1,-16} {2,6:0.0}  {3,10:0.00}  {4,10:0.00}  {5,10:0.00}  {6,8:0.00}  {7,5}  {8,5}",
+                            Trim(net.NetworkName, 22),
+                            Trim(rp.PipeName, 16),
+                            reaches[i].FlowCfs,
+                            hglUs, hglDs, hglMid, point.HmFt,
+                            dOverD,
+                            surcharged ? "*" : ""));
+                    }
+                    else
+                    {
+                        ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                            "\n{0,-22} {1,-16} {2,10:0.00}  {3,10:0.00}  {4,10:0.00}  {5,8:0.00}  {6,5}  {7,5}",
+                            Trim(net.NetworkName, 22),
+                            Trim(rp.PipeName, 16),
+                            hglUs, hglDs, hglMid, point.HmFt,
+                            dOverD,
+                            surcharged ? "*" : ""));
+                    }
 
                     hglUs = hglDs;
                 }
@@ -441,7 +469,7 @@ namespace HydroComplete.Civil3D.Commands
                 return false;
             }
 
-            double designQ = PromptDesignFlow(ed, doc, civilDoc);
+            DesignFlowContext flow = DesignFlowResolver.Prompt(ed, doc.Database, civilDoc, pipes);
             bool useMinorLosses = PromptYesNo(ed, "\nInclude HEC-22 junction/exit losses in HGL section", defaultYes: true);
 
             foreach (var rp in pipes)
@@ -456,8 +484,9 @@ namespace HydroComplete.Civil3D.Commands
                 }
             }
 
-            hglData = BuildHglReportData(pipes, designQ, useMinorLosses);
-            capacityData = CapacityReportBuilder.Build(pipes, designQ);
+            hglData = BuildHglReportData(pipes, flow, useMinorLosses);
+            capacityData = CapacityReportBuilder.Build(
+                pipes, flow.DesignFlowCfs, flow.PipeFlowCfs);
 
             drawingName = Path.GetFileNameWithoutExtension(doc.Name);
             if (string.IsNullOrWhiteSpace(drawingName))
@@ -466,7 +495,7 @@ namespace HydroComplete.Civil3D.Commands
         }
 
         private static HglReportData BuildHglReportData(
-            IReadOnlyList<ReadPipe> pipes, double designQ, bool useMinorLosses)
+            IReadOnlyList<ReadPipe> pipes, DesignFlowContext flow, bool useMinorLosses)
         {
             var hglOptions = new HglProfileOptions
             {
@@ -476,7 +505,8 @@ namespace HydroComplete.Civil3D.Commands
 
             var report = new HglReportData
             {
-                DesignFlowCfs = designQ,
+                DesignFlowCfs = flow.DesignFlowCfs,
+                IsRouted = flow.IsRouted,
                 IncludeMinorLosses = useMinorLosses,
             };
 
@@ -484,8 +514,9 @@ namespace HydroComplete.Civil3D.Commands
             {
                 if (net.OrderedPipes.Count == 0) continue;
 
-                var reaches = NetworkTopology.BuildReaches(
-                    net.OrderedPipes, designQ, useMinorLosses);
+                List<NetworkReach> reaches = flow.IsRouted && flow.PipeFlowCfs != null
+                    ? NetworkTopology.BuildReaches(net.OrderedPipes, flow.PipeFlowCfs, useMinorLosses)
+                    : NetworkTopology.BuildReaches(net.OrderedPipes, flow.DesignFlowCfs, useMinorLosses);
 
                 double startHgl = net.MaxUpstreamInvertFt + 1.0;
                 var profile = Hgl.SteadyNetworkHglProfile(reaches, startHgl, hglOptions);
@@ -505,6 +536,7 @@ namespace HydroComplete.Civil3D.Commands
                     netReport.Rows.Add(new HglPipeReportRow
                     {
                         PipeName = rp.PipeName,
+                        DesignFlowCfs = reaches[i].FlowCfs,
                         HglUsFt = hglUs,
                         HglDsFt = point.HglFt,
                         Point = point,
@@ -577,51 +609,6 @@ namespace HydroComplete.Civil3D.Commands
             Document doc = AcadApp.DocumentManager.MdiActiveDocument;
             if (doc == null) throw new InvalidOperationException("No active drawing.");
             return doc;
-        }
-
-        private static double PromptDesignFlow(Editor ed, Document doc, CivilDocument civilDoc)
-        {
-            var catchments = CatchmentReader.ReadAll(doc.Database, civilDoc);
-            if (catchments.Count > 0 && PromptYesNo(ed, "\nUse Rational Q from catchments + Atlas 14 IDF", defaultYes: true))
-            {
-                Atlas14Resolution? resolution = IdfPrompts.PromptPreset(ed, doc.Database);
-                if (resolution == null)
-                {
-                    IdfCurve idf = IdfPrompts.PromptCustomIdfCurve(ed);
-                    double systemTc = 0.0;
-                    foreach (var cm in catchments) systemTc = Math.Max(systemTc, cm.TcMinutes);
-                    var intensity = idf.Intensity(systemTc);
-                    var q = Rational.Peak(catchments, intensity.IntensityInHr);
-                    ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
-                        "\n  Rational design Q = {0:0.00} cfs ({1} catchments, Tc={2:0.0} min)\n",
-                        q.PeakFlowCfs, catchments.Count, systemTc));
-                    return q.PeakFlowCfs;
-                }
-
-                var peak = resolution.PeakFromCatchments(catchments);
-                double tc = 0.0;
-                foreach (var cm in catchments) tc = Math.Max(tc, cm.TcMinutes);
-                ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
-                    "\n  Rational design Q = {0:0.00} cfs ({1} [{2}], {3} catchments, Tc={4:0.0} min)\n",
-                    peak.PeakFlowCfs, resolution.DisplayLabel, resolution.SourceLabel,
-                    catchments.Count, tc));
-                return peak.PeakFlowCfs;
-            }
-
-            return PromptDouble(ed, "\nUniform design flow Q (cfs)", 10.0);
-        }
-
-        private static double PromptDouble(Editor ed, string message, double dflt)
-        {
-            var opts = new PromptDoubleOptions(message)
-            {
-                DefaultValue = dflt,
-                UseDefaultValue = true,
-                AllowNegative = false,
-                AllowZero = false,
-            };
-            PromptDoubleResult res = ed.GetDouble(opts);
-            return res.Status == PromptStatus.OK ? res.Value : dflt;
         }
 
         private static bool PromptYesNo(Editor ed, string message, bool defaultYes)

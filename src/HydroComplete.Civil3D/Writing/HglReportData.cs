@@ -21,6 +21,9 @@ namespace HydroComplete.Civil3D.Writing
     {
         public string PipeName { get; set; } = "";
 
+        /// <summary>Design Q for this reach when flows are routed.</summary>
+        public double DesignFlowCfs { get; set; }
+
         /// <summary>HGL at the upstream end of the reach, ft.</summary>
         public double HglUsFt { get; set; }
 
@@ -44,6 +47,9 @@ namespace HydroComplete.Civil3D.Writing
     public sealed class HglReportData
     {
         public double DesignFlowCfs { get; set; }
+
+        /// <summary>True when design Q varies by pipe (routed catchment flows).</summary>
+        public bool IsRouted { get; set; }
 
         public bool IncludeMinorLosses { get; set; }
 

@@ -146,6 +146,28 @@ namespace HydroComplete.Civil3D.Reading
         public static List<NetworkReach> BuildReaches(
             IReadOnlyList<ReadPipe> pipes, double designFlowCfs, bool includeJunctionLosses,
             bool useNormalDepth)
+            => BuildReaches(pipes, designFlowCfs, includeJunctionLosses, useNormalDepth, pipeFlowCfs: null);
+
+        /// <summary>
+        /// Builds HGL reaches with per-pipe design flows (routed catchment Q).
+        /// </summary>
+        public static List<NetworkReach> BuildReaches(
+            IReadOnlyList<ReadPipe> pipes,
+            IReadOnlyDictionary<string, double> pipeFlowCfs,
+            bool includeJunctionLosses,
+            bool useNormalDepth = true)
+        {
+            if (pipes == null) throw new ArgumentNullException(nameof(pipes));
+            if (pipeFlowCfs == null) throw new ArgumentNullException(nameof(pipeFlowCfs));
+            return BuildReaches(pipes, uniformDesignFlowCfs: 0.0, includeJunctionLosses, useNormalDepth, pipeFlowCfs);
+        }
+
+        private static List<NetworkReach> BuildReaches(
+            IReadOnlyList<ReadPipe> pipes,
+            double uniformDesignFlowCfs,
+            bool includeJunctionLosses,
+            bool useNormalDepth,
+            IReadOnlyDictionary<string, double>? pipeFlowCfs)
         {
             if (pipes == null) throw new ArgumentNullException(nameof(pipes));
 
@@ -153,9 +175,10 @@ namespace HydroComplete.Civil3D.Reading
             for (int i = 0; i < pipes.Count; i++)
             {
                 ReadPipe rp = pipes[i];
+                double designQ = ResolveDesignFlow(rp, uniformDesignFlowCfs, pipeFlowCfs);
                 NetworkReach reach = useNormalDepth
-                    ? ToReachNormalDepth(rp, designFlowCfs)
-                    : ToReach(rp, designFlowCfs);
+                    ? ToReachNormalDepth(rp, designQ)
+                    : ToReach(rp, designQ);
 
                 if (includeJunctionLosses && i < pipes.Count - 1)
                 {
@@ -168,6 +191,21 @@ namespace HydroComplete.Civil3D.Reading
             }
 
             return reaches;
+        }
+
+        private static double ResolveDesignFlow(
+            ReadPipe rp,
+            double uniformDesignFlowCfs,
+            IReadOnlyDictionary<string, double>? pipeFlowCfs)
+        {
+            if (pipeFlowCfs == null)
+                return uniformDesignFlowCfs;
+
+            string key = rp.PipeId.Handle.ToString();
+            if (pipeFlowCfs.TryGetValue(key, out double routed) && routed > 0)
+                return routed;
+
+            return uniformDesignFlowCfs > 0 ? uniformDesignFlowCfs : routed;
         }
 
         /// <summary>

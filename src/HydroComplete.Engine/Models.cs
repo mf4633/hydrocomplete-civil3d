@@ -50,6 +50,37 @@ namespace HydroComplete.Engine
 
         /// <summary>Time of concentration, minutes (drives the design intensity).</summary>
         public double TcMinutes { get; set; }
+
+        /// <summary>
+        /// Optional outfall structure handle (Civil 3D ObjectId handle string) when
+        /// the catchment is linked to a pipe-network structure.
+        /// </summary>
+        public string? OutfallStructureId { get; set; }
+
+        /// <summary>
+        /// Optional outfall structure name for name-based matching when the handle
+        /// is unavailable.
+        /// </summary>
+        public string? OutfallStructureName { get; set; }
+    }
+
+    /// <summary>
+    /// A pipe link in a storm network for topology-only routing (no CAD types).
+    /// </summary>
+    public sealed class NetworkPipeLink
+    {
+        /// <summary>Unique pipe key (typically Civil 3D ObjectId handle string).</summary>
+        public string PipeKey { get; set; } = "";
+
+        public string NetworkName { get; set; } = "";
+
+        public string PipeName { get; set; } = "";
+
+        /// <summary>Upstream structure key (handle string or synthetic id).</summary>
+        public string UpstreamStructureId { get; set; } = "";
+
+        /// <summary>Downstream structure key (handle string or synthetic id).</summary>
+        public string DownstreamStructureId { get; set; } = "";
     }
 
     /// <summary>A circular gravity pipe segment for Manning capacity / normal-depth checks.</summary>

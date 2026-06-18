@@ -62,7 +62,7 @@ namespace HydroComplete.Civil3D.Writing
 
                         string prefix = row.Surcharged ? "OVER" : "OK";
                         string text = string.Format(CultureInfo.InvariantCulture,
-                            "{0}: {1:0.1}/{2:0.1} cfs",
+                            "{0}: {1:0.0}/{2:0.0} cfs",
                             prefix, row.DesignFlowCfs, row.QFullCfs);
 
                         Point3d mid = Midpoint(pipe.StartPoint, pipe.EndPoint);
@@ -134,7 +134,7 @@ namespace HydroComplete.Civil3D.Writing
                         }
 
                         string text = string.Format(CultureInfo.InvariantCulture,
-                            "Qfull={0:0.0} cfs\\PVfull={1:0.1f} fps",
+                            "Qfull={0:0.0} cfs\\PVfull={1:0.0} fps",
                             cap.FullFlowCfs, cap.FullVelocityFps);
 
                         Point3d mid = Midpoint(pipe.StartPoint, pipe.EndPoint);

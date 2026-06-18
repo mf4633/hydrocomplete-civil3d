@@ -108,10 +108,15 @@ namespace HydroComplete.Civil3D.Writing
         private static void AppendCapacitySection(StringBuilder sb, CapacityReportData capacityData)
         {
             sb.AppendLine("<h2>Design Capacity Check</h2>");
-            sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
-                "<p>Method: Manning normal depth at uniform design Q = <strong>{0:0.00} cfs</strong>. " +
-                "Surcharge when Q exceeds peak open-channel capacity (d/D &rarr; 1.0).</p>",
-                capacityData.DesignFlowCfs));
+            string qDesc = capacityData.IsRouted
+                ? string.Format(CultureInfo.InvariantCulture,
+                    "per-pipe routed catchment Q (system total = <strong>{0:0.00} cfs</strong>)",
+                    capacityData.DesignFlowCfs)
+                : string.Format(CultureInfo.InvariantCulture,
+                    "uniform design Q = <strong>{0:0.00} cfs</strong>",
+                    capacityData.DesignFlowCfs);
+            sb.AppendLine("<p>Method: Manning normal depth at " + qDesc + ". " +
+                "Surcharge when Q exceeds peak open-channel capacity (d/D &rarr; 1.0).</p>");
 
             sb.AppendLine("<table><thead><tr>");
             sb.AppendLine("<th>Network / Pipe</th><th>Q<sub>full</sub> (cfs)</th><th>Q<sub>des</sub> (cfs)</th>");
@@ -138,13 +143,20 @@ namespace HydroComplete.Civil3D.Writing
         {
             string lossNote = hglData.IncludeMinorLosses ? " with HEC-22 junction/exit losses" : "";
             sb.AppendLine("<h2>Steady HGL Profile</h2>");
+            string hglQDesc = hglData.IsRouted
+                ? string.Format(CultureInfo.InvariantCulture,
+                    "per-pipe routed catchment Q (system total = <strong>{0:0.00} cfs</strong>)",
+                    hglData.DesignFlowCfs)
+                : string.Format(CultureInfo.InvariantCulture,
+                    "design Q = <strong>{0:0.00} cfs</strong>",
+                    hglData.DesignFlowCfs);
             sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
                 "<p>Method: steady uniform-flow stepping downstream from headwater HGL " +
                 "using Manning normal depth per reach (partial-flow A and R){0}. " +
                 "(S<sub>f</sub> = [n&middot;Q/(1.486&middot;A&middot;R<sup>2/3</sup>)]<sup>2</sup>, " +
                 "h<sub>f</sub> = S<sub>f</sub>&middot;L, h<sub>m</sub> = K&middot;Vh). " +
-                "Design Q = <strong>{1:0.00} cfs</strong>.</p>",
-                lossNote, hglData.DesignFlowCfs));
+                "{1}.</p>",
+                lossNote, hglQDesc));
 
             foreach (HglNetworkReport net in hglData.Networks)
             {

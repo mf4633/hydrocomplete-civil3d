@@ -20,6 +20,15 @@ namespace HydroComplete.Civil3D.Reading
         public const double DefaultTcMinutes = 10.0;
 
         public static List<Engine.Catchment> ReadAll(Database db, CivilDocument civilDoc)
+            => ReadAll(db, civilDoc, pipes: null);
+
+        /// <summary>
+        /// Reads catchments and resolves outlet structures when pipe geometry is supplied.
+        /// </summary>
+        public static List<Engine.Catchment> ReadAll(
+            Database db,
+            CivilDocument civilDoc,
+            IReadOnlyList<ReadPipe>? pipes)
         {
             if (db == null) throw new ArgumentNullException(nameof(db));
             if (civilDoc == null) throw new ArgumentNullException(nameof(civilDoc));
@@ -43,12 +52,16 @@ namespace HydroComplete.Civil3D.Reading
                         try { if (c.RunoffCoefficient > 0) c_runoff = c.RunoffCoefficient; } catch { }
                         try { if (c.TimeOfConcentration > 0) c_tc = c.TimeOfConcentration; } catch { }
 
+                        CatchmentOutletInfo outlet = CatchmentOutletReader.TryReadOutlet(c, tr, pipes);
+
                         result.Add(new Engine.Catchment
                         {
                             Name = c.Name ?? "",
                             AreaAcres = c.Area2d / SqFtPerAcre,
                             RunoffC = Math.Min(1.0, Math.Max(0.0, c_runoff)),
                             TcMinutes = c_tc,
+                            OutfallStructureId = outlet.StructureId,
+                            OutfallStructureName = outlet.StructureName,
                         });
                     }
                 }

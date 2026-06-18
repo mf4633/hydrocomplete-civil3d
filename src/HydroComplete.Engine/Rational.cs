@@ -20,6 +20,23 @@ namespace HydroComplete.Engine
             public double IntensityInHr { get; set; }
         }
 
+        /// <summary>
+        /// Peak flow for one catchment using its Tc on the supplied IDF curve.
+        /// </summary>
+        public static PeakFlowResult Peak(Catchment catchment, IdfCurve idf)
+        {
+            if (catchment == null) throw new ArgumentNullException(nameof(catchment));
+            if (idf == null) throw new ArgumentNullException(nameof(idf));
+
+            var intensity = idf.Intensity(catchment.TcMinutes);
+            var peak = Peak(catchment.RunoffC, intensity.IntensityInHr, catchment.AreaAcres);
+            if (!string.IsNullOrEmpty(catchment.Name))
+                peak.Steps.Insert(0, new CalcStep("catchment", 0, "", catchment.Name));
+            foreach (CalcStep step in intensity.Steps)
+                peak.Steps.Insert(1, step);
+            return peak;
+        }
+
         /// <summary>Single-area peak flow, Q = C i A.</summary>
         public static PeakFlowResult Peak(double runoffC, double intensityInHr, double areaAcres)
         {
