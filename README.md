@@ -27,14 +27,15 @@ not yet re-tested after the listed fix.
 | HydroComplete ribbon tab | *pending* | Not explicitly confirmed in session |
 | `HC_RATIONAL` (with catchments) | *pending* | No catchment objects in test drawing |
 | Waitlist page `hydrocomplete.com/civil3d` | *deploy only* | HTTP 200 deployed; signup flow not user-tested |
-| Engine unit tests | **validated** | `dotnet test` on dev machine (grows with each release) |
-| `HC_HGL` (normal-depth profile + HC-HGL labels) | *pending* | v0.4.0 — Manning normal depth at design Q; v0.3.0 adds HEC-22 junction/exit losses |
-| `HC_HGL` (HGL profile polyline on HC-HGL-PROFILE) | *pending* | v0.5.0 — 3D polyline at pipe US/DS ends; Yes/No prompt (default Yes) |
+| Engine unit tests | **validated** | `dotnet test` — 112 pass, 1 skip (2026-06-18) |
+| `HC_HGL` tailwater backwater (engine) | **validated** | `Hgl.SteadyBackwaterFromOutfall` anchors at outfall tailwater, steps upstream (`HglBackwaterTests`) |
+| `HC_HGL` (labels + profile in Civil 3D) | *pending re-test* | v0.6.0 — tailwater prompt at outfall; labels on `HC-HGL`, polyline on `HC-HGL-PROFILE`; close C3D → `install.ps1` → run on `C-STORM` |
+| `HC_HGL` (normal-depth + HEC-22 losses) | *pending re-test* | Superseded directionally by tailwater backwater; confirm command table + surcharge flags still match hand check |
 | `HC_CAPACITY` (design Q vs Q_full) | *pending* | v0.4.0 — overload check with Q_des/Q_full, d/D, surcharge flags |
 | `HC_CAPACITY_WRITE` (overload labels) | *pending* | v0.4.0 — MText on `HC-CAPACITY`; overload-only or all-pipes mode |
 | `HC_REPORT` (HTML export) | *pending* | v0.3.0 — Manning capacity + normal-depth HGL per network (Q prompt, HEC-22 optional); `%USERPROFILE%\Documents\HydroComplete\` |
 | `HC_REPORT_PDF` (Pro) | *pending* | v0.4.0 — formula-transparent PDF; requires Pro license or `HYDROCOMPLETE_PRO=1` |
-| `HC_ATLAS14` (IDF preset list) | *pending* | v0.3.0 — 25 embedded NOAA Atlas 14 city curves |
+| `HC_ATLAS14` (IDF preset list) | *pending* | v0.6.0 — 25 embedded presets incl. NOAA Atlas 14 Volume 12 (ID/MT); `Atlas14CoverageTests` engine-validated |
 | `HC_RATIONAL` + Atlas 14 presets | *pending* | v0.3.0 — preset key instead of manual a/b/c |
 | `HC_HGL` + Rational design Q | *pending* | v0.3.0 — optional catchment-driven Q when catchments exist |
 | `HC_CAPACITY` / `HC_HGL` per-catchment Q routing | *pending* | v0.6.0 — route each catchment's Rational peak through pipe topology; per-pipe Q for capacity/HGL |
@@ -229,7 +230,7 @@ The ribbon tab **HydroComplete › Analysis** exposes the same commands.
 ## Roadmap
 
 1. **Write-back (v0.1 done)** — MText labels on `HC-CAPACITY` validated; HGL labels on `HC-HGL` in v0.2; HGL profile polyline on `HC-HGL-PROFILE` in v0.5.0 (pending validation).
-2. **HGL backwater (v0.3 partial)** — HEC-22 junction/exit minor losses in steady profile; full momentum backwater next.
+2. **HGL backwater (v0.6 engine done, CAD pending)** — Tailwater-anchored steady backwater from outfall (`SteadyBackwaterFromOutfall`); HEC-22 junction/exit minor losses; full momentum backwater next.
 3. **Report export** — HTML in v0.2; formula-transparent PDF mirroring the web app next.
 4. **NOAA Atlas 14 (v0.4.0)** — Live PFDS fetch + cache; 25 embedded city presets as offline fallback.
 5. **Account/auth (v0.5.0 done)** — `HC_ACTIVATE` writes `%APPDATA%\HydroComplete\license.json`; online POST to `/api/licensing/validate` with offline `hc_live_*` stub fallback; `HC_LICENSE` shows validation mode and last check; `HC_REPORT_PDF` gated on Pro. HGL profile polyline write-back on `HC-HGL-PROFILE` (Yes/No prompt, default Yes).
