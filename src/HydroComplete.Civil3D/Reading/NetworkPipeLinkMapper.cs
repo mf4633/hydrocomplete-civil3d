@@ -27,6 +27,38 @@ namespace HydroComplete.Civil3D.Reading
             return links;
         }
 
+        public static List<NetworkAnalysisPipe> ToAnalysisPipes(IReadOnlyList<ReadPipe> pipes)
+        {
+            if (pipes == null) throw new ArgumentNullException(nameof(pipes));
+
+            var analysis = new List<NetworkAnalysisPipe>(pipes.Count);
+            foreach (ReadPipe rp in pipes)
+            {
+                analysis.Add(new NetworkAnalysisPipe
+                {
+                    PipeKey = rp.PipeId.Handle.ToString(),
+                    NetworkName = rp.NetworkName,
+                    PipeName = rp.PipeName,
+                    Link = new NetworkPipeLink
+                    {
+                        PipeKey = rp.PipeId.Handle.ToString(),
+                        NetworkName = rp.NetworkName,
+                        PipeName = rp.PipeName,
+                        UpstreamStructureId = rp.UpstreamStructureId.Handle.ToString(),
+                        DownstreamStructureId = rp.DownstreamStructureId.Handle.ToString(),
+                    },
+                    Segment = rp.Segment,
+                    UpstreamNodeId = rp.UpstreamStructureId.Handle.ToString(),
+                    DownstreamNodeId = rp.DownstreamStructureId.Handle.ToString(),
+                    LengthFt = rp.LengthFt,
+                    UpstreamInvertFt = rp.UpstreamInvertFt,
+                    DownstreamInvertFt = rp.DownstreamInvertFt,
+                });
+            }
+
+            return analysis;
+        }
+
         public static Dictionary<string, string> StructureNamesFromPipes(IReadOnlyList<ReadPipe> pipes)
         {
             var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);

@@ -36,7 +36,7 @@ namespace HydroComplete.Civil3D.Commands
                 return;
             }
 
-            DesignFlowContext flow = DesignFlowResolver.Prompt(ed, doc.Database, civilDoc, pipes);
+            DesignFlowContext flow = DesignFlowResolver.Prompt(ed, doc.Database, civilDoc, pipes, doc.Name);
             var capacity = CapacityReportBuilder.Build(
                 pipes, flow.DesignFlowCfs, flow.PipeFlowCfs);
 

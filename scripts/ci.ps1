@@ -17,14 +17,24 @@ $expectedCommands = @(
     'HC_PIPES_WRITE',
     'HC_RATIONAL',
     'HC_INLETS',
+    'HC_NETWORK_EDIT',
+    'HC_PUMP',
+    'HC_COST',
+    'HC_BACKGROUND',
     'HC_HGL',
+    'HC_PREPOST',
+    'HC_OPTIMIZE',
+    'HC_CULVERT',
+    'HC_PROFILE',
+    'HC_PROFILE_DXF',
     'HC_REPORT',
     'HC_REPORT_PDF',
     'HC_ATLAS14',
     'HC_ACTIVATE',
     'HC_LICENSE',
     'HC_CAPACITY',
-    'HC_CAPACITY_WRITE'
+    'HC_CAPACITY_WRITE',
+    'HC_ANALYZE'
 )
 
 function Invoke-Step {

@@ -10,6 +10,7 @@ using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.Civil.ApplicationServices;
 using HydroComplete.Civil3D.Reading;
+using HydroComplete.Civil3D.Ui;
 using HydroComplete.Civil3D.Writing;
 using HydroComplete.Engine;
 using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
@@ -43,47 +44,104 @@ namespace HydroComplete.Civil3D.Commands
                 return;
             }
 
-            NetworkTopology.OrderedNetwork? net = PromptNetwork(ed, networks);
-            if (net == null || net.OrderedPipes.Count == 0)
-            {
-                ed.WriteMessage("\nProfile cancelled or network has no pipes.\n");
-                return;
-            }
+            double defaultDatum = ProfilePlotWriter.DefaultDatumFt(networks[0]);
+            double defaultTw = networks[0].OrderedPipes.Count > 0
+                ? networks[0].OrderedPipes[networks[0].OrderedPipes.Count - 1].DownstreamInvertFt
+                : 0;
 
-            Point3d? insertion = PromptInsertionPoint(ed);
-            if (!insertion.HasValue)
+            var profileDialog = new ProfileOptionsDialog(networks, defaultDatum, defaultTw);
+            if (HydroDialogHost.Show(profileDialog) != true)
             {
                 ed.WriteMessage("\nProfile cancelled.\n");
                 return;
             }
 
-            double horizScale = PromptDouble(ed, "\nHorizontal scale (ft chainage per drawing ft)", 20.0);
-            double vertScale = PromptDouble(ed, "Vertical scale (ft elevation per drawing ft)", 20.0);
-            double defaultDatum = ProfilePlotWriter.DefaultDatumFt(net);
-            double datum = PromptDatum(ed, defaultDatum);
-            bool includeHgl = PromptYesNo(ed, "\nInclude HGL", defaultYes: false);
+            NetworkTopology.OrderedNetwork net = profileDialog.SelectedNetwork!;
+            double horizScale = profileDialog.HorizontalScale;
+            double vertScale = profileDialog.VerticalScale;
+            double datum = profileDialog.DatumFt;
+            bool includeHgl = profileDialog.IncludeHgl;
 
             Dictionary<string, ProfilePlotWriter.HglPipeEnds>? pipeHglEnds = null;
             if (includeHgl)
+                pipeHglEnds = ComputeHglEndsWithTailwater(
+                    ed, doc.Database, civilDoc, pipes, net, profileDialog.TailwaterFt, doc.Name);
+
+            ProfilePlotWriter.ProfilePlotData plotData = ProfilePlotWriter.BuildPlotData(net, pipeHglEnds);
+
+            Point3d insertion = Point3d.Origin;
+            bool drawToDrawing = profileDialog.DrawToDrawing;
+            if (drawToDrawing)
             {
-                pipeHglEnds = ComputeHglEnds(ed, doc.Database, civilDoc, pipes, net);
-                if (pipeHglEnds == null)
+                Point3d? ins = PromptInsertionPoint(ed);
+                if (!ins.HasValue)
                 {
-                    ed.WriteMessage("\nHGL computation cancelled; drawing invert/crown only.\n");
-                    includeHgl = false;
+                    ed.WriteMessage("\nProfile draw cancelled (insertion point required).\n");
+                    if (!profileDialog.ExportDxf) return;
+                    drawToDrawing = false;
+                }
+                else
+                {
+                    insertion = ins.Value;
                 }
             }
 
-            ProfilePlotWriter.ProfilePlotData plotData = ProfilePlotWriter.BuildPlotData(net, pipeHglEnds);
-            var plotOptions = new ProfilePlotWriter.ProfilePlotOptions
-            {
-                InsertionPoint = insertion.Value,
-                DatumElevationFt = datum,
-                HorizontalScale = horizScale,
-                VerticalScale = vertScale,
-                IncludeHgl = includeHgl,
-            };
+            PrintProfileTable(ed, net, plotData, horizScale, vertScale, datum);
 
+            if (drawToDrawing)
+            {
+                var plotOptions = new ProfilePlotWriter.ProfilePlotOptions
+                {
+                    InsertionPoint = insertion,
+                    DatumElevationFt = datum,
+                    HorizontalScale = horizScale,
+                    VerticalScale = vertScale,
+                    IncludeHgl = includeHgl,
+                };
+
+                ProfilePlotWriter.WriteResult write = ProfilePlotWriter.WriteProfile(doc.Database, plotData, plotOptions);
+                ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                    "\n--- Drew {0} profile polyline(s) and {1} station label(s) ---",
+                    write.PolylinesDrawn, write.LabelsDrawn));
+                ed.WriteMessage($"\n  Layers: {ProfilePlotWriter.InvertLayer} (green), {ProfilePlotWriter.CrownLayer} (cyan)");
+                if (includeHgl)
+                    ed.WriteMessage($", {ProfilePlotWriter.HglLayer} (magenta)");
+                foreach (string err in write.Errors)
+                    ed.WriteMessage($"\n  {err}");
+            }
+
+            if (profileDialog.ExportDxf)
+            {
+                string drawingName = ReportWriterCommon.SanitizeFileName(Path.GetFileNameWithoutExtension(doc.Name));
+                string netSlug = ReportWriterCommon.SanitizeFileName(net.NetworkName);
+                Directory.CreateDirectory(ReportWriterCommon.OutputFolder);
+                string dxfPath = Path.Combine(
+                    ReportWriterCommon.OutputFolder,
+                    $"{drawingName}_{netSlug}_profile.dxf");
+
+                ProfileDxfWriter.Write(dxfPath, ProfilePlotWriter.ToDxfData(plotData),
+                    new ProfileDxfWriter.ProfileDxfOptions
+                    {
+                        DatumElevationFt = datum,
+                        HorizontalScale = horizScale,
+                        VerticalScale = vertScale,
+                        IncludeHgl = includeHgl,
+                        TextHeight = Math.Max(0.05, 2.0 / Math.Max(vertScale, 1e-6)),
+                    });
+                ed.WriteMessage($"\n  DXF: {dxfPath}");
+            }
+
+            ed.WriteMessage("\n");
+        }
+
+        private static void PrintProfileTable(
+            Editor ed,
+            NetworkTopology.OrderedNetwork net,
+            ProfilePlotWriter.ProfilePlotData plotData,
+            double horizScale,
+            double vertScale,
+            double datum)
+        {
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
                 "\n--- HydroComplete: profile plot '{0}' ({1} station(s), H={2:0.##} V={3:0.##} ft/dwg-ft, datum={4:0.00} ft) ---",
                 net.NetworkName,
@@ -106,17 +164,6 @@ namespace HydroComplete.Civil3D.Commands
                     station.CrownFt,
                     hglCol));
             }
-
-            ProfilePlotWriter.WriteResult write = ProfilePlotWriter.WriteProfile(doc.Database, plotData, plotOptions);
-            ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
-                "\n--- Drew {0} profile polyline(s) and {1} station label(s) ---",
-                write.PolylinesDrawn, write.LabelsDrawn));
-            ed.WriteMessage($"\n  Layers: {ProfilePlotWriter.InvertLayer} (green), {ProfilePlotWriter.CrownLayer} (cyan)");
-            if (includeHgl)
-                ed.WriteMessage($", {ProfilePlotWriter.HglLayer} (magenta)");
-            foreach (string err in write.Errors)
-                ed.WriteMessage($"\n  {err}");
-            ed.WriteMessage("\n");
         }
 
         [CommandMethod("HC_PROFILE_DXF")]
@@ -156,7 +203,7 @@ namespace HydroComplete.Civil3D.Commands
             Dictionary<string, ProfilePlotWriter.HglPipeEnds>? pipeHglEnds = null;
             if (includeHgl)
             {
-                pipeHglEnds = ComputeHglEnds(ed, doc.Database, civilDoc, pipes, net);
+                pipeHglEnds = ComputeHglEnds(ed, doc.Database, civilDoc, pipes, net, doc.Name);
                 if (pipeHglEnds == null)
                 {
                     ed.WriteMessage("\nHGL computation cancelled; exporting invert/crown only.\n");
@@ -224,16 +271,59 @@ namespace HydroComplete.Civil3D.Commands
             return path;
         }
 
+        private static Dictionary<string, ProfilePlotWriter.HglPipeEnds>? ComputeHglEndsWithTailwater(
+            Editor ed,
+            Database db,
+            CivilDocument civilDoc,
+            IReadOnlyList<ReadPipe> allPipes,
+            NetworkTopology.OrderedNetwork net,
+            double tailwaterFt,
+            string drawingName)
+        {
+            DesignFlowContext flow = DesignFlowResolver.Prompt(ed, db, civilDoc, allPipes, drawingName);
+            bool useMinorLosses = PromptYesNo(ed, "\nInclude HEC-22 junction/exit losses", defaultYes: true);
+            bool useMomentumJunction = PromptYesNo(ed, "\nUse momentum junction losses? [Yes/No]", defaultYes: false);
+
+            var hglOptions = new HglProfileOptions
+            {
+                IncludeJunctionLosses = useMinorLosses,
+                IncludeExitLoss = useMinorLosses,
+                UseMomentumJunction = useMomentumJunction,
+                UseBendLoss = useMinorLosses,
+            };
+
+            List<NetworkReach> reaches = flow.IsRouted && flow.PipeFlowCfs != null
+                ? NetworkTopology.BuildReaches(net.OrderedPipes, flow.PipeFlowCfs, useMinorLosses)
+                : NetworkTopology.BuildReaches(net.OrderedPipes, flow.DesignFlowCfs, useMinorLosses);
+
+            List<HglProfilePoint> profile = Hgl.SteadyBackwaterFromOutfall(reaches, tailwaterFt, hglOptions);
+
+            var pipeHglEnds = new Dictionary<string, ProfilePlotWriter.HglPipeEnds>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < net.OrderedPipes.Count && i < profile.Count; i++)
+            {
+                HglProfilePoint point = profile[i];
+                string reachName = reaches[i].Name;
+                pipeHglEnds[reachName] = new ProfilePlotWriter.HglPipeEnds
+                {
+                    HglUsFt = point.HglUpstreamFt,
+                    HglDsFt = point.HglFt,
+                };
+            }
+
+            return pipeHglEnds;
+        }
+
         private static Dictionary<string, ProfilePlotWriter.HglPipeEnds>? ComputeHglEnds(
             Editor ed,
             Database db,
             CivilDocument civilDoc,
             IReadOnlyList<ReadPipe> allPipes,
-            NetworkTopology.OrderedNetwork net)
+            NetworkTopology.OrderedNetwork net,
+            string drawingName)
         {
-            DesignFlowContext flow = DesignFlowResolver.Prompt(ed, db, civilDoc, allPipes);
+            DesignFlowContext flow = DesignFlowResolver.Prompt(ed, db, civilDoc, allPipes, drawingName);
             bool useMinorLosses = PromptYesNo(ed, "\nInclude HEC-22 junction/exit losses", defaultYes: true);
-            bool useMomentumJunction = PromptYesNo(ed, "\nInclude momentum junction losses", defaultYes: false);
+            bool useMomentumJunction = PromptYesNo(ed, "\nUse momentum junction losses? [Yes/No]", defaultYes: false);
 
             var hglOptions = new HglProfileOptions
             {

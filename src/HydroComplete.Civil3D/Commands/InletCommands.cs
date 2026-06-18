@@ -8,6 +8,7 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.Civil.ApplicationServices;
 using HydroComplete.Civil3D.Reading;
+using HydroComplete.Civil3D.Ui;
 using HydroComplete.Engine;
 using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 
@@ -30,13 +31,18 @@ namespace HydroComplete.Civil3D.Commands
             Editor ed = doc.Editor;
             CivilDocument civilDoc = CivilApplication.ActiveDocument;
 
-            InletCapacity.InletType inletType = PromptInletType(ed);
-            double grateLengthFt = PromptDouble(ed, "\nInlet length L (ft)", 5.0);
-            double flowDepthFt = PromptDouble(ed, "Gutter flow depth d (ft)", 0.15);
-            double gutterSlope = PromptDouble(ed, "Gutter slope S (ft/ft)", 0.005);
-            double curbOpeningHeightFt = 0.0;
-            if (inletType == InletCapacity.InletType.CurbOpening)
-                curbOpeningHeightFt = PromptDouble(ed, "Curb opening height a (ft)", 0.5);
+            var inletDialog = new InletOptionsDialog();
+            if (HydroDialogHost.Show(inletDialog) != true)
+            {
+                ed.WriteMessage("\nInlet check cancelled.\n");
+                return;
+            }
+
+            InletCapacity.InletType inletType = inletDialog.SelectedType;
+            double grateLengthFt = inletDialog.GrateLengthFt;
+            double flowDepthFt = inletDialog.FlowDepthFt;
+            double gutterSlope = inletDialog.GutterSlope;
+            double curbOpeningHeightFt = inletDialog.CurbOpeningHeightFt;
 
             var catchments = CatchmentReader.ReadAll(doc.Database, civilDoc);
             var pipes = PipeNetworkReader.ReadAll(doc.Database, civilDoc);

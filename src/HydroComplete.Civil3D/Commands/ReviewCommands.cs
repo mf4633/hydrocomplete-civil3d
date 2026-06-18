@@ -42,7 +42,7 @@ namespace HydroComplete.Civil3D.Commands
             List<DesignFinding> designFindings = new List<DesignFinding>();
             if (pipes.Count > 0)
             {
-                flow = DesignFlowResolver.Prompt(ed, doc.Database, civilDoc, pipes);
+                flow = DesignFlowResolver.Prompt(ed, doc.Database, civilDoc, pipes, doc.Name);
                 var capacity = CapacityReportBuilder.Build(
                     pipes, flow.DesignFlowCfs, flow.PipeFlowCfs);
 

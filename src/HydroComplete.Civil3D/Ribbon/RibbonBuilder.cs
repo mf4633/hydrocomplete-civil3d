@@ -51,6 +51,7 @@ namespace HydroComplete.Civil3D.Ribbon
             source.Items.Add(MakeButton("Write\nOverload", "HC_CAPACITY_WRITE", "Label overloaded pipes on layer HC-CAPACITY."));
             source.Items.Add(MakeButton("Pipe\nSizing", "HC_SIZE", "Recommend smallest standard pipe (12-72 in) for design Q."));
             source.Items.Add(MakeButton("Validate\nDesign", "HC_VALIDATE", "Design-criteria review: slope, capacity, velocity, cover, size progression, HGL."));
+            source.Items.Add(MakeButton("Full\nAnalysis", "HC_ANALYZE", "Full-network analysis: hydrology, routing, capacity, HGL, sediment, WQV, compliance."));
             source.Items.Add(MakeButton("Design\nReview", "HC_REVIEW", "Design review plus state regulatory compliance (TSS, WQV, peaks, erosion)."));
             source.Items.Add(MakeButton("SCS\nRunoff", "HC_SCS", "SCS curve-number runoff from catchments."));
             source.Items.Add(MakeButton("Unit\nHydro", "HC_UNIT_HYDRO", "SCS synthetic unit hydrograph ordinate table."));
@@ -61,6 +62,9 @@ namespace HydroComplete.Civil3D.Ribbon
             source.Items.Add(MakeButton("WQ\nTrain", "HC_WQ_TRAIN", "Sequential BMP treatment train with EMC pollutant loads."));
             source.Items.Add(MakeButton("Sediment\nBasin", "HC_SEDIMENT_BASIN", "NCDEQ sediment basin sizing from peak Q and RUSLE yield."));
             source.Items.Add(MakeButton("HGL\nProfile", "HC_HGL", "Steady HGL profile polyline on HC-HGL-PROFILE and labels on HC-HGL."));
+            source.Items.Add(MakeButton("Pre/Post\nPeaks", "HC_PREPOST", "Pre/post-development peak flow comparison across state storm suite."));
+            source.Items.Add(MakeButton("BMP\nOptimize", "HC_OPTIMIZE", "Top 3 lowest-cost BMP treatment trains meeting state removal targets."));
+            source.Items.Add(MakeButton("Culvert\nHW", "HC_CULVERT", "FHWA HDS-5 culvert headwater from pipe or manual geometry."));
             source.Items.Add(MakeButton("Chainage\nProfile", "HC_PROFILE", "Invert, crown, and optional HGL vs chainage on HC-PROFILE-* layers."));
             source.Items.Add(MakeButton("Profile\nDXF", "HC_PROFILE_DXF", "Export invert, crown, and optional HGL profile to DXF."));
             source.Items.Add(MakeButton("HTML\nReport", "HC_REPORT", "Export formula-transparent Manning + HGL HTML report."));
@@ -68,7 +72,11 @@ namespace HydroComplete.Civil3D.Ribbon
             source.Items.Add(MakeButton("Rational\nQ", "HC_RATIONAL", "Rational peak flow from catchments + Atlas 14 IDF."));
             source.Items.Add(MakeButton("Multi-RP\nCapacity", "HC_MULTIRP", "Per-pipe Q and d/D for 2/10/25/100-yr return periods."));
             source.Items.Add(MakeButton("TR-55\nTc", "HC_TC", "TR-55 segmented time-of-concentration worksheet."));
-            source.Items.Add(MakeButton("Inlet\nCheck", "HC_INLETS", "HEC-22 inlet check: grate, sag, or curb opening."));
+            source.Items.Add(MakeButton("Inlet\nCheck", "HC_INLETS", "HEC-22 inlet check: grate, sag, or curb opening (modal dialog)."));
+            source.Items.Add(MakeButton("Network\nEdit", "HC_NETWORK_EDIT", "Edit per-pipe Q and Manning n overrides (saved per drawing)."));
+            source.Items.Add(MakeButton("Pump\nStation", "HC_PUMP", "Pump duty-point check: system head vs pump curve."));
+            source.Items.Add(MakeButton("Pipe\nCost", "HC_COST", "Roll up pipe costs from diameter catalog ($/LF)."));
+            source.Items.Add(MakeButton("Background\nMap", "HC_BACKGROUND", "Attach georeferenced raster image on HC-BACKGROUND."));
             source.Items.Add(MakeButton("LandXML\nExport", "HC_LANDXML", "Export pipe network to LandXML 1.2."));
             source.Items.Add(MakeButton("LandXML\nImport", "HC_LANDXML_IMPORT", "Import LandXML 1.2 and compare to drawing."));
             source.Items.Add(MakeButton("Atlas 14\nIDF", "HC_ATLAS14", "List NOAA Atlas 14 IDF presets by city."));

@@ -409,5 +409,194 @@ namespace HydroComplete.Civil3D.Writing
             }
         }
 
+        /// <summary>Full-network analysis HTML report (HC_ANALYZE).</summary>
+        public static string WriteAnalysis(
+            string drawingName,
+            NetworkAnalysisResult result,
+            string? idfLabel = null)
+        {
+            string path = ReportWriterCommon.BuildReportPath(drawingName, "analysis.html");
+
+            var sb = new StringBuilder();
+            sb.AppendLine("<!DOCTYPE html>");
+            sb.AppendLine("<html lang=\"en\"><head><meta charset=\"utf-8\"/>");
+            sb.AppendLine("<title>HydroComplete Analysis Report</title>");
+            sb.AppendLine("<style>");
+            sb.AppendLine("body{font-family:Segoe UI,Arial,sans-serif;margin:24px;color:#1a1a1a;}");
+            sb.AppendLine("h1{font-size:1.4rem;} h2{font-size:1.15rem;margin-top:28px;}");
+            sb.AppendLine("table{border-collapse:collapse;width:100%;margin:16px 0;}");
+            sb.AppendLine("th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;font-size:0.9rem;}");
+            sb.AppendLine("th{background:#f0f4f8;} tr.fail{background:#ffe6e6;}");
+            sb.AppendLine(".steps{font-family:Consolas,monospace;font-size:0.85rem;}");
+            sb.AppendLine(".pass{color:#0a6b0a;font-weight:bold;}.failtxt{color:#b00020;font-weight:bold;}");
+            sb.AppendLine(".disclaimer{margin-top:24px;padding:12px;background:#fff8e6;border:1px solid #e6c200;}");
+            sb.AppendLine("</style></head><body>");
+            sb.AppendLine("<h1>HydroComplete — Full Network Analysis</h1>");
+            sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "<p>Drawing: <strong>{0}</strong><br/>Generated: {1}<br/>State: <strong>{2}</strong>",
+                ReportWriterCommon.EscapeHtml(drawingName),
+                ReportWriterCommon.EscapeHtml(DateTime.Now.ToString("f", CultureInfo.CurrentCulture)),
+                ReportWriterCommon.EscapeHtml(result.StateCode)));
+            if (!string.IsNullOrWhiteSpace(idfLabel))
+                sb.AppendLine("<br/>IDF: " + ReportWriterCommon.EscapeHtml(idfLabel));
+            sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "<br/>Overall: <span class=\"{0}\">{1}</span></p>",
+                result.OverallPass ? "pass" : "failtxt",
+                result.OverallPass ? "PASS" : "FAIL"));
+
+            sb.AppendLine("<h2>Hydrology</h2>");
+            sb.AppendLine("<table><thead><tr>");
+            sb.AppendLine("<th>Catchment</th><th>Area (ac)</th><th>C</th><th>Tc (min)</th>");
+            sb.AppendLine("<th>Q Rational (cfs)</th><th>SCS runoff (in)</th>");
+            sb.AppendLine("</tr></thead><tbody>");
+            foreach (CatchmentHydrologyResult hydro in result.Hydrology)
+            {
+                sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "<tr><td>{0}</td><td>{1:0.000}</td><td>{2:0.00}</td><td>{3:0.0}</td><td>{4:0.00}</td><td>{5:0.###}</td></tr>",
+                    ReportWriterCommon.EscapeHtml(hydro.Catchment.Name),
+                    hydro.Catchment.AreaAcres, hydro.Catchment.RunoffC, hydro.Catchment.TcMinutes,
+                    hydro.Rational.PeakFlowCfs, hydro.Scs.RunoffDepthInches));
+            }
+            sb.AppendLine("</tbody></table>");
+
+            if (result.Capacity.Count > 0)
+            {
+                sb.AppendLine("<h2>Pipe Capacity</h2>");
+                sb.AppendLine("<table><thead><tr>");
+                sb.AppendLine("<th>Network / Pipe</th><th>Q (cfs)</th><th>Q/Qfull</th><th>d/D</th><th>Surcharged</th>");
+                sb.AppendLine("</tr></thead><tbody>");
+                foreach (PipeCapacityAnalysisResult row in result.Capacity)
+                {
+                    string label = string.IsNullOrEmpty(row.Pipe.NetworkName)
+                        ? row.Pipe.PipeName
+                        : row.Pipe.NetworkName + "/" + row.Pipe.PipeName;
+                    string rowClass = row.Surcharged ? " class=\"fail\"" : "";
+                    sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                        "<tr{0}><td>{1}</td><td>{2:0.0}</td><td>{3:0.00}</td><td>{4:0.00}</td><td>{5}</td></tr>",
+                        rowClass,
+                        ReportWriterCommon.EscapeHtml(label),
+                        row.DesignFlowCfs, row.FlowRatio, row.NormalDepth.RelativeDepth,
+                        row.Surcharged ? "Yes" : "No"));
+                }
+                sb.AppendLine("</tbody></table>");
+            }
+
+            if (result.HglNetworks.Count > 0)
+            {
+                sb.AppendLine("<h2>HGL Profiles</h2>");
+                foreach (NetworkHglResult net in result.HglNetworks)
+                {
+                    sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                        "<h3>{0}</h3><p>Tailwater = {1:0.00} ft</p>",
+                        ReportWriterCommon.EscapeHtml(net.NetworkName), net.TailwaterFt));
+                    sb.AppendLine("<table><thead><tr>");
+                    sb.AppendLine("<th>Pipe</th><th>Q (cfs)</th><th>HGL US (ft)</th><th>HGL DS (ft)</th><th>h<sub>f</sub> (ft)</th>");
+                    sb.AppendLine("</tr></thead><tbody>");
+                    for (int i = 0; i < net.OrderedPipes.Count && i < net.Profile.Count; i++)
+                    {
+                        sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                            "<tr><td>{0}</td><td>{1:0.0}</td><td>{2:0.00}</td><td>{3:0.00}</td><td>{4:0.00}</td></tr>",
+                            ReportWriterCommon.EscapeHtml(net.OrderedPipes[i].PipeName),
+                            net.Reaches[i].FlowCfs,
+                            net.Profile[i].HglUpstreamFt,
+                            net.Profile[i].HglFt,
+                            net.Profile[i].HfFt));
+                    }
+                    sb.AppendLine("</tbody></table>");
+                }
+            }
+
+            if (result.Sediment.Count > 0)
+            {
+                sb.AppendLine("<h2>RUSLE Sediment</h2>");
+                sb.AppendLine("<table><thead><tr>");
+                sb.AppendLine("<th>Catchment</th><th>Soil loss (tons/ac/yr)</th><th>Risk</th>");
+                sb.AppendLine("</tr></thead><tbody>");
+                foreach (SedimentEngine.RusleResult rusle in result.Sediment)
+                {
+                    sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                        "<tr><td>{0}</td><td>{1:0.##}</td><td>{2}</td></tr>",
+                        ReportWriterCommon.EscapeHtml(rusle.Name),
+                        rusle.SoilLossTonsPerAcYr, rusle.RiskLevel));
+                }
+                sb.AppendLine("</tbody></table>");
+            }
+
+            if (result.Wqv != null)
+            {
+                sb.AppendLine("<h2>Water Quality Volume</h2>");
+                sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "<p>WQV = {0:0} cf ({1:0.##} ac-ft), Rv = {2:0.###}</p>",
+                    result.Wqv.WqvCf, result.Wqv.WqvAcreFt, result.Wqv.RunoffCoefficientRv));
+            }
+
+            if (result.TreatmentTrain != null)
+            {
+                sb.AppendLine("<h2>Placeholder BMP Treatment Train</h2>");
+                sb.AppendLine("<table><thead><tr>");
+                sb.AppendLine("<th>Pollutant</th><th>Influent (lbs)</th><th>Effluent (lbs)</th><th>η (%)</th>");
+                sb.AppendLine("</tr></thead><tbody>");
+                foreach (string pollutant in Pollutant.Core)
+                {
+                    result.TreatmentTrain.InitialLoadsLbs.TryGetValue(pollutant, out double influent);
+                    result.TreatmentTrain.FinalEffluentLbs.TryGetValue(pollutant, out double effluent);
+                    result.TreatmentTrain.OverallRemovalEfficiency.TryGetValue(pollutant, out double eta);
+                    sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                        "<tr><td>{0}</td><td>{1:0.##}</td><td>{2:0.##}</td><td>{3:0.#}</td></tr>",
+                        pollutant, influent, effluent, eta * 100.0));
+                }
+                sb.AppendLine("</tbody></table>");
+            }
+
+            if (result.Compliance != null)
+            {
+                sb.AppendLine("<h2>Regulatory Compliance</h2>");
+                sb.AppendLine("<table><thead><tr>");
+                sb.AppendLine("<th>Criterion</th><th>Required</th><th>Actual</th><th>Status</th>");
+                sb.AppendLine("</tr></thead><tbody>");
+                foreach (ComplianceCriterion c in result.Compliance.Criteria)
+                {
+                    string rowClass = c.Status == ComplianceStatus.Fail ? " class=\"fail\"" : "";
+                    sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                        "<tr{0}><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td></tr>",
+                        rowClass,
+                        ReportWriterCommon.EscapeHtml(c.Name),
+                        ReportWriterCommon.EscapeHtml(c.Required),
+                        ReportWriterCommon.EscapeHtml(c.Actual),
+                        c.Status));
+                }
+                sb.AppendLine("</tbody></table>");
+            }
+
+            if (result.DesignReview.Count > 0)
+            {
+                sb.AppendLine("<h2>Design Review Findings</h2><ul>");
+                foreach (DesignFinding finding in result.DesignReview)
+                {
+                    sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                        "<li><strong>{0}</strong> {1}: {2}</li>",
+                        finding.Severity,
+                        ReportWriterCommon.EscapeHtml(finding.Id),
+                        ReportWriterCommon.EscapeHtml(finding.Message)));
+                }
+                sb.AppendLine("</ul>");
+            }
+
+            sb.AppendLine("<h2>Pipeline Trace</h2><div class=\"steps\">");
+            foreach (CalcStep step in result.Steps)
+                sb.AppendLine(ReportWriterCommon.EscapeHtml(step.ToString()) + "<br/>");
+            sb.AppendLine("</div>");
+
+            sb.AppendLine("<div class=\"disclaimer\">");
+            sb.AppendLine("<strong>Disclaimer:</strong> Full-network analysis is preliminary. ");
+            sb.AppendLine("Placeholder BMP treatment assumes bioretention; verify all inputs and ");
+            sb.AppendLine("jurisdiction-specific requirements with licensed professional judgment.");
+            sb.AppendLine("</div>");
+            sb.AppendLine("</body></html>");
+
+            File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
+            return path;
+        }
+
     }
 }

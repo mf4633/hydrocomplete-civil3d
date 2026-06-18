@@ -208,7 +208,11 @@ namespace HydroComplete.Civil3D.Reading
                         reach.DeflectionAngleDeg = PlanDeflectionDegrees(rp, next);
 
                         if (includeJunctionLosses)
+                        {
                             reach.JunctionLossK = Hec22.DefaultManholeK;
+                            if (reach.DeflectionAngleDeg > 0)
+                                reach.BendLossK = Hec22.BendLossK(reach.DeflectionAngleDeg);
+                        }
                     }
                 }
 
@@ -225,10 +229,7 @@ namespace HydroComplete.Civil3D.Reading
         {
             (double inX, double inY) = PlanFlowDirection(incoming);
             (double outX, double outY) = PlanFlowDirection(outgoing);
-
-            double dot = inX * outX + inY * outY;
-            dot = Math.Max(-1.0, Math.Min(1.0, dot));
-            return Math.Acos(dot) * 180.0 / Math.PI;
+            return PipePlanGeometry.DeflectionDegrees(inX, inY, outX, outY);
         }
 
         private static (double X, double Y) PlanFlowDirection(ReadPipe pipe)
@@ -240,13 +241,9 @@ namespace HydroComplete.Civil3D.Reading
                 ? pipe.EndPoint
                 : pipe.StartPoint;
 
-            double dx = downstream.X - upstream.X;
-            double dy = downstream.Y - upstream.Y;
-            double length = Math.Sqrt(dx * dx + dy * dy);
-            if (length < 1e-9)
-                return (1.0, 0.0);
-
-            return (dx / length, dy / length);
+            return PipePlanGeometry.FlowDirection(
+                upstream.X, upstream.Y,
+                downstream.X, downstream.Y);
         }
 
         private static double ResolveDesignFlow(

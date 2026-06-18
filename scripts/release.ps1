@@ -41,6 +41,25 @@ try {
         Where-Object { $_.Name -notmatch '^HydroComplete\.' } |
         Copy-Item -Destination $contents -Force
 
+    $acad2024 = 'C:\Program Files\Autodesk\AutoCAD 2024\AcMgd.dll'
+    if (Test-Path $acad2024) {
+        Write-Host 'Building net48 target for Civil 3D 2024...'
+        dotnet build $csproj -c Release -p:BuildNet48=true -p:AcadDir='C:\Program Files\Autodesk\AutoCAD 2024\'
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        $net48Out = Join-Path $root 'src\HydroComplete.Civil3D\bin\Release\net48'
+        $net48Contents = Join-Path $contents 'net48'
+        New-Item -ItemType Directory -Force -Path $net48Contents | Out-Null
+        Copy-Item (Join-Path $net48Out 'HydroComplete.Civil3D.dll') $net48Contents -Force
+        Copy-Item (Join-Path $eng 'HydroComplete.Engine.dll') $net48Contents -Force
+        Get-ChildItem $net48Out -Filter '*.dll' |
+            Where-Object { $_.Name -notmatch '^HydroComplete\.' } |
+            Copy-Item -Destination $net48Contents -Force
+        Write-Host "net48 bundle staged at $net48Contents"
+    }
+    else {
+        Write-Host 'Skipping net48 build (AutoCAD 2024 not installed).'
+    }
+
     $iconDest = Join-Path $contents 'PackageIcon.png'
     if (-not (Test-Path $iconDest)) {
         throw "PackageIcon.png missing in $contents - add a 96x96 PNG before release."

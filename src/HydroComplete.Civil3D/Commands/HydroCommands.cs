@@ -30,7 +30,7 @@ namespace HydroComplete.Civil3D.Commands
         public void About()
         {
             Editor ed = Active().Editor;
-            ed.WriteMessage("\n=== HydroComplete for Civil 3D 1.1.0 ===");
+            ed.WriteMessage("\n=== HydroComplete for Civil 3D 1.2.0 ===");
             ed.WriteMessage("\n  HC_NETWORK       Per-network summary (pipes, length, inverts, diameters, structures)");
             ed.WriteMessage("\n  HC_PIPES         Manning capacity of every pipe-network pipe (circular, box, arch)");
             ed.WriteMessage("\n  HC_PIPES_WRITE   Label Qfull/Vfull on layer HC-CAPACITY");
@@ -38,6 +38,7 @@ namespace HydroComplete.Civil3D.Commands
             ed.WriteMessage("\n  HC_CAPACITY_WRITE Label overloaded pipes on layer HC-CAPACITY");
             ed.WriteMessage("\n  HC_SIZE          Standard catalog pipe sizing (velocity, % full)");
             ed.WriteMessage("\n  HC_VALIDATE      Design-criteria review (slope, capacity, velocity, cover, HGL)");
+            ed.WriteMessage("\n  HC_ANALYZE       Full-network analysis (hydrology, routing, HGL, sediment, compliance)");
             ed.WriteMessage("\n  HC_REVIEW        Design review + state regulatory compliance check");
             ed.WriteMessage("\n  HC_SCS           SCS CN runoff from catchments");
             ed.WriteMessage("\n  HC_UNIT_HYDRO    SCS unit hydrograph table output");
@@ -47,15 +48,26 @@ namespace HydroComplete.Civil3D.Commands
             ed.WriteMessage("\n  HC_BMP_SIZE      WQV-based BMP sizing (bioretention, wet pond, sand filter, swale)");
             ed.WriteMessage("\n  HC_WQ_TRAIN      BMP treatment train with EMC pollutant loads from catchments");
             ed.WriteMessage("\n  HC_SEDIMENT_BASIN Sediment basin design from peak Q (NCDEQ surface-area method)");
-            ed.WriteMessage("\n  HC_HGL           Steady HGL (normal depth) + HEC-22 losses + HC-HGL labels + plan profile");
-            ed.WriteMessage("\n  HC_PROFILE       Chainage profile plot (invert, crown, optional HGL)");
+            ed.WriteMessage("\n  HC_HGL           Steady HGL (normal depth) + HEC-22/momentum/bend losses + HC-HGL labels + plan profile");
+            ed.WriteMessage("\n  HC_PREPOST       Pre/post-development peak comparison (SCS UH, multi-storm state depths)");
+            ed.WriteMessage("\n  HC_OPTIMIZE      BMP treatment-train cost optimizer (top 3 chains)");
+            ed.WriteMessage("\n  HC_CULVERT       Culvert headwater (FHWA HDS-5 inlet/outlet control)");
+            ed.WriteMessage("\n  HC_PROFILE       Chainage profile plot (invert, crown, optional HGL) — modal options dialog");
             ed.WriteMessage("\n  HC_PROFILE_DXF   Export chainage profile to DXF (invert, crown, optional HGL)");
             ed.WriteMessage("\n  HC_REPORT      Export formula-transparent HTML Manning + HGL report (free)");
             ed.WriteMessage("\n  HC_REPORT_PDF  Export formula-transparent PDF Manning + HGL report (Pro)");
             ed.WriteMessage("\n  HC_RATIONAL    Rational Q from catchments + NOAA Atlas 14 IDF presets");
             ed.WriteMessage("\n  HC_MULTIRP     Per-pipe Q and d/D for 2/10/25/100-yr return periods");
             ed.WriteMessage("\n  HC_TC          TR-55 segmented time-of-concentration worksheet");
-            ed.WriteMessage("\n  HC_INLETS      HEC-22 inlet check (grate / sag / curb opening)");
+            ed.WriteMessage("\n  HC_INLETS      HEC-22 inlet check (grate / sag / curb opening) — modal options dialog");
+            ed.WriteMessage("\n  HC_NETWORK_EDIT  Edit pipe Q and Manning n overrides (saved per drawing)");
+            ed.WriteMessage("\n  HC_PUMP          Pump station duty-point check (curve vs system head)");
+            ed.WriteMessage("\n  HC_COST          Pipe cost roll-up from diameter catalog ($/LF)");
+            ed.WriteMessage("\n  HC_BACKGROUND    Attach georeferenced raster on HC-BACKGROUND layer");
+            ed.WriteMessage("\n  HC_HYDROGRAPH    Synthetic hydrograph ordinates (SCS, Clark, Snyder)");
+            ed.WriteMessage("\n  HC_BIORETENTION  Bioretention routing with underdrain/outlet");
+            ed.WriteMessage("\n  HC_WETLAND       Wetland detention routing");
+            ed.WriteMessage("\n  HC_SOIL          NRCS soil group lookup by map unit");
             ed.WriteMessage("\n  HC_LANDXML       Export pipe network to LandXML 1.2");
             ed.WriteMessage("\n  HC_LANDXML_IMPORT Import LandXML 1.2 (preview + optional write to drawing)");
             ed.WriteMessage("\n  HC_ATLAS14     List Atlas 14 IDF presets + live PFDS fetch info");
@@ -250,7 +262,7 @@ namespace HydroComplete.Civil3D.Commands
                 return;
             }
 
-            DesignFlowContext flow = DesignFlowResolver.Prompt(ed, doc.Database, civilDoc, pipes);
+            DesignFlowContext flow = DesignFlowResolver.Prompt(ed, doc.Database, civilDoc, pipes, doc.Name);
             var report = CapacityReportBuilder.Build(
                 pipes, flow.DesignFlowCfs, flow.PipeFlowCfs);
 
@@ -293,7 +305,7 @@ namespace HydroComplete.Civil3D.Commands
                 return;
             }
 
-            DesignFlowContext flow = DesignFlowResolver.Prompt(ed, doc.Database, civilDoc, pipes);
+            DesignFlowContext flow = DesignFlowResolver.Prompt(ed, doc.Database, civilDoc, pipes, doc.Name);
             bool overloadOnly = PromptYesNo(ed,
                 "\nLabel overloaded pipes only (No = label all pipes, dim OK)",
                 defaultYes: true);
@@ -363,9 +375,9 @@ namespace HydroComplete.Civil3D.Commands
                 return;
             }
 
-            DesignFlowContext flow = DesignFlowResolver.Prompt(ed, doc.Database, civilDoc, pipes);
+            DesignFlowContext flow = DesignFlowResolver.Prompt(ed, doc.Database, civilDoc, pipes, doc.Name);
             bool useMinorLosses = PromptYesNo(ed, "\nInclude HEC-22 junction/exit losses", defaultYes: true);
-            bool useMomentumJunction = PromptYesNo(ed, "\nInclude momentum junction losses", defaultYes: false);
+            bool useMomentumJunction = PromptYesNo(ed, "\nUse momentum junction losses? [Yes/No]", defaultYes: false);
 
             var hglOptions = new HglProfileOptions
             {
@@ -537,7 +549,7 @@ namespace HydroComplete.Civil3D.Commands
                 return false;
             }
 
-            DesignFlowContext flow = DesignFlowResolver.Prompt(ed, doc.Database, civilDoc, pipes);
+            DesignFlowContext flow = DesignFlowResolver.Prompt(ed, doc.Database, civilDoc, pipes, doc.Name);
             bool useMinorLosses = PromptYesNo(ed, "\nInclude HEC-22 junction/exit losses in HGL section", defaultYes: true);
 
             foreach (var rp in pipes)

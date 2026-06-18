@@ -1,7 +1,7 @@
 # Autodesk App Store — Listing Copy
 
 **Product:** HydroComplete for Civil 3D  
-**Version at submission:** 1.1.0
+**Version at submission:** 1.2.0
 **Last updated:** 2026-06-18
 
 ---
@@ -59,7 +59,15 @@ Every engine result carries a `Steps` trace (label, value, units, formula) — t
 
 Learn more: [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d)
 
-### New in v1.1.0
+### New in v1.2.0
+
+- **`HC_PUMP`** — Pump station duty-point check (system head vs default pump curve).
+- **`HC_NETWORK_EDIT`** — Interactive pipe override editor (design Q, Manning *n*); saved per drawing in `%APPDATA%\HydroComplete\overrides\`.
+- **`HC_COST`** — Pipe cost roll-up from diameter catalog ($/LF).
+- **`HC_BACKGROUND`** — Attach georeferenced raster image on layer `HC-BACKGROUND`.
+- **Modal UI** — `HC_PROFILE` and `HC_INLETS` open WPF option dialogs (scales, HGL, tailwater, inlet type).
+
+### Also in v1.1.0
 
 - **`HC_PROFILE_DXF`** — Export chainage profile (invert, crown, optional HGL) to ASCII DXF for external CAD review.
 - **App Store manifest** — Registers `HC_PROFILE`, `HC_PROFILE_DXF`, `HC_TC`, `HC_LANDXML`, and `HC_LANDXML_IMPORT`.

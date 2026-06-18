@@ -14,7 +14,16 @@ using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.TcCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.ValidateCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.AdvancedStormwaterCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.AnalyzeCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.BackgroundCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.CostCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.CulvertCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.HydrographCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.NetworkEditorCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.PeakControlCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.ProfileCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.PumpCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.WaterQualityCommands))]
 
 namespace HydroComplete.Civil3D
 {
@@ -33,7 +42,7 @@ namespace HydroComplete.Civil3D
             {
                 var doc = AcadApp.DocumentManager?.MdiActiveDocument;
                 doc?.Editor.WriteMessage(
-                    $"\n{ProductName} for Civil 3D 1.1.0 loaded. Type HC_ABOUT for commands.\n");
+                    $"\n{ProductName} for Civil 3D 1.2.0 loaded. Type HC_ABOUT for commands.\n");
             }
             catch
             {

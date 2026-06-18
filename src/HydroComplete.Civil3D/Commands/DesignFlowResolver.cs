@@ -6,6 +6,7 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.Civil.ApplicationServices;
 using HydroComplete.Civil3D.Reading;
+using HydroComplete.Civil3D.Storage;
 using HydroComplete.Engine;
 
 namespace HydroComplete.Civil3D.Commands
@@ -30,8 +31,13 @@ namespace HydroComplete.Civil3D.Commands
             Editor ed,
             Database db,
             CivilDocument civilDoc,
-            IReadOnlyList<ReadPipe> pipes)
+            IReadOnlyList<ReadPipe> pipes,
+            string? drawingName = null)
         {
+            NetworkOverrideApplier.ApplyToPipes(
+                pipes,
+                NetworkOverrideStore.Load(drawingName ?? ""));
+
             var catchments = CatchmentReader.ReadAll(db, civilDoc, pipes);
             ApplyDefaultTcFallback(catchments, pipes);
             if (catchments.Count == 0)
@@ -144,7 +150,7 @@ namespace HydroComplete.Civil3D.Commands
             return PromptDouble(ed, "\nUniform design flow Q (cfs)", 10.0);
         }
 
-        private static void ApplyDefaultTcFallback(
+        internal static void ApplyDefaultTcFallback(
             IList<Catchment> catchments,
             IReadOnlyList<ReadPipe> pipes)
         {

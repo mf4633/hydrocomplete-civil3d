@@ -24,6 +24,18 @@ try {
         Where-Object { $_.Name -notmatch '^HydroComplete\.' } |
         Copy-Item -Destination $contents -Force
 
+    $net48Out = "src\HydroComplete.Civil3D\bin\$Configuration\net48"
+    if (Test-Path (Join-Path $net48Out 'HydroComplete.Civil3D.dll')) {
+        $net48Contents = Join-Path $contents 'net48'
+        New-Item -ItemType Directory -Force -Path $net48Contents | Out-Null
+        Copy-Item (Join-Path $net48Out 'HydroComplete.Civil3D.dll') $net48Contents -Force
+        Copy-Item (Join-Path $eng 'HydroComplete.Engine.dll') $net48Contents -Force
+        Get-ChildItem $net48Out -Filter '*.dll' |
+            Where-Object { $_.Name -notmatch '^HydroComplete\.' } |
+            Copy-Item -Destination $net48Contents -Force
+        Write-Host "net48 bundle copied to Contents/net48 (Civil 3D 2024)"
+    }
+
     $bundle = Join-Path $root 'dist\HydroComplete.bundle'
     $dest = Join-Path $env:APPDATA 'Autodesk\ApplicationPlugins\HydroComplete.bundle'
 

@@ -5,7 +5,7 @@ drawing** — read pipe networks and catchments, compute on public-domain method
 and show every formula. This is the desktop companion behind
 [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d).
 
-Status: **v1.1.0** — Hydraflow parity batch 5 (profile DXF export, App Store command registration). See [User validation](#user-validation) below.
+Status: **v1.2.0** — Hydraflow parity batch 6 (pump stations, network editor, cost codes, background maps, modal profile/inlet UI). See [User validation](#user-validation) below.
 
 **Autodesk App Store:** Listing copy, submission checklist, and screenshot shot list live in [`dist/app-store/`](dist/app-store/) (`LISTING.md`, `SUBMISSION_CHECKLIST.md`, `SCREENSHOTS.md`).
 
@@ -27,7 +27,7 @@ not yet re-tested after the listed fix.
 | HydroComplete ribbon tab | *pending* | Not explicitly confirmed in session |
 | `HC_RATIONAL` (with catchments) | *pending* | No catchment objects in test drawing |
 | Waitlist page `hydrocomplete.com/civil3d` | *deploy only* | HTTP 200 deployed; signup flow not user-tested |
-| Engine unit tests | **validated** | `dotnet test` — 242 pass, 1 skip (2026-06-18, v0.8.0) |
+| Engine unit tests | **validated** | `dotnet test` — 348 pass, 1 skip, 1 fail pre-existing (2026-06-18); +14 new tests (topology, culvert, storms) |
 | `HC_HGL` tailwater backwater (engine) | **validated** | `Hgl.SteadyBackwaterFromOutfall` anchors at outfall tailwater, steps upstream (`HglBackwaterTests`) |
 | `HC_HGL` (labels + profile in Civil 3D) | *pending re-test* | v0.6.0 — tailwater prompt at outfall; labels on `HC-HGL`, polyline on `HC-HGL-PROFILE`; close C3D → `install.ps1` → run on `C-STORM` |
 | `HC_HGL` (normal-depth + HEC-22 losses) | *pending re-test* | Superseded directionally by tailwater backwater; confirm command table + surcharge flags still match hand check |
@@ -177,6 +177,9 @@ before the one-time install above.
 | `HC_SIZE` | Standard catalog pipe sizing (velocity, % full) — Hydraflow-style |
 | `HC_VALIDATE` | Design-criteria review: slope, capacity, velocity, cover, HGL flooding |
 | `HC_HGL` | Tailwater backwater HGL; optional HEC-22, momentum junction, bend losses; labels + profile polyline |
+| `HC_PREPOST` | Pre/post-development peak comparison (SCS UH); state multi-storm depths; optional detention routing |
+| `HC_OPTIMIZE` | BMP treatment-train optimizer — top 3 lowest-cost chains vs state TSS/TN/TP targets |
+| `HC_CULVERT` | Circular culvert headwater (FHWA HDS-5 inlet/outlet control) from drawing pipe or manual entry |
 | `HC_MULTIRP` | Per-pipe Q and d/D for 2/10/25/100-yr return periods |
 | `HC_INLETS` | HEC-22 grate-on-grade inlet interception check |
 | `HC_REPORT` | Formula-transparent HTML Manning + steady HGL report to `Documents\HydroComplete\` (free) |
