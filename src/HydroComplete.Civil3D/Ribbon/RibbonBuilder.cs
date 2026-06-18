@@ -61,6 +61,7 @@ namespace HydroComplete.Civil3D.Ribbon
             source.Items.Add(MakeButton("WQ\nTrain", "HC_WQ_TRAIN", "Sequential BMP treatment train with EMC pollutant loads."));
             source.Items.Add(MakeButton("Sediment\nBasin", "HC_SEDIMENT_BASIN", "NCDEQ sediment basin sizing from peak Q and RUSLE yield."));
             source.Items.Add(MakeButton("HGL\nProfile", "HC_HGL", "Steady HGL profile polyline on HC-HGL-PROFILE and labels on HC-HGL."));
+            source.Items.Add(MakeButton("Chainage\nProfile", "HC_PROFILE", "Invert, crown, and optional HGL vs chainage on HC-PROFILE-* layers."));
             source.Items.Add(MakeButton("HTML\nReport", "HC_REPORT", "Export formula-transparent Manning + HGL HTML report."));
             source.Items.Add(MakeButton("PDF\nReport", "HC_REPORT_PDF", "Export formula-transparent Manning + HGL PDF report."));
             source.Items.Add(MakeButton("Rational\nQ", "HC_RATIONAL", "Rational peak flow from catchments + Atlas 14 IDF."));
@@ -68,6 +69,7 @@ namespace HydroComplete.Civil3D.Ribbon
             source.Items.Add(MakeButton("TR-55\nTc", "HC_TC", "TR-55 segmented time-of-concentration worksheet."));
             source.Items.Add(MakeButton("Inlet\nCheck", "HC_INLETS", "HEC-22 inlet check: grate, sag, or curb opening."));
             source.Items.Add(MakeButton("LandXML\nExport", "HC_LANDXML", "Export pipe network to LandXML 1.2."));
+            source.Items.Add(MakeButton("LandXML\nImport", "HC_LANDXML_IMPORT", "Import LandXML 1.2 and compare to drawing."));
             source.Items.Add(MakeButton("Atlas 14\nIDF", "HC_ATLAS14", "List NOAA Atlas 14 IDF presets by city."));
             source.Items.Add(MakeButton("Activate\nPro", "HC_ACTIVATE", "Activate Pro with email and hc_live_ beta token."));
             source.Items.Add(MakeButton("License", "HC_LICENSE", "Show Free/Pro status and activation info."));

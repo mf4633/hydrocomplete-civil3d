@@ -1,7 +1,7 @@
 # Autodesk App Store — Listing Copy
 
 **Product:** HydroComplete for Civil 3D  
-**Version at submission:** 0.8.0  
+**Version at submission:** 0.9.0
 **Last updated:** 2026-06-18
 
 ---
@@ -59,7 +59,14 @@ Every engine result carries a `Steps` trace (label, value, units, formula) — t
 
 Learn more: [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d)
 
-### New in v0.8.0
+### New in v0.9.0
+
+- **`HC_PROFILE`** — Chainage profile plot (invert, crown, optional HGL on `HC-PROFILE-*` layers).
+- **`HC_LANDXML_IMPORT`** — Read LandXML 1.2 and compare pipe counts to the active drawing.
+- **Arch conduit Manning** — Pipe-arch partial flow, capacity, and normal depth in engine.
+- **`Manning.Capacity` / `NormalDepth`** — Shape dispatch for circular, box, and arch pipes.
+
+### Also in v0.8.0
 
 - **`HC_TC`** — TR-55 segmented time-of-concentration worksheet (sheet / shallow / channel segments).
 - **HEC-22 inlets** — `HC_INLETS` supports grate-on-grade, sag, and curb-opening inlet types.

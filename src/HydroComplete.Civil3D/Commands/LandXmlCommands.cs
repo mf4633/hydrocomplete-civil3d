@@ -17,9 +17,126 @@ using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 
 namespace HydroComplete.Civil3D.Commands
 {
-    /// <summary>HC_LANDXML — export pipe network geometry and hydraulics to LandXML 1.2.</summary>
+    /// <summary>HC_LANDXML / HC_LANDXML_IMPORT — LandXML 1.2 storm network export and import-read.</summary>
     public sealed class LandXmlCommands
     {
+        [CommandMethod("HC_LANDXML_IMPORT")]
+        public void ImportLandXml()
+        {
+            Document doc = Active();
+            Editor ed = doc.Editor;
+            CivilDocument civilDoc = CivilApplication.ActiveDocument;
+
+            Directory.CreateDirectory(ReportWriterCommon.OutputFolder);
+            string defaultPath = ReportWriterCommon.OutputFolder;
+
+            string inputPath = PromptInputPath(ed, defaultPath);
+            if (string.IsNullOrWhiteSpace(inputPath))
+            {
+                ed.WriteMessage("\nLandXML import cancelled.\n");
+                return;
+            }
+
+            LandXmlImportResult import = LandXmlReader.Parse(inputPath);
+            if (import.Errors.Count > 0)
+            {
+                ed.WriteMessage("\n--- HydroComplete: LandXML import errors ---\n");
+                foreach (string error in import.Errors)
+                    ed.WriteMessage("  " + error + "\n");
+                return;
+            }
+
+            var networkGroups = import.Pipes
+                .GroupBy(p => string.IsNullOrWhiteSpace(p.NetworkName) ? "Network" : p.NetworkName.Trim(),
+                    StringComparer.OrdinalIgnoreCase)
+                .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                "\n--- HydroComplete: LandXML import ---\n  Project: {0}\n  Networks: {1}\n",
+                string.IsNullOrWhiteSpace(import.ProjectName) ? "(unnamed)" : import.ProjectName,
+                networkGroups.Count));
+
+            ed.WriteMessage("\nNetwork                 Pipes  Structs  Length(ft)");
+            foreach (IGrouping<string, LandXmlPipeRecord> group in networkGroups)
+            {
+                int structCount = import.Structures.Count(s =>
+                    string.Equals(s.NetworkName, group.Key, StringComparison.OrdinalIgnoreCase));
+
+                ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                    "\n{0,-22} {1,5}  {2,7}  {3,10:0.0}",
+                    Trim(group.Key, 22),
+                    group.Count(),
+                    structCount,
+                    group.Sum(p => p.LengthFt)));
+            }
+
+            ed.WriteMessage("\n\n  First pipes (up to 10):");
+            ed.WriteMessage("\n  Name              Dia(ft)  Slope      Length(ft)  Start      End");
+            foreach (LandXmlPipeRecord pipe in import.Pipes
+                .OrderBy(p => p.NetworkName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+                .Take(10))
+            {
+                ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                    "\n  {0,-16} {1,7:0.00}  {2,8:0.####}  {3,10:0.0}  {4,-10} {5,-10}",
+                    Trim(pipe.Name, 16),
+                    pipe.DiameterFt,
+                    pipe.Slope,
+                    pipe.LengthFt,
+                    Trim(pipe.StartStructureName, 10),
+                    Trim(pipe.EndStructureName, 10)));
+            }
+
+            var drawingPipes = PipeNetworkReader.ReadAll(doc.Database, civilDoc);
+            if (drawingPipes.Count > 0)
+            {
+                var drawingByNetwork = drawingPipes
+                    .GroupBy(p => string.IsNullOrWhiteSpace(p.NetworkName) ? "Network" : p.NetworkName.Trim(),
+                        StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
+
+                ed.WriteMessage("\n\n  Drawing comparison (pipe counts):");
+                ed.WriteMessage("\n  Network                 Import  Drawing");
+
+                var allNetworks = networkGroups.Select(g => g.Key)
+                    .Concat(drawingByNetwork.Keys)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(n => n, StringComparer.OrdinalIgnoreCase);
+
+                foreach (string network in allNetworks)
+                {
+                    int importCount = import.Pipes.Count(p =>
+                        string.Equals(
+                            string.IsNullOrWhiteSpace(p.NetworkName) ? "Network" : p.NetworkName.Trim(),
+                            network,
+                            StringComparison.OrdinalIgnoreCase));
+                    drawingByNetwork.TryGetValue(network, out int drawingCount);
+
+                    ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                        "\n  {0,-22} {1,6}  {2,7}",
+                        Trim(network, 22),
+                        importCount,
+                        drawingCount));
+                }
+            }
+
+            if (import.Warnings.Count > 0)
+            {
+                ed.WriteMessage("\n\n  Warnings:");
+                foreach (string warning in import.Warnings.Take(10))
+                    ed.WriteMessage("\n    " + warning);
+                if (import.Warnings.Count > 10)
+                {
+                    ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                        "\n    ... and {0} more warning(s).",
+                        import.Warnings.Count - 10));
+                }
+            }
+
+            ed.WriteMessage("\n");
+        }
+
         [CommandMethod("HC_LANDXML")]
         public void ExportLandXml()
         {
@@ -198,6 +315,27 @@ namespace HydroComplete.Civil3D.Commands
             if (!path.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
                 path += ".xml";
             return path;
+        }
+
+        private static string PromptInputPath(Editor ed, string defaultPath)
+        {
+            var opts = new PromptStringOptions("\nLandXML input file path")
+            {
+                DefaultValue = defaultPath,
+                UseDefaultValue = true,
+                AllowSpaces = true,
+            };
+            PromptResult res = ed.GetString(opts);
+            if (res.Status != PromptStatus.OK)
+                return "";
+
+            return string.IsNullOrWhiteSpace(res.StringResult) ? defaultPath : res.StringResult.Trim();
+        }
+
+        private static string Trim(string value, int max)
+        {
+            if (string.IsNullOrEmpty(value)) return "";
+            return value.Length <= max ? value : value.Substring(0, max - 1) + "~";
         }
 
         private static Document Active()

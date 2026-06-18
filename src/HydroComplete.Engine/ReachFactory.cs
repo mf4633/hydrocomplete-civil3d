@@ -36,6 +36,27 @@ namespace HydroComplete.Engine
                 };
             }
 
+            if (pipe.Shape == PipeShape.Arch)
+            {
+                double span = ArchConduit.ResolveSpan(pipe);
+                double rise = ArchConduit.ResolveRise(pipe);
+                double areaFull = ArchConduit.PartialFlowGeometry(span, rise, rise).AreaFt2;
+                double rFull = ArchConduit.PartialFlowGeometry(span, rise, rise).HydRadiusFt;
+
+                return new NetworkReach
+                {
+                    Name = string.IsNullOrEmpty(name) ? pipe.Name : name,
+                    LengthFt = lengthFt,
+                    ManningN = pipe.ManningN,
+                    AreaFt2 = areaFull,
+                    HydRadiusFt = rFull,
+                    FlowCfs = designFlowCfs,
+                    RelativeDepth = 1.0,
+                    FlowSurcharged = false,
+                    FlowDepthFt = rise,
+                };
+            }
+
             double d = pipe.DiameterFt;
             double areaCircular = Math.PI * d * d / 4.0;
             double rCircular = d / 4.0;
@@ -66,6 +87,9 @@ namespace HydroComplete.Engine
 
             if (pipe.Shape == PipeShape.Box)
                 return FromBoxNormalDepth(pipe, designFlowCfs, lengthFt, name);
+
+            if (pipe.Shape == PipeShape.Arch)
+                return FromArchNormalDepth(pipe, designFlowCfs, lengthFt, name);
 
             double d = pipe.DiameterFt;
             var nd = Manning.NormalDepth(pipe, designFlowCfs);
@@ -132,6 +156,42 @@ namespace HydroComplete.Engine
                 RelativeDepth = nd.RelativeDepth,
                 FlowSurcharged = nd.Surcharged,
                 FlowDepthFt = nd.Surcharged ? h : nd.DepthFt,
+                VelHeadUpFt = vh,
+                VelHeadDownFt = vh,
+            };
+        }
+
+        private static NetworkReach FromArchNormalDepth(
+            PipeSegment pipe, double designFlowCfs, double lengthFt, string name)
+        {
+            double span = ArchConduit.ResolveSpan(pipe);
+            double rise = ArchConduit.ResolveRise(pipe);
+            var nd = ArchConduit.NormalDepth(pipe, designFlowCfs);
+
+            double areaFt2;
+            double hydRadiusFt;
+            if (nd.Surcharged)
+            {
+                (areaFt2, hydRadiusFt) = ArchConduit.PartialFlowGeometry(span, rise, rise);
+            }
+            else
+            {
+                (areaFt2, hydRadiusFt) = ArchConduit.PartialFlowGeometry(span, rise, nd.DepthFt);
+            }
+
+            double vh = Hec22.VelocityHeadFt(nd.VelocityFps);
+
+            return new NetworkReach
+            {
+                Name = string.IsNullOrEmpty(name) ? pipe.Name : name,
+                LengthFt = lengthFt,
+                ManningN = pipe.ManningN,
+                AreaFt2 = areaFt2,
+                HydRadiusFt = hydRadiusFt,
+                FlowCfs = designFlowCfs,
+                RelativeDepth = nd.RelativeDepth,
+                FlowSurcharged = nd.Surcharged,
+                FlowDepthFt = nd.Surcharged ? rise : nd.DepthFt,
                 VelHeadUpFt = vh,
                 VelHeadDownFt = vh,
             };

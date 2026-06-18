@@ -5,7 +5,7 @@ drawing** — read pipe networks and catchments, compute on public-domain method
 and show every formula. This is the desktop companion behind
 [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d).
 
-Status: **v0.8.0** — Hydraflow parity batch 2 (TR-55 Tc, sag/curb inlets, box pipes, LandXML, compliance). See [User validation](#user-validation) below.
+Status: **v0.9.0** — Hydraflow parity batch 3 (arch pipes, LandXML import, chainage profile). See [User validation](#user-validation) below.
 
 **Autodesk App Store:** Listing copy, submission checklist, and screenshot shot list live in [`dist/app-store/`](dist/app-store/) (`LISTING.md`, `SUBMISSION_CHECKLIST.md`, `SCREENSHOTS.md`).
 

@@ -22,7 +22,7 @@
     <NoWarn>CS1591</NoWarn>
     <AssemblyName>HydroComplete.Engine</AssemblyName>
     <RootNamespace>HydroComplete.Engine</RootNamespace>
-    <Version>0.8.0</Version>
+    <Version>0.9.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

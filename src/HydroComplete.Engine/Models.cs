@@ -98,9 +98,16 @@ namespace HydroComplete.Engine
         /// <summary>Rectangular box conduit; use <see cref="PipeSegment.WidthFt"/> and
         /// <see cref="PipeSegment.HeightFt"/>.</summary>
         Box,
+
+        /// <summary>
+        /// Pipe arch (corrugated metal arch); use <see cref="PipeSegment.SpanFt"/> and
+        /// <see cref="PipeSegment.RiseFt"/> (or <see cref="PipeSegment.WidthFt"/> /
+        /// <see cref="PipeSegment.HeightFt"/> as span/rise aliases).
+        /// </summary>
+        Arch,
     }
 
-    /// <summary>A gravity pipe segment (circular or box) for Manning capacity / normal-depth checks.</summary>
+    /// <summary>A gravity pipe segment (circular, box, or arch) for Manning capacity / normal-depth checks.</summary>
     public sealed class PipeSegment
     {
         public string Name { get; set; } = "";
@@ -116,6 +123,16 @@ namespace HydroComplete.Engine
 
         /// <summary>Inside height, feet (box conduits).</summary>
         public double HeightFt { get; set; }
+
+        /// <summary>
+        /// Inside span at spring line, feet (pipe arch). When zero, <see cref="WidthFt"/> is used.
+        /// </summary>
+        public double SpanFt { get; set; }
+
+        /// <summary>
+        /// Inside rise invert-to-crown, feet (pipe arch). When zero, <see cref="HeightFt"/> is used.
+        /// </summary>
+        public double RiseFt { get; set; }
 
         /// <summary>Slope, ft/ft (rise over run, positive downstream).</summary>
         public double Slope { get; set; }

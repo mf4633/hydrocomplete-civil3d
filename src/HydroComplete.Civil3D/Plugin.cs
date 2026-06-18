@@ -14,6 +14,7 @@ using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.TcCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.ValidateCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.AdvancedStormwaterCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.ProfileCommands))]
 
 namespace HydroComplete.Civil3D
 {
@@ -32,7 +33,7 @@ namespace HydroComplete.Civil3D
             {
                 var doc = AcadApp.DocumentManager?.MdiActiveDocument;
                 doc?.Editor.WriteMessage(
-                    $"\n{ProductName} for Civil 3D 0.8.0 loaded. Type HC_ABOUT for commands.\n");
+                    $"\n{ProductName} for Civil 3D 0.9.0 loaded. Type HC_ABOUT for commands.\n");
             }
             catch
             {

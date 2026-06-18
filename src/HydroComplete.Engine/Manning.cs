@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace HydroComplete.Engine
 {
@@ -73,8 +74,26 @@ namespace HydroComplete.Engine
             return (Kn / n) * area * Math.Pow(r, 2.0 / 3.0) * Math.Sqrt(slope);
         }
 
-        /// <summary>Full-barrel capacity and the slightly-higher peak capacity of a circular pipe.</summary>
+        /// <summary>
+        /// Full-barrel capacity for a <see cref="PipeSegment"/>, dispatching by
+        /// <see cref="PipeSegment.Shape"/> (circular, box, or arch).
+        /// </summary>
         public static CapacityResult Capacity(PipeSegment pipe)
+        {
+            if (pipe == null) throw new ArgumentNullException(nameof(pipe));
+            switch (pipe.Shape)
+            {
+                case PipeShape.Box:
+                    return FromBoxCapacity(BoxConduit.Capacity(pipe));
+                case PipeShape.Arch:
+                    return FromArchCapacity(ArchConduit.Capacity(pipe));
+                default:
+                    return CapacityCircular(pipe);
+            }
+        }
+
+        /// <summary>Full-barrel capacity and the slightly-higher peak capacity of a circular pipe.</summary>
+        public static CapacityResult CapacityCircular(PipeSegment pipe)
         {
             if (pipe == null) throw new ArgumentNullException(nameof(pipe));
             double d = pipe.DiameterFt, n = pipe.ManningN, s = pipe.Slope;
@@ -104,10 +123,28 @@ namespace HydroComplete.Engine
         }
 
         /// <summary>
+        /// Normal depth for a target flow, dispatching by <see cref="PipeSegment.Shape"/>.
+        /// </summary>
+        public static NormalDepthResult NormalDepth(PipeSegment pipe, double targetFlowCfs)
+        {
+            if (pipe == null) throw new ArgumentNullException(nameof(pipe));
+            if (targetFlowCfs < 0) throw new ArgumentOutOfRangeException(nameof(targetFlowCfs));
+            switch (pipe.Shape)
+            {
+                case PipeShape.Box:
+                    return FromBoxNormalDepth(BoxConduit.NormalDepth(pipe, targetFlowCfs));
+                case PipeShape.Arch:
+                    return FromArchNormalDepth(ArchConduit.NormalDepth(pipe, targetFlowCfs));
+                default:
+                    return NormalDepthCircular(pipe, targetFlowCfs);
+            }
+        }
+
+        /// <summary>
         /// Normal depth for a target flow via bisection on depth in (0, D).
         /// Flags surcharge when the flow exceeds the pipe's peak open-channel capacity.
         /// </summary>
-        public static NormalDepthResult NormalDepth(PipeSegment pipe, double targetFlowCfs)
+        public static NormalDepthResult NormalDepthCircular(PipeSegment pipe, double targetFlowCfs)
         {
             if (pipe == null) throw new ArgumentNullException(nameof(pipe));
             if (targetFlowCfs < 0) throw new ArgumentOutOfRangeException(nameof(targetFlowCfs));
@@ -152,6 +189,45 @@ namespace HydroComplete.Engine
             result.Steps.Add(new CalcStep("d_n", y, "ft", "bisection on Manning Q(y)=Q_design"));
             result.Steps.Add(new CalcStep("d/D", y / d, "-", "relative depth"));
             result.Steps.Add(new CalcStep("V", v, "ft/s", "Q_design/A(d_n)"));
+            return result;
+        }
+
+        private static CapacityResult FromBoxCapacity(BoxConduit.CapacityResult source)
+            => CopyCapacity(source.FullFlowCfs, source.FullVelocityFps, source.PeakFlowCfs, source.Steps);
+
+        private static CapacityResult FromArchCapacity(ArchConduit.CapacityResult source)
+            => CopyCapacity(source.FullFlowCfs, source.FullVelocityFps, source.PeakFlowCfs, source.Steps);
+
+        private static CapacityResult CopyCapacity(
+            double fullFlowCfs, double fullVelocityFps, double peakFlowCfs, List<CalcStep> steps)
+        {
+            var result = new CapacityResult
+            {
+                FullFlowCfs = fullFlowCfs,
+                FullVelocityFps = fullVelocityFps,
+                PeakFlowCfs = peakFlowCfs,
+            };
+            result.Steps.AddRange(steps);
+            return result;
+        }
+
+        private static NormalDepthResult FromBoxNormalDepth(BoxConduit.NormalDepthResult source)
+            => CopyNormalDepth(source.DepthFt, source.RelativeDepth, source.VelocityFps, source.Surcharged, source.Steps);
+
+        private static NormalDepthResult FromArchNormalDepth(ArchConduit.NormalDepthResult source)
+            => CopyNormalDepth(source.DepthFt, source.RelativeDepth, source.VelocityFps, source.Surcharged, source.Steps);
+
+        private static NormalDepthResult CopyNormalDepth(
+            double depthFt, double relativeDepth, double velocityFps, bool surcharged, List<CalcStep> steps)
+        {
+            var result = new NormalDepthResult
+            {
+                DepthFt = depthFt,
+                RelativeDepth = relativeDepth,
+                VelocityFps = velocityFps,
+                Surcharged = surcharged,
+            };
+            result.Steps.AddRange(steps);
             return result;
         }
     }
