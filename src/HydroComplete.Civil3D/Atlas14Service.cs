@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using HydroComplete.Engine;
 
@@ -26,7 +27,24 @@ namespace HydroComplete.Civil3D
                 lat,
                 lon,
                 returnPeriodYears,
-                () => Atlas14Resolution.EmbeddedNearest(lat, lon));
+                () => Atlas14Resolution.EmbeddedNearest(lat, lon, returnPeriodYears));
+        }
+
+        /// <summary>
+        /// Tabular PFDS intensities at 10 minutes for the standard return periods.
+        /// Uses the nearest embedded preset when live PFDS is unavailable.
+        /// </summary>
+        public static IReadOnlyDictionary<int, double> IntensitiesAt10Min(double lat, double lon)
+        {
+            try
+            {
+                return Fetcher.ResolveIntensitiesAtDuration(lat, lon, 10.0);
+            }
+            catch
+            {
+                Atlas14Presets.Preset preset = Atlas14Presets.Nearest(lat, lon);
+                return preset.Intensity10MinInHr;
+            }
         }
     }
 }

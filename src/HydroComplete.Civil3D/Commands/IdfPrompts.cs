@@ -98,20 +98,19 @@ namespace HydroComplete.Civil3D.Commands
         {
             var sb = new StringBuilder();
             sb.AppendLine("\n--- HydroComplete: NOAA Atlas 14 IDF ---");
-            sb.AppendLine("  i = a/(t+b)^c   (10-yr return period, t in minutes)");
+            sb.AppendLine("  i = a/(t+b)^c   (default 10-yr curve; t in minutes)");
+            sb.AppendLine("  i@10m tabular intensities shown for 2 / 10 / 25 / 100-yr return periods.");
             sb.AppendLine("  Live PFDS fetch: when the drawing has geolocation, auto uses NOAA HDSC");
             sb.AppendLine("  for the drawing coordinates (cached 30 days under %APPDATA%\\HydroComplete\\idf-cache).");
             sb.AppendLine("  Offline or out-of-coverage locations fall back to the nearest embedded city.");
             sb.AppendLine();
-            sb.AppendLine("  embedded presets:");
+            sb.AppendLine("  embedded presets (10-yr a/b/c + multi-RP i@10m):");
             foreach (Atlas14Presets.Preset p in Atlas14Presets.List())
             {
-                var at10 = p.ToCurve().Intensity(10.0);
-                var at15 = p.ToCurve().Intensity(15.0);
                 sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
-                    "  {0,-16} {1,-20} a={2,5:0.#} b={3,4:0.#} c={4:0.##}  i@10m={5:0.00}  i@15m={6:0.00}",
+                    "  {0,-16} {1,-20} a={2,5:0.#} b={3,4:0.#} c={4:0.##}  {5}",
                     p.Key, p.DisplayName, p.A, p.B, p.C,
-                    at10.IntensityInHr, at15.IntensityInHr));
+                    p.MultiReturnPeriod10MinLabel));
             }
             sb.AppendLine("\nUse preset key with HC_RATIONAL or HC_HGL (Rational Q option).");
             sb.AppendLine("When the drawing has geolocation, press Enter at the preset prompt for auto (live when online).\n");

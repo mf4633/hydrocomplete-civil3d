@@ -26,6 +26,78 @@ namespace HydroComplete.Engine.Tests
         }
 
         [Fact]
+        public void ParseIntensitiesAtDuration_CharlotteFixture_ReadsStandardReturnPeriods()
+        {
+            string csv = File.ReadAllText(FixturePath("charlotte_nc_intensity.csv"));
+            var intensities = Atlas14Fetcher.ParseIntensitiesAtDuration(csv, 10.0);
+
+            Assert.Equal(Atlas14Fetcher.StandardReturnPeriods.Length, intensities.Count);
+            Assert.Equal(4.54, intensities[2], 2);
+            Assert.Equal(5.81, intensities[10], 2);
+            Assert.Equal(6.40, intensities[25], 2);
+            Assert.Equal(7.19, intensities[100], 2);
+        }
+
+        [Fact]
+        public void ParseIntensitiesAtDuration_SplitHeader_ReadsTenMinuteRow()
+        {
+            const string csv = """
+                PRECIPITATION FREQUENCY ESTIMATES
+                by duration for ARI (years):, 1,2,5,10,25,50,100,200,500,1000
+                10-min:, 3.83,4.54,5.29,5.81,6.40,6.82,7.19,7.51,7.87,8.09
+                """;
+
+            var intensities = Atlas14Fetcher.ParseIntensitiesAtDuration(csv, 10.0);
+
+            Assert.Equal(5.81, intensities[10], 2);
+            Assert.Equal(7.19, intensities[100], 2);
+        }
+
+        [Fact]
+        public void FormatMultiReturnPeriodIntensities_CharlotteFixture_FormatsTenMinuteRow()
+        {
+            string csv = File.ReadAllText(FixturePath("charlotte_nc_intensity.csv"));
+            var intensities = Atlas14Fetcher.ParseIntensitiesAtDuration(csv, 10.0);
+            string label = Atlas14Fetcher.FormatMultiReturnPeriodIntensities(intensities);
+
+            Assert.Equal("2y=4.54 10y=5.81 25y=6.40 100y=7.19", label);
+        }
+
+        [Fact]
+        public void ParseAndFitAll_CharlotteFixture_FitsStandardReturnPeriods()
+        {
+            string csv = File.ReadAllText(FixturePath("charlotte_nc_intensity.csv"));
+            var fits = Atlas14Fetcher.ParseAndFitAll(csv, 35.23, -80.84);
+
+            Assert.Equal(4, fits.Count);
+            foreach (int returnPeriod in Atlas14Fetcher.StandardReturnPeriods)
+            {
+                Atlas14CacheEntry entry = fits[returnPeriod];
+                Assert.Equal(returnPeriod, entry.ReturnPeriodYears);
+                Assert.True(entry.A > 0);
+                Assert.True(entry.B > 0);
+                Assert.True(entry.C > 0);
+            }
+        }
+
+        [Fact]
+        public void CharlottePreset_MultiReturnPeriod10MinLabel_MatchesFixture()
+        {
+            Atlas14Presets.Preset preset = Atlas14Presets.Find("charlotte-nc")!;
+            Assert.Equal("2y=4.54 10y=5.81 25y=6.40 100y=7.19", preset.MultiReturnPeriod10MinLabel);
+        }
+
+        [Fact]
+        public void CharlottePreset_ToCurve_ReturnPeriodSpecificCoefficients()
+        {
+            Atlas14Presets.Preset preset = Atlas14Presets.Find("charlotte-nc")!;
+
+            Assert.Equal(81.21, preset.ToCurve(10).A, 2);
+            Assert.Equal(75.09, preset.ToCurve(2).A, 2);
+            Assert.Equal(69.60, preset.ToCurve(100).A, 2);
+        }
+
+        [Fact]
         public void ParseAndFit_CharlotteFixture_ProducesReasonableCoefficients()
         {
             string csv = File.ReadAllText(FixturePath("charlotte_nc_intensity.csv"));
@@ -199,6 +271,24 @@ namespace HydroComplete.Engine.Tests
 
             Assert.Equal(Atlas14Source.Embedded, result.Source);
             Assert.Equal("charlotte-nc", result.PresetKey);
+        }
+
+        [Fact]
+        public void ResolveIntensitiesAtDuration_DownloadsFixture_ReturnsMultiReturnPeriod()
+        {
+            string csv = File.ReadAllText(FixturePath("charlotte_nc_intensity.csv"));
+            var handler = new StubHttpHandler(csv);
+            var client = new HttpClient(handler);
+            var fetcher = new Atlas14Fetcher(
+                cacheDirectory: null,
+                pfdsUrl: "https://example.test/pfds.csv",
+                httpClientFactory: () => client);
+
+            var intensities = fetcher.ResolveIntensitiesAtDuration(35.23, -80.84, 10.0);
+
+            Assert.Equal(4.54, intensities[2], 2);
+            Assert.Equal(5.81, intensities[10], 2);
+            Assert.Equal(7.19, intensities[100], 2);
         }
 
         [Fact]

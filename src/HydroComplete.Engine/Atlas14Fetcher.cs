@@ -20,6 +20,13 @@ namespace HydroComplete.Engine
         public const string DefaultPfdsIntensityUrl =
             "https://hdsc.nws.noaa.gov/cgi-bin/hdsc/new/fe_text.csv";
 
+        /// <summary>Standard design return periods surfaced in presets and HC_ATLAS14.</summary>
+        public static readonly int[] StandardReturnPeriods = { 2, 10, 25, 100 };
+
+        /// <summary>All ARI columns present in NOAA PFDS intensity tables.</summary>
+        public static readonly int[] SupportedReturnPeriods =
+            { 1, 2, 5, 10, 25, 50, 100, 200, 500, 1000 };
+
         public static readonly TimeSpan DefaultCacheTtl = TimeSpan.FromDays(30);
 
         private static readonly HttpClient SharedHttp = CreateHttpClient();
@@ -85,6 +92,60 @@ namespace HydroComplete.Engine
 
                 if (fallback != null)
                     return fallback();
+
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Read tabular PFDS intensities at a duration without fitting IDF curves.
+        /// Uses a single NOAA download and does not write per-return-period cache files.
+        /// </summary>
+        public IReadOnlyDictionary<int, double> ResolveIntensitiesAtDuration(
+            double lat,
+            double lon,
+            double durationMin,
+            IReadOnlyList<int>? returnPeriodYears = null)
+        {
+            return ResolveIntensitiesAtDurationAsync(
+                    lat,
+                    lon,
+                    durationMin,
+                    returnPeriodYears,
+                    CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
+        }
+
+        public async Task<IReadOnlyDictionary<int, double>> ResolveIntensitiesAtDurationAsync(
+            double lat,
+            double lon,
+            double durationMin,
+            IReadOnlyList<int>? returnPeriodYears = null,
+            CancellationToken cancellationToken = default)
+        {
+            ValidateCoordinates(lat, lon);
+
+            try
+            {
+                string csv = await DownloadCsvAsync(lat, lon, cancellationToken).ConfigureAwait(false);
+                return ParseIntensitiesAtDuration(csv, durationMin, returnPeriodYears);
+            }
+            catch
+            {
+                IReadOnlyList<int> periods = returnPeriodYears ?? StandardReturnPeriods;
+                var fromCache = new Dictionary<int, double>(periods.Count);
+                foreach (int returnPeriod in periods)
+                {
+                    Atlas14CacheEntry? cached = TryReadCache(lat, lon, returnPeriod);
+                    if (cached == null) continue;
+
+                    fromCache[returnPeriod] =
+                        cached.A / Math.Pow(durationMin + cached.B, cached.C);
+                }
+
+                if (fromCache.Count > 0)
+                    return fromCache;
 
                 throw;
             }
@@ -260,11 +321,8 @@ namespace HydroComplete.Engine
                 string line = rawLine.Trim();
                 if (line.Length == 0) continue;
 
-                if (line.StartsWith("PRECIPITATION FREQUENCY ESTIMATES by duration for ARI", StringComparison.OrdinalIgnoreCase))
-                {
-                    inMainTable = true;
+                if (TryEnterIntensityTable(line, ref inMainTable))
                     continue;
-                }
 
                 if (!inMainTable) continue;
 
@@ -281,16 +339,135 @@ namespace HydroComplete.Engine
             return points;
         }
 
+        /// <summary>
+        /// Read tabular PFDS intensities (in/hr) at a single duration for one or more return periods.
+        /// </summary>
+        public static IReadOnlyDictionary<int, double> ParseIntensitiesAtDuration(
+            string csv,
+            double durationMin,
+            IReadOnlyList<int>? returnPeriodYears = null)
+        {
+            if (string.IsNullOrWhiteSpace(csv))
+                throw new InvalidDataException("NOAA PFDS response was empty.");
+
+            IReadOnlyList<int> periods = returnPeriodYears ?? StandardReturnPeriods;
+            bool inMainTable = false;
+
+            foreach (string rawLine in SplitLines(csv))
+            {
+                string line = rawLine.Trim();
+                if (line.Length == 0) continue;
+
+                if (TryEnterIntensityTable(line, ref inMainTable))
+                    continue;
+
+                if (!inMainTable) continue;
+
+                if (line.StartsWith("PRECIPITATION FREQUENCY ESTIMATES AT", StringComparison.OrdinalIgnoreCase))
+                    break;
+
+                if (!TryParseDurationRow(line, 0, out double rowDurationMin, out _))
+                    continue;
+
+                if (Math.Abs(rowDurationMin - durationMin) > 0.001)
+                    continue;
+
+                var intensities = new Dictionary<int, double>(periods.Count);
+                foreach (int returnPeriod in periods)
+                {
+                    int column = ReturnPeriodColumnIndex(returnPeriod);
+                    if (!TryParseDurationRow(line, column, out _, out double intensityInHr))
+                        continue;
+                    intensities[returnPeriod] = intensityInHr;
+                }
+
+                if (intensities.Count == 0)
+                {
+                    throw new InvalidDataException(
+                        string.Format(
+                            CultureInfo.InvariantCulture,
+                            "NOAA PFDS table did not contain intensities at {0:0.#} min.",
+                            durationMin));
+                }
+
+                return intensities;
+            }
+
+            throw new InvalidDataException(
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    "NOAA PFDS table did not contain a row for {0:0.#} min duration.",
+                    durationMin));
+        }
+
+        /// <summary>Fit IDF coefficients for each requested return period from one PFDS CSV.</summary>
+        public static IReadOnlyDictionary<int, Atlas14CacheEntry> ParseAndFitAll(
+            string csv,
+            double lat,
+            double lon,
+            IReadOnlyList<int>? returnPeriodYears = null)
+        {
+            IReadOnlyList<int> periods = returnPeriodYears ?? StandardReturnPeriods;
+            var entries = new Dictionary<int, Atlas14CacheEntry>(periods.Count);
+            foreach (int returnPeriod in periods)
+                entries[returnPeriod] = ParseAndFit(csv, lat, lon, returnPeriod);
+            return entries;
+        }
+
+        public static string FormatMultiReturnPeriodIntensities(
+            IReadOnlyDictionary<int, double> intensitiesInHr,
+            IReadOnlyList<int>? returnPeriodYears = null)
+        {
+            IReadOnlyList<int> periods = returnPeriodYears ?? StandardReturnPeriods;
+            var parts = new List<string>(periods.Count);
+            foreach (int returnPeriod in periods)
+            {
+                if (!intensitiesInHr.TryGetValue(returnPeriod, out double intensityInHr))
+                    continue;
+                parts.Add(string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0}y={1:0.00}",
+                    returnPeriod,
+                    intensityInHr));
+            }
+
+            return string.Join(" ", parts);
+        }
+
         private static int ReturnPeriodColumnIndex(int returnPeriodYears)
         {
-            int[] periods = { 1, 2, 5, 10, 25, 50, 100, 200, 500, 1000 };
-            for (int i = 0; i < periods.Length; i++)
+            for (int i = 0; i < SupportedReturnPeriods.Length; i++)
             {
-                if (periods[i] == returnPeriodYears) return i;
+                if (SupportedReturnPeriods[i] == returnPeriodYears) return i;
             }
             throw new ArgumentOutOfRangeException(
                 nameof(returnPeriodYears),
                 "Return period must be one of 1,2,5,10,25,50,100,200,500,1000.");
+        }
+
+        private static bool TryEnterIntensityTable(string line, ref bool inMainTable)
+        {
+            if (line.StartsWith("PRECIPITATION FREQUENCY ESTIMATES AT", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            if (line.StartsWith("by duration for ARI", StringComparison.OrdinalIgnoreCase))
+            {
+                inMainTable = true;
+                return true;
+            }
+
+            if (!line.StartsWith("PRECIPITATION FREQUENCY ESTIMATES", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            if (line.IndexOf("by duration for ARI", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                inMainTable = true;
+                return true;
+            }
+
+            // Live PFDS may split the header across two lines; the next row begins the table.
+            inMainTable = false;
+            return true;
         }
 
         public static bool TryParseDurationRow(
@@ -421,24 +598,26 @@ namespace HydroComplete.Engine
             Source == Atlas14Source.Cache ? "cached live" :
             "embedded";
 
-        public static Atlas14Resolution FromPreset(Atlas14Presets.Preset preset)
+        public static Atlas14Resolution FromPreset(
+            Atlas14Presets.Preset preset, int returnPeriodYears = 10)
         {
+            IdfCurve curve = preset.ToCurve(returnPeriodYears);
             return new Atlas14Resolution(
                 Atlas14Source.Embedded,
                 preset.Lat,
                 preset.Lon,
-                preset.ReturnPeriodYears,
-                preset.A,
-                preset.B,
-                preset.C,
+                returnPeriodYears,
+                curve.A,
+                curve.B,
+                curve.C,
                 preset.DisplayName,
                 preset.Key);
         }
 
-        public static Atlas14Resolution EmbeddedNearest(double lat, double lon)
+        public static Atlas14Resolution EmbeddedNearest(double lat, double lon, int returnPeriodYears = 10)
         {
             Atlas14Presets.Preset preset = Atlas14Presets.Nearest(lat, lon);
-            return FromPreset(preset);
+            return FromPreset(preset, returnPeriodYears);
         }
 
         public Rational.PeakFlowResult PeakFromCatchments(IReadOnlyList<Catchment> catchments)
