@@ -82,7 +82,7 @@ namespace HydroComplete.Civil3D.Commands
             {
                 string assign = string.IsNullOrEmpty(routed.AssignedStructureId)
                     ? "(unassigned)"
-                    : routed.AssignedStructureId;
+                    : routed.AssignedStructureId!;
                 ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
                     "\n    {0,-16} Q={1,6:0.00} cfs  -> struct {2}",
                     Trim(routed.Catchment.Name, 16),

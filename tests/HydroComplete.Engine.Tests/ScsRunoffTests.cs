@@ -37,7 +37,7 @@ namespace HydroComplete.Engine.Tests
             var depths = StormHyetograph.TypeIIUniform(5.0, 24.0, 0.5).Increments.Select(x => x.DepthIn).ToList();
             var result = ScsRunoff.ComputeIncremental(depths, 75);
             Assert.True(result.Increments.Take(5).All(x => x.IncrementalRunoffIn == 0));
-            Assert.True(result.Increments.Any(x => x.IncrementalRunoffIn > 0));
+            Assert.Contains(result.Increments, x => x.IncrementalRunoffIn > 0);
         }
 
         [Fact]

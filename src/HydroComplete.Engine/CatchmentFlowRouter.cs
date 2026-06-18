@@ -187,17 +187,19 @@ namespace HydroComplete.Engine
             Dictionary<string, string> structureNames,
             HashSet<string> knownStructures)
         {
-            if (!string.IsNullOrWhiteSpace(catchment.OutfallStructureId))
+            string? outfallId = catchment.OutfallStructureId;
+            if (!string.IsNullOrWhiteSpace(outfallId))
             {
-                string id = catchment.OutfallStructureId.Trim();
+                string id = outfallId!.Trim();
                 if (knownStructures.Contains(id))
                     return id;
             }
 
-            if (string.IsNullOrWhiteSpace(catchment.OutfallStructureName))
+            string? outfallName = catchment.OutfallStructureName;
+            if (string.IsNullOrWhiteSpace(outfallName))
                 return null;
 
-            string target = catchment.OutfallStructureName.Trim();
+            string target = outfallName!.Trim();
             foreach (var pair in structureNames)
             {
                 if (string.Equals(pair.Value, target, StringComparison.OrdinalIgnoreCase)

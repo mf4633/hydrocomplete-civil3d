@@ -516,7 +516,7 @@ namespace HydroComplete.Civil3D.Writing
                 ReportWriterCommon.EscapeHtml(DateTime.Now.ToString("f", CultureInfo.CurrentCulture)),
                 ReportWriterCommon.EscapeHtml(result.StateCode)));
             if (!string.IsNullOrWhiteSpace(idfLabel))
-                sb.AppendLine("<br/>IDF: " + ReportWriterCommon.EscapeHtml(idfLabel));
+                sb.AppendLine("<br/>IDF: " + ReportWriterCommon.EscapeHtml(idfLabel!));
             sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
                 "<br/>Overall: <span class=\"{0}\">{1}</span></p>",
                 result.OverallPass ? "pass" : "failtxt",

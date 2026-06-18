@@ -30,7 +30,7 @@ namespace HydroComplete.Engine
         }
 
         /// <summary>
-        /// RUSLE: A = R × K × LS × C × P (tons/acre/year). LS uses SEDCAD4 <see cref="Rusle.LsFactor"/>.
+        /// RUSLE: A = R × K × LS × C × P (tons/acre/year). LS uses SEDCAD4 <see cref="RusleAnalysis.LsFactor"/>.
         /// </summary>
         public static RusleResult Rusle(
             double areaAcres,

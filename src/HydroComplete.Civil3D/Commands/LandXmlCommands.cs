@@ -140,7 +140,7 @@ namespace HydroComplete.Civil3D.Commands
                 return;
             }
 
-            string networkOverride = PromptNetworkName(ed, networkGroups);
+            string? networkOverride = PromptNetworkName(ed, networkGroups);
             LandXmlNetworkImporter.ImportResult write = LandXmlNetworkImporter.ImportToDrawing(
                 doc.Database,
                 civilDoc,

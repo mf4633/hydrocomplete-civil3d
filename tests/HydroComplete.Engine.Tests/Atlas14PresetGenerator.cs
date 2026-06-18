@@ -52,7 +52,7 @@ namespace HydroComplete.Engine.Tests
                     Atlas14Fetcher.DefaultPfdsIntensityUrl,
                     city.lat,
                     city.lon);
-                string csv = await client.GetStringAsync(url).ConfigureAwait(false);
+                string csv = await client.GetStringAsync(url);
                 var i10 = Atlas14Fetcher.ParseIntensitiesAtDuration(csv, 10.0);
                 var fits = Atlas14Fetcher.ParseAndFitAll(csv, city.lat, city.lon);
 
@@ -82,7 +82,7 @@ namespace HydroComplete.Engine.Tests
 
                 sb.Length -= 2;
                 sb.AppendLine("),");
-                await Task.Delay(300).ConfigureAwait(false);
+                await Task.Delay(300);
             }
 
             _output.WriteLine(sb.ToString());

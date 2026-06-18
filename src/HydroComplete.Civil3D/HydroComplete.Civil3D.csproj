@@ -24,6 +24,8 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+    <!-- Autodesk host DLLs reference older framework assembly versions; binding is resolved at load time. -->
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
     <TargetFramework>net8.0-windows</TargetFramework>
     <BuildNet48>false</BuildNet48>
     <BuildNet48 Condition="'$(BuildNet48)' == '' and Exists('C:\Program Files\Autodesk\AutoCAD 2024\AcMgd.dll')">true</BuildNet48>

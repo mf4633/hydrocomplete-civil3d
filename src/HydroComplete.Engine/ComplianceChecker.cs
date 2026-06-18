@@ -120,7 +120,7 @@ namespace HydroComplete.Engine
 
             report.Steps.Add(new CalcStep("state", 0, "", $"{config.Code} — {config.Name}"));
 
-            CheckTssRemoval(report, results, config, developmentType);
+            CheckTssRemoval(report, results, config, report.DevelopmentType);
             CheckNutrientRemoval(report, results, config, "TN", config.TnRemovalPercent);
             CheckNutrientRemoval(report, results, config, "TP", config.TpRemovalPercent);
             CheckVolumeControl(report, results, config);

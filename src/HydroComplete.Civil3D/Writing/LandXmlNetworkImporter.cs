@@ -66,7 +66,7 @@ namespace HydroComplete.Civil3D.Writing
                 {
                     string networkName = string.IsNullOrWhiteSpace(networkNameOverride)
                         ? group.Key
-                        : networkNameOverride.Trim();
+                        : networkNameOverride!.Trim();
 
                     try
                     {

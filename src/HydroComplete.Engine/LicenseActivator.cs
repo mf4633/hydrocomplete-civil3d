@@ -37,7 +37,7 @@ namespace HydroComplete.Engine
             string? validateUrl = null,
             Func<HttpClient>? httpClientFactory = null)
         {
-            _validateUrl = string.IsNullOrWhiteSpace(validateUrl) ? DefaultValidateUrl : validateUrl.Trim();
+            _validateUrl = string.IsNullOrWhiteSpace(validateUrl) ? DefaultValidateUrl : validateUrl!.Trim();
             _httpClientFactory = httpClientFactory ?? (() => SharedHttp);
         }
 
@@ -47,11 +47,11 @@ namespace HydroComplete.Engine
             if (string.IsNullOrWhiteSpace(token))
                 return false;
 
-            token = token.Trim();
-            if (!token.StartsWith(TokenPrefix, StringComparison.Ordinal))
+            string trimmed = token!.Trim();
+            if (!trimmed.StartsWith(TokenPrefix, StringComparison.Ordinal))
                 return false;
 
-            return token.Length >= TokenPrefix.Length + 8;
+            return trimmed.Length >= TokenPrefix.Length + 8;
         }
 
         /// <summary>Parse a single paste field: "email@domain.com hc_live_…".</summary>
@@ -62,13 +62,13 @@ namespace HydroComplete.Engine
             if (string.IsNullOrWhiteSpace(input))
                 return false;
 
-            input = input.Trim();
-            int space = input.IndexOf(' ');
-            if (space <= 0 || input.IndexOf('@') <= 0)
+            string trimmed = input!.Trim();
+            int space = trimmed.IndexOf(' ');
+            if (space <= 0 || trimmed.IndexOf('@') <= 0)
                 return false;
 
-            email = input.Substring(0, space).Trim();
-            token = input.Substring(space + 1).Trim();
+            email = trimmed.Substring(0, space).Trim();
+            token = trimmed.Substring(space + 1).Trim();
             return !string.IsNullOrWhiteSpace(email) && IsWellFormedToken(token);
         }
 
