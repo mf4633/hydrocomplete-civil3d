@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   Civil 3D auto-load bundle. Modeled on ADSK-ProjectExplorer-2026.bundle.
-  Series: Civil 3D 2025 = R25.0, Civil 3D 2026 = R25.1.
+  Series (internal release codes, not calendar year):
+    Civil 3D 2021 = R24.0, 2022 = R24.1, 2023 = R24.2, 2024 = R24.3
+    Civil 3D 2025 = R25.0, 2026 = R25.1
+  No R24.3 ComponentEntry: Civil 3D 2024 runs .NET Framework 4.8 (net48 plugins).
+  Contents/*.dll are net8.0-windows (2025+ only). A net48 build + separate DLL path
+  is required before adding SeriesMin/Max R24.3 — see README "Civil 3D 2024 compatibility".
 -->
 <ApplicationPackage SchemaVersion="1.0"
                     AppVersion="0.6.0"

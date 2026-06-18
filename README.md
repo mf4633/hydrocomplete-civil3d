@@ -95,6 +95,46 @@ Host assemblies (`AcMgd`, `AcCoreMgd`, `AcDbMgd`, `AdWindows`, `AeccDbMgd`,
 `AecBaseMgd`) are referenced with `Private=false` — they are never copied; the
 plugin binds to them inside the running AutoCAD process.
 
+### Civil 3D 2024 compatibility (not bundled in v0.5.0)
+
+Research summary for adding Civil 3D 2024 to the auto-load bundle:
+
+| Product year | Internal series | Host .NET runtime | Plugin TFM required |
+|---|---|---|---|
+| Civil 3D 2021 | R24.0 | .NET Framework 4.8 | `net48` |
+| Civil 3D 2022 | R24.1 | .NET Framework 4.8 | `net48` |
+| Civil 3D 2023 | R24.2 | .NET Framework 4.8 | `net48` |
+| **Civil 3D 2024** | **R24.3** | **.NET Framework 4.8** | **`net48`** |
+| Civil 3D 2025 | R25.0 | .NET 8 | `net8.0-windows` |
+| Civil 3D 2026 | R25.1 | .NET 8 | `net8.0-windows` |
+
+**Series codes are not the calendar year.** Autodesk bundles use `R24.x` for the
+2021–2024 product line (e.g. `ADSK-ProjectExplorer-2022.bundle` targets
+`SeriesMin="R24.1"` / `SeriesMax="R24.1"` for Civil 3D 2022). Civil 3D 2024 maps to
+**R24.3**, confirmed by `AutoCAD.NET` NuGet 24.3.0 and `AdMigrator.xml` release
+progression on installed hosts.
+
+**The current `net8.0-windows` build does not load in Civil 3D 2024.** Autodesk's
+AutoCAD 2025 autoloader guidance and multi-targeting samples split plugins at the
+.NET upgrade: `SeriesMax="R24.3"` for .NET Framework 4.8 DLLs,
+`SeriesMin="R25.0"` for .NET 8 DLLs. A `net8.0-windows` assembly cannot run inside
+the R24.3 host (and `net7.0-windows` is not the Civil 3D 2024 runtime — shipping
+2024 stayed on .NET Framework 4.8; .NET 8 arrived with 2025).
+
+**Why `PackageContents.xml` has no R24.3 `ComponentEntry`:** adding one that points
+at the existing `./Contents/HydroComplete.Civil3D.dll` would make Autoloader attempt
+to load a .NET 8 plugin into a .NET Framework 4.8 process and fail (or crash).
+Supporting 2024 requires a separate `net48` build (multi-target project or release
+branch), its own `Contents/` output path, and a dedicated `ComponentEntry` with
+`SeriesMin="R24.3" SeriesMax="R24.3"`. The portable `HydroComplete.Engine`
+(`netstandard2.0`) already ships unchanged across all runtimes.
+
+**Build verification on this machine:** `dotnet build` succeeds against Civil 3D
+2026 (`net8.0-windows`, default `AcadDir`). Civil 3D 2024 is not installed here,
+so load testing was not performed. When a `net48` target is added, build with
+`-p:AcadDir="C:\Program Files\Autodesk\AutoCAD 2024\"` and validate auto-load on
+Civil 3D 2024 before publishing an R24.3 bundle entry.
+
 ## Loading in Civil 3D (no NETLOAD)
 
 Auto-load is a **one-time install**, then every **Civil 3D 2025 or 2026** startup
