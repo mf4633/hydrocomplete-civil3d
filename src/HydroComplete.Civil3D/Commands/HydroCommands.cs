@@ -30,7 +30,7 @@ namespace HydroComplete.Civil3D.Commands
         public void About()
         {
             Editor ed = Active().Editor;
-            ed.WriteMessage("\n=== HydroComplete for Civil 3D 1.3.0 ===");
+            ed.WriteMessage("\n=== HydroComplete for Civil 3D 1.4.0 ===");
             ed.WriteMessage("\n  HC_NETWORK       Per-network summary (pipes, length, inverts, diameters, structures)");
             ed.WriteMessage("\n  HC_PIPES         Manning capacity of every pipe-network pipe (circular, box, arch)");
             ed.WriteMessage("\n  HC_PIPES_WRITE   Label Qfull/Vfull on layer HC-CAPACITY");

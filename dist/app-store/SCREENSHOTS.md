@@ -5,13 +5,13 @@ Target resolution: **1920×1080** (or Publisher portal minimum). Save as PNG.
 
 **Recommended test drawing:** `C-STORM` (30 pipes, AutoCAD 2018-format DWG) — same drawing used for README validation.
 
-**Publisher captions:** Ready-to-paste text in `SCREENSHOT_CAPTIONS.md` (10 shots for v1.3.0 portal upload).
+**Publisher captions:** Ready-to-paste text in `SCREENSHOT_CAPTIONS.md` (10 shots for v1.4.0 portal upload).
 
 ---
 
 ## Before you shoot
 
-1. Run `install.ps1` so the bundle auto-loads (banner shows **v1.3.0**).
+1. Run `install.ps1` so the bundle auto-loads (banner shows **v1.4.0**).
 2. Open the test DWG with pipe networks visible in plan.
 3. Set a clean visual style: light background, pipe network color distinct, labels readable.
 4. Hide unrelated palettes if they clutter the frame; keep the Civil 3D ribbon visible in at least one shot.
@@ -21,12 +21,12 @@ Target resolution: **1920×1080** (or Publisher portal minimum). Save as PNG.
 
 ---
 
-## Command reference (45 commands — v1.3.0)
+## Command reference (46 commands — v1.4.0)
 
 | Category | Commands |
 |---|---|
-| **Network & capacity** | `HC_NETWORK`, `HC_PIPES`, `HC_PIPES_WRITE`, `HC_CAPACITY`, `HC_CAPACITY_WRITE`, `HC_SIZE`, `HC_VALIDATE`, `HC_MULTIRP`, `HC_NETWORK_EDIT`, `HC_COST` |
-| **Hydrology & analysis** | `HC_RATIONAL`, `HC_TC`, `HC_SCS`, `HC_UNIT_HYDRO`, `HC_HYDROGRAPH`, `HC_ATLAS14`, `HC_ANALYZE`, `HC_PREPOST`, `HC_OPTIMIZE` |
+| **Network & capacity** | `HC_NETWORK`, `HC_PIPES`, `HC_PIPES_WRITE`, `HC_CAPACITY`, `HC_CAPACITY_WRITE`, `HC_SIZE`, `HC_VALIDATE`, `HC_MULTIRP`, `HC_NETWORK_EDIT`, `HC_NETWORK_DIAGRAM`, `HC_COST` |
+| **Hydrology & analysis** | `HC_RATIONAL`, `HC_TC`, `HC_SCS`, `HC_UNIT_HYDRO`, `HC_HYDROGRAPH`, `HC_ROUTE_HYDRO`, `HC_ATLAS14`, `HC_ANALYZE`, `HC_PREPOST`, `HC_OPTIMIZE` |
 | **Hydraulics & structures** | `HC_HGL`, `HC_INLETS`, `HC_CULVERT`, `HC_GVF`, `HC_PUMP`, `HC_PROFILE`, `HC_PROFILE_DXF` |
 | **BMPs & detention** | `HC_WQV`, `HC_DETENTION`, `HC_BMP_SIZE`, `HC_WQ_TRAIN`, `HC_SEDIMENT`, `HC_SEDIMENT_BASIN`, `HC_BIORETENTION`, `HC_WETLAND`, `HC_SOIL` |
 | **Compliance & exchange** | `HC_REVIEW`, `HC_LANDXML`, `HC_LANDXML_IMPORT`, `HC_REPORT`, `HC_REPORT_PDF`, `HC_BACKGROUND` |

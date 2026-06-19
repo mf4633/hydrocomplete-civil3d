@@ -8,7 +8,7 @@
   Civil 3D 2025+ loads net8.0-windows DLLs from Contents/.
 -->
 <ApplicationPackage SchemaVersion="1.0"
-                    AppVersion="1.3.0"
+                    AppVersion="1.4.0"
                     Name="HydroComplete for Civil 3D"
                     Description="Stormwater analysis driven straight from your Civil 3D drawing â€” Rational, SCS Tc, Manning, IDF with full formula transparency."
                     ProductCode="{8d07b4c8-06cb-497d-832a-dcb5b095d9fa}"

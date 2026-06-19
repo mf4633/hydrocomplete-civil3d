@@ -1,8 +1,8 @@
 ﻿# Autodesk App Store â€” Listing Copy
 
 **Product:** HydroComplete for Civil 3D  
-**Version at submission:** 1.3.0
-**Last updated:** 2026-06-18
+**Version at submission:** 1.4.0
+**Last updated:** 2026-06-19
 
 ---
 
@@ -35,7 +35,9 @@ Built by a practicing PE for the everyday sizing and reporting work Civil 3D eng
 - **Normal-depth hydraulic grade line** â€” Steady HGL at design *Q* using Manning normal depth (partial flow + velocity head), with optional HEC-22 junction and exit minor losses; plan labels on layer `HC-HGL`; optional **3D profile polyline** on layer `HC-HGL-PROFILE` at pipe upstream/downstream ends (`HC_HGL`). Routed catchment *Q* supported when catchments are present.
 - **Rational peak flows** â€” `Q = CÂ·iÂ·A` from catchment geometry with composite runoff coefficients (`HC_RATIONAL`).
 - **Live NOAA Atlas 14 IDF** â€” PFDS intensityâ€“durationâ€“frequency fetch from drawing geolocation (30-day cache); 25 embedded US city presets as offline fallback (`HC_ATLAS14`, `HC_RATIONAL`).
-- **Formula-transparent reports** â€” HTML export with step-by-step calculation traces to `Documents\HydroComplete\` (`HC_REPORT`); sealable PDF export with Pro (`HC_REPORT_PDF`). Reports reflect routed per-pipe *Q* when catchment routing is used.
+- **Formula-transparent reports** â€” HTML export with **KaTeX-rendered equations** and step-by-step calculation traces to `Documents\HydroComplete\` (`HC_REPORT`); sealable PDF export with Pro (`HC_REPORT_PDF`). Reports reflect routed per-pipe *Q* when catchment routing is used.
+- **Network schematic export** â€” `HC_NETWORK_DIAGRAM` writes an HTML/SVG pipe-network diagram from plan topology for review packages and submittals.
+- **Live SSURGO soils** â€” `HC_SOIL` queries USDA SSURGO by drawing geolocation (30-day cache) with regional fallback; surfaces hydrologic soil group, K-factor, and BMP suitability hints.
 - **Pro activation** â€” Activate with email and beta token (`hc_live_*`) via online validation or offline stub; `HC_LICENSE` shows tier and last check (`HC_ACTIVATE`, `HC_LICENSE`).
 - **Ribbon integration** â€” **HydroComplete â€º Analysis** tab exposes the same commands as the command line.
 
@@ -59,11 +61,18 @@ Every engine result carries a `Steps` trace (label, value, units, formula) â€
 
 Learn more: [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d)
 
-### New in v1.3.0
+### New in v1.4.0
+
+- **`HC_NETWORK_DIAGRAM`** â€” Export an HTML/SVG pipe-network schematic from plan topology (structures, pipes, flow direction) to `Documents\HydroComplete\` for review and submittal packages.
+- **KaTeX HTML reports** â€” `HC_REPORT` embeds KaTeX so Manning, IDF, and HGL formulas render as typeset equations in the browser (offline CDN with graceful fallback).
+- **Live SSURGO API** â€” `HC_SOIL` fetches map-unit data from USDA Soil Data Access by lat/lon (30-day cache); regional NRCS fallback when offline or out of coverage.
+- **Online Pro activation** â€” `HC_ACTIVATE` validates `hc_live_*` tokens against the production licensing API (`hc-refactored.fly.dev`).
+- **Manifest** â€” All **46** `HC_*` commands registered for Civil 3D 2024 (R24.3), 2025 (R25.0), and 2026 (R25.1).
+
+### Also in v1.3.0
 
 - **`HC_ROUTE_HYDRO`** â€” Route catchment hydrographs through the pipe network (TR-20 lag â†’ SCS unit hydrograph â†’ Kahn topological routing â†’ junction superposition; optional Muskingum-Cunge on long reaches). Exports CSV to `Documents\HydroComplete\`.
 - **Civil 3D 2024 support** â€” `net48` build staged at `Contents/net48/` with R24.3 `ComponentEntry` in `PackageContents.xml` (build via `scripts/build-net48.ps1`).
-- **Manifest** â€” All **45** `HC_*` commands registered for Civil 3D 2024 (R24.3), 2025 (R25.0), and 2026 (R25.1); preflight-validated via `scripts/app-store-preflight.ps1`.
 
 ### Also in v1.2.0
 
@@ -125,7 +134,7 @@ Learn more: [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d)
 
 ---
 
-## Command reference (45 commands â€” v1.3.0)
+## Command reference (46 commands â€” v1.4.0)
 
 All commands print formula-transparent `CalcStep` traces where applicable. Type `HC_ABOUT` in Civil 3D for the live list.
 
@@ -142,6 +151,7 @@ All commands print formula-transparent `CalcStep` traces where applicable. Type 
 | `HC_VALIDATE` | Design-criteria review (slope, capacity, velocity, cover, HGL) |
 | `HC_MULTIRP` | Per-pipe *Q* and *d*/*D* for 2/10/25/100-yr return periods |
 | `HC_NETWORK_EDIT` | Edit pipe *Q* and Manning *n* overrides (saved per drawing) |
+| `HC_NETWORK_DIAGRAM` | Export HTML/SVG pipe-network schematic from plan topology |
 | `HC_COST` | Pipe cost roll-up from diameter catalog ($/LF) |
 
 ### Hydrology & analysis
@@ -183,7 +193,7 @@ All commands print formula-transparent `CalcStep` traces where applicable. Type 
 | `HC_SEDIMENT_BASIN` | Sediment basin design from peak *Q* (NCDEQ surface-area method) |
 | `HC_BIORETENTION` | Bioretention routing with underdrain/outlet |
 | `HC_WETLAND` | Wetland detention routing |
-| `HC_SOIL` | NRCS soil group lookup by map unit |
+| `HC_SOIL` | Live SSURGO lookup by drawing geo or map-unit name; hydrologic soil group, K-factor, BMP hints |
 
 ### Compliance, exchange & reporting
 
@@ -208,7 +218,7 @@ All commands print formula-transparent `CalcStep` traces where applicable. Type 
 
 ## Key Features (bullet list for store UI)
 
-- **45 HC_* commands** â€” Network capacity, hydrology, routed hydrographs, HGL, GVF, detention, BMPs, compliance, LandXML, and reports in one auto-load bundle
+- **46 HC_* commands** â€” Network capacity, hydrology, routed hydrographs, HGL, GVF, detention, BMPs, compliance, LandXML, network diagrams, and reports in one auto-load bundle
 - **Design capacity overload check** â€” Design *Q* vs *Q*<sub>full</sub> with *d*/*D* and surcharge flags; optional routed catchment *Q* per pipe; label overloaded pipes on `HC-CAPACITY`
 - **Full-network analysis** â€” `HC_ANALYZE` combines hydrology, routing, HGL, sediment, and compliance in one pass
 - **Detention & BMP suite** â€” `HC_DETENTION`, `HC_BMP_SIZE`, `HC_WQ_TRAIN`, `HC_PREPOST`, `HC_OPTIMIZE` for stormwater quality and peak control
@@ -219,7 +229,9 @@ All commands print formula-transparent `CalcStep` traces where applicable. Type 
 - **Routed hydrographs** â€” `HC_ROUTE_HYDRO` routes full catchment hydrographs with junction superposition and optional Muskingum-Cunge
 - **Rational method** â€” Peak runoff from catchment areas with composite *C* and IDF intensity
 - **Live NOAA Atlas 14 IDF** â€” PFDS fetch from drawing geolocation; 25 embedded city presets offline
-- **Formula transparency** â€” Every number traceable to its equation and inputs; HTML report export (free)
+- **Formula transparency** â€” Every number traceable to its equation and inputs; KaTeX-rendered HTML report export (free)
+- **Network diagram export** â€” `HC_NETWORK_DIAGRAM` HTML/SVG schematic for review packages
+- **Live SSURGO soils** â€” `HC_SOIL` with USDA API fetch, cache, and regional fallback
 - **PDF Pro export** â€” Sealable formula-transparent Manning + HGL PDF (`HC_REPORT_PDF`)
 - **Pro activation** â€” Email + beta token activation with online or offline validation (`HC_ACTIVATE`, `HC_LICENSE`)
 - **Drawing write-back** â€” MText capacity and HGL labels on `HC-CAPACITY` and `HC-HGL`; HGL profile polylines on `HC-HGL-PROFILE`

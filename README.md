@@ -5,7 +5,7 @@ drawing** — read pipe networks and catchments, compute on public-domain method
 and show every formula. This is the desktop companion behind
 [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d).
 
-Status: **v1.3.0** — GVF profiles, routed hydrographs (`HC_ROUTE_HYDRO`), Civil 3D 2024 net48 bundle entry. See [User validation](#user-validation) below.
+Status: **v1.4.0** — KaTeX HTML reports, live SSURGO (`HC_SOIL`), network diagram export (`HC_NETWORK_DIAGRAM`), online Pro activation. See [User validation](#user-validation) below.
 
 **Autodesk App Store:** Listing copy, submission checklist, and screenshot shot list live in [`dist/app-store/`](dist/app-store/) (`LISTING.md`, `SUBMISSION_CHECKLIST.md`, `SCREENSHOTS.md`).
 
@@ -27,7 +27,11 @@ not yet re-tested after the listed fix.
 | HydroComplete ribbon tab | *pending* | Not explicitly confirmed in session |
 | `HC_RATIONAL` (with catchments) | *pending* | No catchment objects in test drawing |
 | Waitlist page `hydrocomplete.com/civil3d` | *deploy only* | HTTP 200 deployed; signup flow not user-tested |
-| Engine unit tests | **validated** | `dotnet test` — 348 pass, 1 skip, 1 fail pre-existing (2026-06-18); +14 new tests (topology, culvert, storms) |
+| Engine unit tests | **validated** | `dotnet test` — 405 pass, 1 skip (2026-06-19) |
+| `HC_NETWORK_DIAGRAM` (HTML/SVG export) | *pending* | v1.4.0 |
+| `HC_SOIL` live SSURGO | *pending* | v1.4.0 — drawing geo or map-unit prompt |
+| `HC_REPORT` KaTeX HTML | *pending* | v1.4.0 — formulas render in browser |
+| `HC_ACTIVATE` online (production API) | *pending* | v1.4.0 — `hc_live_beta_tester01` test token |
 | `HC_HGL` tailwater backwater (engine) | **validated** | `Hgl.SteadyBackwaterFromOutfall` anchors at outfall tailwater, steps upstream (`HglBackwaterTests`) |
 | `HC_HGL` (labels + profile in Civil 3D) | *pending re-test* | v0.6.0 — tailwater prompt at outfall; labels on `HC-HGL`, polyline on `HC-HGL-PROFILE`; close C3D → `install.ps1` → run on `C-STORM` |
 | `HC_HGL` (normal-depth + HEC-22 losses) | *pending re-test* | Superseded directionally by tailwater backwater; confirm command table + surcharge flags still match hand check |

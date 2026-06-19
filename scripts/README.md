@@ -68,6 +68,21 @@ Related managed DLLs resolved from `$(AcadDir)` and `$(AcadDir)C3D\`.
 
 ## App Store preflight (`app-store-preflight.ps1`)
 
+**No-Civil-3D release gate** — tests, CI, preflight, HTTP smoke (civil3d page + licensing API):
+
+```powershell
+.\scripts\validation-preflight.ps1
+.\scripts\validation-preflight.ps1 -SkipHttp   # offline
+```
+
+**Code signing** (after cert obtained):
+
+```powershell
+$env:HC_SIGN_CERT_THUMBPRINT = 'YOUR_THUMBPRINT'
+.\scripts\sign-release.ps1
+.\scripts\release.ps1
+```
+
 Validates bundle readiness before Publisher upload:
 
 - `PackageIcon.png` exists in `Contents/`

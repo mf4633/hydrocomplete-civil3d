@@ -74,12 +74,24 @@ try {
         dotnet test 'HydroComplete.Civil3D.sln' -c $Configuration --no-restore
     }
 
-    $net8AcadDir = if ($env:ACAD_DIR) { $env:ACAD_DIR } else { 'C:\Program Files\Autodesk\AutoCAD 2026\' }
-    $net48AcadDir = if ($env:ACAD_2024_DIR) { $env:ACAD_2024_DIR } else { 'C:\Program Files\Autodesk\AutoCAD 2024\' }
+    # Trim trailing slash — PowerShell eats the closing quote when the path ends in \
+    $net8AcadDir = if ($env:ACAD_DIR) { $env:ACAD_DIR } else { 'C:\Program Files\Autodesk\AutoCAD 2026' }
+    $net48AcadDir = if ($env:ACAD_2024_DIR) { $env:ACAD_2024_DIR } else { 'C:\Program Files\Autodesk\AutoCAD 2024' }
+    $net8AcadDir = $net8AcadDir.TrimEnd('\')
+    $net48AcadDir = $net48AcadDir.TrimEnd('\')
     $acadMgd = Join-Path $net8AcadDir 'AcMgd.dll'
     if (Test-Path $acadMgd) {
         Invoke-Step "dotnet build HydroComplete.Civil3D net8 ($Configuration)" {
-            dotnet build 'src\HydroComplete.Civil3D\HydroComplete.Civil3D.csproj' -c $Configuration -p:BuildNet48=false -p:Net8AcadDir="$net8AcadDir"
+            $buildArgs = @(
+                'build', 'src\HydroComplete.Civil3D\HydroComplete.Civil3D.csproj',
+                '-c', $Configuration,
+                '-p:BuildNet48=false'
+            )
+            # Only override Net8AcadDir when non-default — paths with spaces need quoting
+            if ($env:ACAD_DIR) {
+                $buildArgs += "-p:Net8AcadDir=$net8AcadDir\"
+            }
+            dotnet @buildArgs
         }
     }
     else {
@@ -90,8 +102,22 @@ try {
 
     # net48 compiles offline via AutoCAD.NET 24.3.0 NuGet when AutoCAD 2024 is not installed.
     Invoke-Step "dotnet build HydroComplete.Civil3D net48 ($Configuration)" {
-        dotnet build 'src\HydroComplete.Civil3D\HydroComplete.Civil3D.csproj' -c $Configuration -p:BuildNet48=true -p:Net48AcadDir="$net48AcadDir"
-        & (Join-Path $root 'scripts\build-net48.ps1') -Configuration $Configuration -Net48AcadDir $net48AcadDir
+        $net48Args = @(
+            'build', 'src\HydroComplete.Civil3D\HydroComplete.Civil3D.csproj',
+            '-c', $Configuration,
+            '-p:BuildNet48=true'
+        )
+        if ($env:ACAD_2024_DIR) {
+            $net48Args += "-p:Net48AcadDir=$net48AcadDir\"
+        }
+        dotnet @net48Args
+        $net48StageDir = if ($env:ACAD_2024_DIR) { $net48AcadDir + '\' } else { $null }
+        if ($net48StageDir) {
+            & (Join-Path $root 'scripts\build-net48.ps1') -Configuration $Configuration -Net48AcadDir $net48StageDir
+        }
+        else {
+            & (Join-Path $root 'scripts\build-net48.ps1') -Configuration $Configuration
+        }
     }
 
     Invoke-Step 'Verify PackageContents.xml' {

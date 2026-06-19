@@ -1,219 +1,252 @@
-# Autodesk App Store — Submission Checklist
+# HydroComplete C3D — Release & App Store Checklist
 
-Step-by-step checklist for publishing **HydroComplete for Civil 3D** via the
-[Autodesk Developer Network Publisher](https://apps.autodesk.com/en/Publisher/Home).
+**Target version:** 1.4.0  
+**Last updated:** 2026-06-19
 
-**Bundle source:** `dist/HydroComplete.bundle/`  
-**CI:** `.\scripts\ci.ps1` (test + build + manifest check)  
-**Preflight:** `.\scripts\app-store-preflight.ps1` (icon, commands, version sync, zip layout)  
-**Version bump:** `.\scripts\bump-version.ps1 -Version x.y.z`  
-**Release zip:** `.\scripts\release.ps1` → `dist/HydroComplete-{version}.zip` + SHA256  
-**Manual build:** `./package.sh Release` (or `dotnet build` + copy per `package.sh`)
+### Legend
 
----
+| Tag | Meaning |
+|-----|---------|
+| 🤖 | Agent/automation — no Civil 3D required |
+| 👤 | Michael — requires live Civil 3D or business action |
+| ⏳ | Blocked on external dependency (cert, Autodesk review, PayPal) |
 
-## 1. Pre-submission — Account & Legal
-
-- [ ] **Autodesk Publisher account** — Register / sign in at apps.autodesk.com Publisher portal
-- [ ] **Developer agreement** — Accept current Autodesk App Store terms
-- [x] **Privacy policy URL** — `https://hydrocomplete.com/privacy.html` (live, matches site footer)
-- [x] **Support contact** — `support@hydrocomplete.com` (monitored inbox)
-- [x] **Product landing page** — `https://hydrocomplete.com/civil3d` (linked in manifest `HelpFile`)
-- [x] **Trademark disclaimer** — Include Autodesk trademark notice in listing (see `LISTING.md`)
-
----
-
-## 2. Bundle Structure Verification
-
-Autodesk auto-load bundles must follow the `*.bundle` folder convention.
-
-### Expected layout
-
-```
-HydroComplete.bundle/
-├── PackageContents.xml          ← manifest (required)
-└── Contents/
-    ├── HydroComplete.Civil3D.dll  ← plugin entry (ModuleName)
-    ├── HydroComplete.Engine.dll   ← mapped dependency
-    ├── PackageIcon.png            ← 96×96 bundle icon (App Store)
-    └── net48/                     ← optional: Civil 3D 2024 only (see §2b)
-        ├── HydroComplete.Civil3D.dll
-        └── HydroComplete.Engine.dll
-```
-
-### Supported Civil 3D versions (v1.3.0 submission)
-
-| Product | Series | Runtime | Bundle layout |
-|---|---|---|---|
-| **Civil 3D 2024** | R24.3 | .NET Framework 4.8 (`net48`) | `./Contents/net48/*.dll` |
-| **Civil 3D 2025** | R25.0 | .NET 8 (`net8.0-windows`) | `./Contents/*.dll` |
-| **Civil 3D 2026** | R25.1 | .NET 8 (`net8.0-windows`) | `./Contents/*.dll` |
-
-One `RuntimeRequirements` + `ComponentEntry` pair per series. Civil 3D 2024 loads
-`Contents/net48/`; 2025+ load `Contents/` net8 DLLs.
-
-### `PackageContents.xml` requirements
-
-| Item | Status | Notes |
-|---|---|---|
-| `SchemaVersion="1.0"` | ✅ Present | |
-| `AppVersion` matches release | ✅ `1.3.0` | Bump via `.\scripts\bump-version.ps1` on each store upload |
-| `Name` / `Description` | ✅ Present | Mirror `LISTING.md` copy |
-| `ProductCode` (GUID) | ✅ `{8d07b4c8-06cb-497d-832a-dcb5b095d9fa}` | Keep stable across versions |
-| `CompanyDetails` (Name, Url, Email) | ✅ Present | |
-| `RuntimeRequirements` OS/Platform/Series | ✅ `Win64` / `Civil3D` / **R24.3 + R25.0 + R25.1** | Three `ComponentEntry` blocks (net48 + net8) |
-| `ComponentEntry` `ModuleName` path | ✅ `./Contents/HydroComplete.Civil3D.dll` | File must exist in zip |
-| `LoadOnAutoCADStartup` | ✅ `True` | |
-| `Commands` block (Local + Global) | ✅ **45** `HC_*` commands listed | Full list in `LISTING.md` § Command reference; validated by `app-store-preflight.ps1` |
-| `AssemblyMappings` for Engine.dll | ✅ Present | Required for split assembly |
-| **Bundle icon** | ✅ Present | `Icon="./Contents/PackageIcon.png"` — 96×96 PNG in `Contents/` |
-| **Help file URL** | ✅ Present | `HelpFile="https://hydrocomplete.com/civil3d"` on `ApplicationPackage` |
-| **Publisher certificate / signing** | ⚠️ **Not configured** | See §3 |
-
-### 2a. Manifest gaps to fix before upload
-
-1. ~~**Icon**~~ — ✅ Done: `PackageIcon.png` (96×96) + `Icon` attribute on `<ApplicationPackage>`.
-2. ~~**HelpFile**~~ — ✅ Done: `HelpFile="https://hydrocomplete.com/civil3d"` on `<ApplicationPackage>`.
-3. ~~**Version bump workflow**~~ — ✅ Done: `.\scripts\bump-version.ps1 -Version x.y.z` syncs csproj, manifest, `Plugin.cs`, `verify-install.ps1`, `LISTING.md`, and `HC_ABOUT` header.
-4. ~~**Command manifest sync**~~ — ✅ Done: all 45 `HC_*` commands in R24.3, R25.0, and R25.1 `ComponentEntry` blocks (preflight-validated).
-5. **Code signing** — ⚠️ Pending (§3).
-
-### 2b. Civil 3D 2024 (R24.3 / net48)
-
-| Prerequisite | Status |
-|---|---|
-| `net48` Release build (`scripts/build-net48.ps1`) | ✅ NuGet stub refs when AutoCAD 2024 not installed |
-| `Contents/net48/HydroComplete.Civil3D.dll` in bundle | ✅ Staged by `release.ps1` |
-| `ComponentEntry` with `SeriesMin="R24.3" SeriesMax="R24.3"` | ✅ Present |
-| `ModuleName="./Contents/net48/HydroComplete.Civil3D.dll"` | ✅ Separate path from net8 DLLs |
-| Interactive auto-load test on Civil 3D 2024 | ⬜ Required before App Store listing claims 2024 support |
-
-See README § "Civil 3D 2024 compatibility" for series/runtime background.
-
-### Verify locally before zipping
+### Quick commands
 
 ```powershell
+# Automated gate (no C3D)
+.\scripts\validation-preflight.ps1
+
+# Full CI
+.\scripts\ci.ps1
+
+# App Store bundle check
 .\scripts\app-store-preflight.ps1
-powershell -File verify-install.ps1   # after install.ps1 on a test machine
-```
 
-- [ ] `app-store-preflight.ps1` exits 0 (icon, 45 commands, version `1.3.0`, zip layout)
-- [ ] Civil 3D **2025 (R25.0)** and **2026 (R25.1)** each start with banner: `HydroComplete for Civil 3D 1.3.0 loaded`
-- [ ] Civil 3D **2024 (R24.3)** auto-load test (when available): banner `1.3.0 loaded`, `HC_GVF` and `HC_ROUTE_HYDRO` respond
-- [ ] `verify-install.ps1` reports `Series: R25.0 OK` and `Series: R25.1 OK`
-- [ ] `HC_ABOUT` lists all 45 commands
-- [ ] No duplicate bundle folders under `%APPDATA%\Autodesk\ApplicationPlugins\`
+# Release zip + SHA256
+.\scripts\release.ps1
 
----
-
-## 3. Code Signing
-
-Autodesk App Store submissions require a **digitally signed** bundle for trust and auto-load approval.
-
-- [ ] Obtain a **code-signing certificate** (EV or standard OV; Authenticode for Windows)
-- [ ] Sign **both DLLs** before packaging:
-  - `HydroComplete.Civil3D.dll`
-  - `HydroComplete.Engine.dll`
-- [ ] Typical tool: `signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /a HydroComplete.Civil3D.dll`
-- [ ] Confirm signature: `signtool verify /pa HydroComplete.Civil3D.dll`
-- [ ] **Do not sign** Autodesk host DLLs (`AcMgd`, `AeccDbMgd`, etc.) — they are `Private=false` references only
-- [ ] Re-run `verify-install.ps1` on a clean VM after signing (SmartScreen / trust prompt behavior)
-
-> Unsigned bundles may load via manual `NETLOAD` in dev but can fail Publisher validation or trigger security warnings for end users.
-
----
-
-## 4. Screenshots (5–10 required)
-
-Capture at **1920×1080** or Autodesk's current minimum (check Publisher portal). Use a real storm-sewer drawing with pipe networks. See `SCREENSHOTS.md` for shot-by-shot guidance; paste captions from `SCREENSHOT_CAPTIONS.md`.
-
-| # | Caption source | Command / view |
-|---|---|---|
-| 1 | `SCREENSHOT_CAPTIONS.md` #1 | HydroComplete › Analysis ribbon |
-| 2 | #2 | `HC_PIPES` command-line output |
-| 3 | #3 | `HC_CAPACITY` overload table |
-| 4 | #4 | `HC_HGL` profile + labels |
-| 5 | #5 | `HC_ANALYZE` full-network summary |
-| 6 | #6 | `HC_DETENTION` pond routing |
-| 7 | #7 | `HC_PREPOST` peak comparison |
-| 8 | #8 | `HC_REPORT` → browser |
-| 9 | #9 | `HC_ATLAS14` / `HC_RATIONAL` IDF |
-| 10 | #10 | `HC_ACTIVATE` + `HC_LICENSE` |
-
-- [ ] All screenshots free of client-identifying project data (or use anonymized sample DWG)
-- [ ] Captions copied from `SCREENSHOT_CAPTIONS.md`
-- [ ] At least one shot shows Civil 3D chrome (ribbon + drawing) so reviewers recognize the host app
-- [ ] **Do not** commit placeholder PNGs — capture steps only until Michael shoots real frames
-
----
-
-## 5. Listing Metadata (Publisher portal)
-
-Copy from `LISTING.md`:
-
-- [ ] **Title:** HydroComplete for Civil 3D
-- [ ] **Short description** (80 chars)
-- [ ] **Long description** (full markdown/HTML as allowed)
-- [ ] **Category:** Civil Engineering / Hydraulics / Productivity (pick best fit in portal)
-- [ ] **Supported products:** Civil 3D 2025 (R25.0), Civil 3D 2026 (R25.1)
-- [ ] **Version number:** 1.3.0
-- [ ] **Keywords** — paste from `LISTING.md`
-- [ ] **Pricing** — set when model finalized (TBD / freemium per `LISTING.md`)
-- [ ] **Release notes** — v1.3.0: `HC_ROUTE_HYDRO` routed catchment hydrographs, Civil 3D 2024 net48 bundle; v1.2.0: `HC_GVF`, `HC_PUMP`, `HC_NETWORK_EDIT`, `HC_COST`, `HC_BACKGROUND`, modal `HC_PROFILE`/`HC_INLETS`; prior: full stormwater suite (`HC_ANALYZE`, `HC_DETENTION`, `HC_PREPOST`, compliance, LandXML, etc.)
-
----
-
-## 6. Upload Package
-
-### 6a. Create release zip
-
-From the repo root (PowerShell):
-
-```powershell
-.\scripts\app-store-preflight.ps1
+# Sign DLLs (after cert obtained)
+$env:HC_SIGN_CERT_THUMBPRINT = 'THUMBPRINT'
+.\scripts\sign-release.ps1
 .\scripts\release.ps1
 ```
 
-This builds Release, refreshes `dist/HydroComplete.bundle/Contents/*.dll`, and writes
-`dist/HydroComplete-{version}.zip` (version from `HydroComplete.Civil3D.csproj` unless
-`-Version` is passed). Record the printed **SHA256** for your release notes / audit trail.
+**Civil 3D validation guide:** [`VALIDATION_SESSION.md`](VALIDATION_SESSION.md)
 
-Optional: run full CI before packaging:
+---
 
-```powershell
-.\scripts\ci.ps1
+## Phase 0 — Automated gate (🤖 no C3D)
+
+Run `.\scripts\validation-preflight.ps1` before every release candidate.
+
+| Item | Owner | Status |
+|------|-------|--------|
+| Engine unit tests (`dotnet test`) — 405+ pass | 🤖 | [x] 2026-06-19 |
+| CI build + manifest command sync (`ci.ps1`) | 🤖 | [x] 2026-06-19 — fixed AcadDir quoting bug |
+| App Store preflight (`app-store-preflight.ps1`) exits 0 | 🤖 | [x] 2026-06-19 — 46 commands |
+| Bundle DLLs present and non-trivial size | 🤖 | [x] C3D 304 KB, Engine 513 KB |
+| `hydrocomplete.com/civil3d` HTTP 200 | 🤖 | [x] 2026-06-19 |
+| `hydrocomplete.com/privacy.html` HTTP 200 | 🤖 | [x] 2026-06-19 |
+| Licensing API accepts `hc_live_beta_tester01` | 🤖 | [x] 2026-06-19 — Fly deploy; `JWT_SECRET` fallback |
+| `hydrocomplete.com/api/*` proxy to Fly | 🤖 | [ ] `netlify.toml` ready — deploy from hc-refactored (`bash build.sh && npx netlify deploy --prod`) |
+| Plugin `HC_ACTIVATE` online URL | 🤖 | [x] points to `hc-refactored.fly.dev` until Netlify proxy live |
+| Release zip + SHA256 (`release.ps1`) | 🤖 | [x] `HydroComplete-1.4.0.zip` SHA256 `B3BD4B9F…C4B07` |
+| GitHub remote pushed (`hydrocomplete-civil3d`) | 🤖 | [ ] |
+
+**Version 1.4.0 shipped (2026-06-19):** SSURGO live API, KaTeX HTML reports, `HC_NETWORK_DIAGRAM`, licensing URL fix.
+
+---
+
+## Phase 1 — Civil 3D validation (👤)
+
+Follow [`VALIDATION_SESSION.md`](VALIDATION_SESSION.md) on Civil 3D **2026** with `C-STORM`.
+
+### Already validated (v0.1.1 core)
+
+- [x] Bundle auto-load — startup banner, no NETLOAD
+- [x] `HC_ABOUT`, `HC_PIPES`, `HC_RATIONAL` (empty catchments), `NETLOAD` fallback
+- [x] `HC_PIPES_WRITE` — MText on `HC-CAPACITY` (30/30 pipes)
+
+### Block A — Ribbon & discovery
+
+- [ ] HydroComplete › Analysis ribbon tab visible
+- [ ] Ribbon buttons invoke commands
+- [ ] `HC_ABOUT` lists **46** commands
+
+### Block B — Core hydraulics (C-STORM)
+
+- [ ] `HC_NETWORK`
+- [ ] `HC_CAPACITY` + `HC_CAPACITY_WRITE`
+- [ ] `HC_VALIDATE`
+
+### Block C — HGL & profile
+
+- [ ] `HC_HGL` tailwater backwater + labels on `HC-HGL`
+- [ ] Profile polyline on `HC-HGL-PROFILE`
+- [ ] Surcharge flags match hand check
+
+### Block D — Reports
+
+- [ ] `HC_REPORT` HTML opens in browser with formula steps
+- [ ] `HC_REPORT_PDF` gated without license; works after `HC_ACTIVATE`
+
+### Block E — Hydrology (needs catchment DWG)
+
+- [ ] `HC_RATIONAL` with catchments + Atlas 14 preset
+- [ ] `HC_ATLAS14` live PFDS + embedded fallback
+- [ ] Catchment Q routing in `HC_CAPACITY` / `HC_HGL`
+
+### Block F — Licensing
+
+- [ ] `HC_ACTIVATE` online with `hc_live_*` server token
+- [ ] `HC_LICENSE` shows Pro + validation mode
+- [ ] Offline stub still works when server unreachable
+
+### Block G — v1.4.0 features
+
+- [ ] `HC_GVF`
+- [ ] `HC_ROUTE_HYDRO` + CSV export
+- [ ] `HC_NETWORK_DIAGRAM` (HTML/SVG in Documents)
+- [ ] `HC_SOIL` live SSURGO (drawing geo)
+- [ ] `HC_REPORT` KaTeX formulas in browser
+- [ ] `HC_ANALYZE` / `HC_DETENTION` / `HC_PREPOST` (catchment DWG)
+
+### Block H — Civil 3D 2024 (optional)
+
+- [ ] Auto-load on R24.3 (net48 bundle)
+- [ ] `HC_PIPES`, `HC_GVF` on 2024
+
+### Block I — Marketing
+
+- [ ] Waitlist form on `hydrocomplete.com/civil3d` submits (`c3d_waitlist` analytics event)
+
+---
+
+## Phase 2 — Business & licensing (👤 + 🤖)
+
+| Item | Owner | Status |
+|------|-------|--------|
+| Pricing model decided (free / paid / freemium) | 👤 | [ ] TBD — see `LISTING.md` § Pricing |
+| PayPal publisher account (if paid on Marketplace) | 👤 ⏳ | [ ] |
+| `hc_live_*` tokens in production licensing API | 🤖 | [x] code ready in `hc-refactored/server/routes/licensing.js` |
+| Deploy licensing API to Fly.io | 👤 | [ ] `flyctl deploy --app hc-refactored` |
+| Stripe → token issuance for paying customers | 👤 | [ ] future — manual `HC_LICENSE_KEYS` env OK for beta |
+| Beta token distribution to waitlist | 👤 | [ ] |
+
+**Env vars for production (Fly.io):**
+
+```
+LICENSE_SECRET=<existing>
+HC_LICENSE_KEYS=hc_live_waitlist_user1,hc_live_waitlist_user2
+# or full JSON:
+HC_LICENSE_STORE_JSON={"hc_live_firm_x":{"email":"pe@firm.com","expires":"2027-12-31","features":["reports","export","civil3d"]}}
 ```
 
-### 6b. Upload
+---
 
-- [ ] Confirm zip root contains `PackageContents.xml` and `Contents/` (see `scripts/README.md`)
-- [ ] Upload `dist/HydroComplete-1.3.0.zip` via Publisher → New/Update App → Attach bundle
-- [ ] Pass automated manifest validation (fix Icon/HelpFile if rejected)
-- [ ] Submit for Autodesk review
+## Phase 3 — Code signing (👤 ⏳)
+
+| Item | Owner | Status |
+|------|-------|--------|
+| Obtain Authenticode code-signing certificate (OV/EV) | 👤 ⏳ | [ ] |
+| Sign net8 DLLs + net48 DLLs (`scripts/sign-release.ps1`) | 👤 | [ ] scaffold ready |
+| Verify signatures (`signtool verify /pa`) | 👤 | [ ] |
+| Test signed bundle on clean VM (SmartScreen) | 👤 | [ ] |
 
 ---
 
-## 7. Post-approval
+## Phase 4 — Screenshots & video (👤)
 
-- [ ] Update [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d) with App Store download link
-- [ ] Email waitlist with store URL
-- [ ] Monitor `support@hydrocomplete.com` for install issues
-- [ ] Track validation gaps in `README.md` User validation table
+See `SCREENSHOTS.md` + `SCREENSHOT_CAPTIONS.md`. Capture at **1920×1080**.
+
+| # | Shot | Status |
+|---|------|--------|
+| 1 | Ribbon tab | [ ] |
+| 2 | `HC_PIPES` output | [ ] |
+| 3 | `HC_CAPACITY` overload | [ ] |
+| 4 | `HC_HGL` profile + labels | [ ] |
+| 5 | `HC_ANALYZE` summary | [ ] |
+| 6 | `HC_DETENTION` | [ ] |
+| 7 | `HC_PREPOST` | [ ] |
+| 8 | `HC_REPORT` in browser | [ ] |
+| 9 | `HC_ATLAS14` / `HC_RATIONAL` | [ ] |
+| 10 | `HC_ACTIVATE` + `HC_LICENSE` | [ ] |
+| — | 60–90s demo video (recommended) | [ ] |
+
+- [ ] No client-identifying data in shots
+- [ ] Do not commit placeholder PNGs to repo
 
 ---
 
-## Quick Reference
+## Phase 5 — Autodesk Publisher (👤 ⏳)
 
-| Resource | URL / path |
-|---|---|
-| Privacy policy | https://hydrocomplete.com/privacy.html |
-| Support email | support@hydrocomplete.com |
-| Product page | https://hydrocomplete.com/civil3d |
-| Bundle manifest | `dist/HydroComplete.bundle/PackageContents.xml` |
-| CI script | `scripts/ci.ps1` |
-| Preflight script | `scripts/app-store-preflight.ps1` |
-| Version bump | `scripts/bump-version.ps1` |
-| Release zip script | `scripts/release.ps1` |
-| Screenshot guide | `dist/app-store/SCREENSHOTS.md` |
-| Screenshot captions | `dist/app-store/SCREENSHOT_CAPTIONS.md` |
+### Account & legal
+
+- [ ] Autodesk Publisher account at [apps.autodesk.com](https://apps.autodesk.com/en/Publisher/Home)
+- [ ] Developer agreement accepted
+- [x] Privacy policy — `https://hydrocomplete.com/privacy.html`
+- [x] Support — `support@hydrocomplete.com`
+- [x] Product page — `https://hydrocomplete.com/civil3d` (manifest `HelpFile`)
+- [x] Trademark disclaimer in listing (`LISTING.md`)
+
+### Bundle structure (🤖 verified)
+
+- [x] `PackageContents.xml` — SchemaVersion 1.0, AppVersion, ProductCode GUID stable
+- [x] R24.3 + R25.0 + R25.1 `ComponentEntry` blocks
+- [x] 46 `HC_*` commands in manifest
+- [x] `PackageIcon.png` (96×96)
+- [x] `AssemblyMappings` for Engine.dll
+- [ ] Code signing (Phase 3)
+
+### Listing metadata (copy from `LISTING.md`)
+
+- [ ] Title, short + long description
+- [ ] Category, keywords, release notes
+- [ ] Supported products: 2024 (if Block H pass), 2025, 2026
+- [ ] Pricing set in portal
+
+### Upload
+
+- [ ] `validation-preflight.ps1` + `release.ps1` on final version
+- [ ] Upload `dist/HydroComplete-{version}.zip`
+- [ ] Pass Autodesk automated manifest validation
+- [ ] Submit for review (~1–2 weeks)
+
+---
+
+## Phase 6 — Parallel release paths
+
+You can ship **before** Autodesk approval:
+
+| Path | Ready when | Owner |
+|------|------------|-------|
+| **Waitlist beta zip** | Phase 1 Blocks A–F pass | 👤 |
+| **Direct download** (`install.ps1` + email) | Same | 👤 |
+| **Autodesk Marketplace** | Phases 1–5 complete | 👤 ⏳ |
+
+---
+
+## Phase 7 — Post-launch (👤)
+
+- [ ] App Store link on `hydrocomplete.com/civil3d`
+- [ ] Email waitlist with download URL + beta token instructions
+- [ ] Monitor `support@hydrocomplete.com`
+- [ ] Update `README.md` User validation table from Phase 1 results
+- [ ] File issues for any Phase 1 failures
+
+---
+
+## Quick reference
+
+| Resource | Path / URL |
+|----------|------------|
+| Validation session | `dist/app-store/VALIDATION_SESSION.md` |
 | Listing copy | `dist/app-store/LISTING.md` |
+| Screenshots | `dist/app-store/SCREENSHOTS.md` |
+| Captions | `dist/app-store/SCREENSHOT_CAPTIONS.md` |
+| Automated gate | `scripts/validation-preflight.ps1` |
+| Sign DLLs | `scripts/sign-release.ps1` |
+| Licensing API | `hc-refactored/server/routes/licensing.js` |
+| Privacy | https://hydrocomplete.com/privacy.html |
+| Product page | https://hydrocomplete.com/civil3d |
