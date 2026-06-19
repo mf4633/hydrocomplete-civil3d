@@ -51,8 +51,9 @@ Run `.\scripts\validation-preflight.ps1` before every release candidate.
 | Licensing API accepts `hc_live_beta_tester01` | 🤖 | [x] 2026-06-19 — Fly deploy; `JWT_SECRET` fallback |
 | `hydrocomplete.com/api/*` proxy to Fly | 🤖 | [ ] `netlify.toml` ready — deploy from hc-refactored (`bash build.sh && npx netlify deploy --prod`) |
 | Plugin `HC_ACTIVATE` online URL | 🤖 | [x] points to `hc-refactored.fly.dev` until Netlify proxy live |
-| Release zip + SHA256 (`release.ps1`) | 🤖 | [x] `HydroComplete-1.4.0.zip` SHA256 `B3BD4B9F…C4B07` |
-| GitHub remote pushed (`hydrocomplete-civil3d`) | 🤖 | [ ] |
+| Release zip + SHA256 (`release.ps1`) | 🤖 | [x] `HydroComplete-1.4.0.zip` SHA256 `2075812B…FD0FE` (2026-06-19 rebuild) |
+| Civil 3D parity smoke (`smoke-civil3d-parity.ps1`) | 🤖 | [x] 2026-06-19 — KaTeX report + network diagram on Pipe Networks-3 |
+| GitHub remote pushed (`hydrocomplete-civil3d`) | 🤖 | [x] `v1.4.0` tag + master `54752d1` |
 
 **Version 1.4.0 shipped (2026-06-19):** SSURGO live API, KaTeX HTML reports, `HC_NETWORK_DIAGRAM`, licensing URL fix.
 
@@ -107,9 +108,9 @@ Follow [`VALIDATION_SESSION.md`](VALIDATION_SESSION.md) on Civil 3D **2026** wit
 
 - [ ] `HC_GVF`
 - [ ] `HC_ROUTE_HYDRO` + CSV export
-- [ ] `HC_NETWORK_DIAGRAM` (HTML/SVG in Documents)
-- [ ] `HC_SOIL` live SSURGO (drawing geo)
-- [ ] `HC_REPORT` KaTeX formulas in browser
+- [x] `HC_NETWORK_DIAGRAM` (HTML/SVG in Documents) — automated 2026-06-19
+- [ ] `HC_SOIL` live SSURGO (drawing geo) — name lookup only so far
+- [x] `HC_REPORT` KaTeX formulas in browser — user confirmed 2026-06-19
 - [ ] `HC_ANALYZE` / `HC_DETENTION` / `HC_PREPOST` (catchment DWG)
 
 ### Block H — Civil 3D 2024 (optional)

@@ -126,6 +126,24 @@ Output:
 
 Before first release, ensure `dist/HydroComplete.bundle/Contents/PackageIcon.png` exists (96×96 PNG).
 
+## Civil 3D parity smoke (`smoke-civil3d-parity.ps1`)
+
+Automated v1.4.0 check via COM: launches Civil 3D 2026, runs `HC_REPORT`, `HC_NETWORK_DIAGRAM`, and `HC_SOIL`, then verifies HTML outputs under `Documents\HydroComplete\` (respects OneDrive folder redirection).
+
+```powershell
+# After install.ps1 — closes any open acad.exe by default
+.\scripts\smoke-civil3d-parity.ps1
+
+# Custom drawing (e.g. C-STORM)
+.\scripts\smoke-civil3d-parity.ps1 -Drawing "D:\Projects\C-STORM.dwg"
+
+# Leave your open Civil 3D session alone (may fail if COM is busy)
+.\scripts\smoke-civil3d-parity.ps1 -KeepExistingAcad
+```
+
+- **Exit 0** when KaTeX report + network-diagram HTML are written and pass content checks.
+- **Exit 1** on failure; **exit 0 skip** when Civil 3D 2026 or seed drawing is missing.
+
 ## accoreconsole smoke test (`smoke-accoreconsole.ps1`)
 
 Optional headless check that runs `accoreconsole /product C3D` with `HC_ABOUT` when Civil 3D is installed locally. **Not wired into `ci.ps1` or GitHub Actions.**

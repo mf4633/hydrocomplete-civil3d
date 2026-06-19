@@ -135,9 +135,9 @@ you@email.com hc_live_beta_tester01
 | G2 | `HC_ROUTE_HYDRO` | ☐ | Routed hydrograph output; CSV in Documents |
 | G3 | `HC_CULVERT` | ☐ | Headwater calc from pipe or manual entry |
 | G4 | `HC_INLETS` | ☐ | Modal dialog opens; HEC-22 result prints |
-| G5 | `HC_NETWORK_DIAGRAM` | ☐ | HTML/SVG opens in browser from Documents |
-| G6 | `HC_SOIL` | ☐ | Live SSURGO or regional fallback; HSG + K-factor |
-| G7 | `HC_REPORT` | ☐ | KaTeX formulas render in browser (not plain text) |
+| G5 | `HC_NETWORK_DIAGRAM` | ☑ | Automated 2026-06-19 (Pipe Networks-3); SVG in OneDrive `Documents\HydroComplete\` |
+| G6 | `HC_SOIL` | ☐ | Cecil name lookup OK; **live geo fetch still needs project DWG** |
+| G7 | `HC_REPORT` | ☑ | User confirmed KaTeX HTML looks good (2026-06-19) |
 
 If catchment DWG available:
 
