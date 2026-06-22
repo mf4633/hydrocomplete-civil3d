@@ -94,6 +94,26 @@ html, body { height: 100%; background: #0d1117; font-family: 'Segoe UI', Arial, 
 }
 #results-bar.open { display: block; }
 
+/* ── Chart tab ───────────────────────────────────────────────────── */
+#chart-tab {
+  display: none; padding: 0;
+  flex-direction: column;
+}
+#chart-tab.open { display: flex; }
+#chart-canvas-el {
+  width: 100%; flex: 1; display: block; background: #0d1117;
+}
+
+/* ── Config panel tabs ───────────────────────────────────────────── */
+.tab-btn {
+  font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 3px;
+  cursor: pointer; color: #8b949e; border: 1px solid transparent;
+}
+.tab-btn.active { color: #c9d1d9; border-color: #30363d; background: #21262d; }
+.tab-btn:hover:not(.active) { color: #c9d1d9; }
+#config-panel { flex-direction: column; }
+#config-header { display: flex; align-items: center; gap: 4px; padding: 5px 8px; border-bottom: 1px solid #30363d; flex-shrink: 0; }
+
 /* ── Zoom controls ───────────────────────────────────────────────── */
 #zoom-ctrl {
   position: absolute; bottom: 10px; right: 10px;
@@ -147,14 +167,21 @@ html, body { height: 100%; background: #0d1117; font-family: 'Segoe UI', Arial, 
       <div id="help">Drag from palette · Connect ports · Scroll=zoom · Mid-drag=pan · Del=remove · Click=inspect</div>
     </div>
 
-    <!-- Config / inspector panel -->
+    <!-- Config / inspector + chart panel -->
     <div id="config-panel">
       <div id="config-header">
-        <span id="config-title">Inspector</span>
+        <div style="display:flex;gap:6px">
+          <span class="tab-btn active" data-tab="config">Config</span>
+          <span class="tab-btn" data-tab="chart">Chart</span>
+        </div>
+        <span id="config-title" style="font-size:10px;color:#8b949e;flex:1;text-align:center"></span>
         <span id="config-close">✕</span>
       </div>
-      <div id="config-body">
+      <div id="config-body" style="flex:1;overflow-y:auto;padding:8px 10px">
         <p style="font-size:10px;color:#8b949e">Select a node to configure.</p>
+      </div>
+      <div id="chart-tab">
+        <canvas id="chart-canvas-el"></canvas>
       </div>
     </div>
 
@@ -292,6 +319,7 @@ function showConfig(nodeJson) {
   }
 
   cfgPanel.classList.add('open');
+  if (activeTab === 'chart') refreshChart();
 }
 
 function getPortName(schema, key) {
@@ -328,6 +356,30 @@ function flushConfig() {
 }
 
 document.getElementById('config-close').addEventListener('click', hideConfig);
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+const chartTab = document.getElementById('chart-tab');
+const chartCanvas = document.getElementById('chart-canvas-el');
+let activeTab = 'config';
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeTab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+    const isChart = activeTab === 'chart';
+    cfgBody.style.display   = isChart ? 'none' : '';
+    chartTab.classList.toggle('open', isChart);
+    if (isChart) refreshChart();
+  });
+});
+
+function refreshChart() {
+  if (configNodeId === null) return;
+  const panelH = cfgPanel.clientHeight - 40;
+  chartCanvas.width  = cfgPanel.clientWidth;
+  chartCanvas.height = Math.max(panelH, 200);
+  editor.render_chart(configNodeId, 'chart-canvas-el');
+}
 
 // ── Palette drag ──────────────────────────────────────────────────────────
 let palDragging = false, palKind = null;
@@ -457,11 +509,9 @@ window.addEventListener('message', e => {
   if (!msg || msg.type !== 'HC_RESULT') return;
   const resultJson = typeof msg.dag === 'string' ? msg.dag : JSON.stringify(msg.dag);
   if (editor.apply_results_json(resultJson)) {
-    setStatus('Results applied');
-    // Update config panel if a node is selected
+    setStatus('Results applied — click a node to see charts');
     const j = editor.get_selected_node_json();
     if (j) showConfig(j);
-    // Show summary strip
     showResultsBar(JSON.parse(resultJson));
   }
 });

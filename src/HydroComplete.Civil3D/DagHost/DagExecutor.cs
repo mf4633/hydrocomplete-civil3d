@@ -175,6 +175,19 @@ namespace HydroComplete.Civil3D.DagHost
                         r.TotalLoadsLbs.TryGetValue(Pollutant.Tss, out double tss) ? tss / yrs : 0.0);
                     outs["tn_lbs_yr"] = JsonValue.Create(
                         r.TotalLoadsLbs.TryGetValue(Pollutant.Tn, out double tn) ? tn / yrs : 0.0);
+                    // Monthly arrays for chart
+                    var rainArr   = new JsonArray();
+                    var runoffArr = new JsonArray();
+                    var tssArr    = new JsonArray();
+                    foreach (var m in r.MonthlyAverage)
+                    {
+                        rainArr.Add(JsonValue.Create(m.AvgRainfallIn));
+                        runoffArr.Add(JsonValue.Create(m.AvgRunoffAcreIn));
+                        tssArr.Add(JsonValue.Create(m.AvgTssLbs));
+                    }
+                    outs["monthly_rain_in"]       = rainArr;
+                    outs["monthly_runoff_ac_in"]  = runoffArr;
+                    outs["monthly_tss_lbs"]       = tssArr;
                     break;
                 }
 
@@ -261,6 +274,11 @@ namespace HydroComplete.Civil3D.DagHost
                     outs["attenuation_pct"]  = JsonValue.Create(r.ReductionPercent);
                     outs["peak_storage_cf"]  = JsonValue.Create(r.PeakStorageFt3);
                     outs["steps"] = JsonValue.Create(Steps(r.Steps));
+                    // Array data for chart renderer
+                    var inflowArr  = new JsonArray(); foreach (var pt in r.Ordinates) inflowArr.Add(JsonValue.Create(pt.InflowCfs));
+                    var outflowArr = new JsonArray(); foreach (var pt in r.Ordinates) outflowArr.Add(JsonValue.Create(pt.OutflowCfs));
+                    outs["hydro_inflow_cfs"]  = inflowArr;
+                    outs["hydro_outflow_cfs"] = outflowArr;
                     break;
                 }
 
@@ -308,6 +326,13 @@ namespace HydroComplete.Civil3D.DagHost
                     outs["0"] = JsonNode.Parse(JsonSerializer.Serialize(r.FinalEffluentLbs))!;
                     outs["1"] = JsonValue.Create(tssEta * 100.0);
                     outs["steps"] = JsonValue.Create(Steps(r.Steps));
+                    // Chart data
+                    outs["tss_in_lbs"]  = JsonValue.Create(loads.LoadsLbs.TryGetValue(Pollutant.Tss, out double ti) ? ti : 0.0);
+                    outs["tn_in_lbs"]   = JsonValue.Create(loads.LoadsLbs.TryGetValue(Pollutant.Tn,  out double ni) ? ni : 0.0);
+                    outs["tp_in_lbs"]   = JsonValue.Create(loads.LoadsLbs.TryGetValue(Pollutant.Tp,  out double pi) ? pi : 0.0);
+                    outs["tss_out_lbs"] = JsonValue.Create(r.FinalEffluentLbs.TryGetValue(Pollutant.Tss, out double to) ? to : 0.0);
+                    outs["tn_out_lbs"]  = JsonValue.Create(r.FinalEffluentLbs.TryGetValue(Pollutant.Tn,  out double no) ? no : 0.0);
+                    outs["tp_out_lbs"]  = JsonValue.Create(r.FinalEffluentLbs.TryGetValue(Pollutant.Tp,  out double po) ? po : 0.0);
                     break;
                 }
 
