@@ -36,7 +36,7 @@ namespace HydroComplete.Civil3D.Commands
 
             Dictionary<string, NetworkDiagramWriter.PipeDiagramStats>? stats = null;
             if (PromptYesNo(ed, "\nColor pipes by routed capacity (requires catchments)? [Yes/No]", defaultYes: true))
-                stats = TryBuildCapacityStats(doc, civilDoc, pipes, structureNames);
+                stats = TryBuildCapacityStats(doc, civilDoc, pipes, structureNames, ed);
 
             string drawingName = Path.GetFileNameWithoutExtension(doc.Name) ?? "drawing";
             string path = NetworkDiagramWriter.Write(drawingName, networkName, pipes, structureNames, stats);
@@ -52,14 +52,15 @@ namespace HydroComplete.Civil3D.Commands
             Document doc,
             CivilDocument civilDoc,
             IReadOnlyList<ReadPipe> pipes,
-            Dictionary<string, string> structureNames)
+            Dictionary<string, string> structureNames,
+            Editor ed)
         {
             var catchments = CatchmentReader.ReadAll(doc.Database, civilDoc, pipes);
             if (catchments.Count == 0)
                 return null;
 
             DesignFlowResolver.ApplyDefaultTcFallback(catchments, pipes);
-            IdfCurve idf = ResolveDefaultIdf(doc.Database);
+            IdfCurve idf = ResolveDefaultIdf(doc.Database, ed);
             var links = NetworkPipeLinkMapper.FromReadPipes(pipes);
             CatchmentFlowRouterResult route = CatchmentFlowRouter.Route(catchments, links, idf, structureNames);
             Dictionary<string, double> qByPipe = route.PipeFlowCfs;
@@ -84,7 +85,7 @@ namespace HydroComplete.Civil3D.Commands
             return stats.Count > 0 ? stats : null;
         }
 
-        private static IdfCurve ResolveDefaultIdf(Autodesk.AutoCAD.DatabaseServices.Database db)
+        private static IdfCurve ResolveDefaultIdf(Autodesk.AutoCAD.DatabaseServices.Database db, Editor? ed = null)
         {
             DrawingGeolocation.Result? geo = DrawingGeolocation.TryRead(db);
             if (geo != null)
@@ -98,6 +99,9 @@ namespace HydroComplete.Civil3D.Commands
                 }
             }
 
+            ed?.WriteMessage(
+                "\n  Note: no drawing geolocation — pipe capacity coloring uses Charlotte, NC IDF (Atlas 14 Vol 2)." +
+                " Set drawing coordinates or run HC_ATLAS14 to apply the correct regional IDF.\n");
             return Atlas14Presets.Nearest(35.23, -80.84).ToCurve();
         }
 

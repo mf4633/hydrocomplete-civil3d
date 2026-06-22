@@ -32,15 +32,19 @@ if (-not (Test-Path $Drawing)) {
 }
 
 New-Item -ItemType Directory -Force -Path $work | Out-Null
-$localDwg = Join-Path $work 'parity-seed.dwg'
-Copy-Item $Drawing $localDwg -Force
+$openDwg = $Drawing
+if ($Drawing.StartsWith('C:\Program Files\', [StringComparison]::OrdinalIgnoreCase)) {
+    $localDwg = Join-Path $work 'parity-seed.dwg'
+    Copy-Item $Drawing $localDwg -Force
+    $openDwg = $localDwg
+}
 
 if (-not $KeepExistingAcad) {
     Get-Process acad -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 3
 }
 
-Start-Process -FilePath $AcadExe -ArgumentList '/product', 'C3D', '/nologo', '/i', $localDwg -WindowStyle Normal | Out-Null
+Start-Process -FilePath $AcadExe -ArgumentList '/product', 'C3D', '/nologo', '/i', "`"$openDwg`"" -WindowStyle Normal | Out-Null
 Write-Host '[1/5] Launched Civil 3D'
 
 $acad = $null
@@ -52,7 +56,7 @@ for ($i = 0; $i -lt 60; $i++) {
     } catch {}
 }
 if (-not $acad) { throw 'COM unavailable after 180s' }
-Write-Host "[2/5] COM v$($acad.Version) — $($acad.ActiveDocument.Name)"
+Write-Host "[2/5] COM v$($acad.Version) - $($acad.ActiveDocument.Name)"
 Start-Sleep -Seconds $StartupWaitSec
 
 function Send-Cmd([string]$label, [string]$cmd, [int]$waitSec = 8) {
@@ -70,11 +74,14 @@ function Send-Cmd([string]$label, [string]$cmd, [int]$waitSec = 8) {
 }
 
 if (-not (Test-Path $dll)) {
-    Write-Host "WARN: Bundle DLL missing — run install.ps1 first. Attempting NETLOAD from build output."
+    Write-Host 'WARN: Bundle DLL missing - run install.ps1 first. Attempting NETLOAD from build output.'
     $dll = Join-Path $repoRoot 'src\HydroComplete.Civil3D\bin\Release\net8.0-windows\HydroComplete.Civil3D.dll'
 }
+Send-Cmd 'SECURELOAD' "_.SECURELOAD`n0`n" 3
 Send-Cmd 'NETLOAD' "NETLOAD`n`"$dll`"`n" 12
-Send-Cmd 'HC_PIPES' "HC_PIPES`n" 10
+Send-Cmd 'HC_ABOUT' "HC_ABOUT`n" 8
+Send-Cmd 'HC_NETWORK' "HC_NETWORK`n" 10
+Send-Cmd 'HC_PIPES' "HC_PIPES`n" 15
 Send-Cmd 'HC_REPORT' "HC_REPORT`n`n`nNo`n" 22
 Send-Cmd 'HC_NETWORK_DIAGRAM' "HC_NETWORK_DIAGRAM`nNo`n" 15
 Send-Cmd 'HC_SOIL' "HC_SOIL`nName`nCecil`nBioretention`n" 15
@@ -112,7 +119,7 @@ if ($diagramHtml) {
 Write-Host '[5/5] Checks'
 Write-Host "  KaTeX report: $(if ($katexOk) { 'PASS' } else { 'FAIL' })"
 Write-Host "  Network SVG:  $(if ($svgOk) { 'PASS' } else { 'FAIL' })"
-Write-Host "  HC_SOIL:      dispatched (Cecil name lookup — live SSURGO needs drawing geo)"
+Write-Host '  HC_SOIL:      dispatched (Cecil name lookup; live SSURGO needs drawing geo)'
 
 if ($reportHtml -and $diagramHtml -and $katexOk -and $svgOk) {
     Write-Host 'SMOKE OK: v1.4.0 parity outputs verified.'

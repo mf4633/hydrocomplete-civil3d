@@ -238,7 +238,7 @@ namespace HydroComplete.Engine
                 WriteCache(entry);
                 return entry.ToResolution(SsugroSource.Live);
             }
-            catch
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 if (cached != null)
                     return cached.ToResolution(SsugroSource.Cache);
@@ -314,6 +314,7 @@ namespace HydroComplete.Engine
                 });
             }
 
+            results.Sort((a, b) => (b.DominantPct ?? 0).CompareTo(a.DominantPct ?? 0));
             return results;
         }
 

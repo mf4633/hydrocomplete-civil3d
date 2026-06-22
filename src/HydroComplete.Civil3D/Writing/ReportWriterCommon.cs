@@ -135,14 +135,28 @@ namespace HydroComplete.Civil3D.Writing
 
         private static string FormatResultLatex(CalcStep step)
         {
-            string units = string.IsNullOrWhiteSpace(step.Units) ? "" : $"\\ \\text{{{step.Units}}}";
+            string units = string.IsNullOrWhiteSpace(step.Units)
+                ? ""
+                : $"\\ \\text{{{EscapeLatexText(step.Units)}}}";
             return $"{EscapeLatexIdentifier(step.Label)} = {step.Value.ToString("0.####", CultureInfo.InvariantCulture)}{units}";
         }
 
         private static string EscapeLatexIdentifier(string label)
         {
             if (string.IsNullOrWhiteSpace(label)) return "x";
-            return label.Replace("_", @"\_");
+            return label
+                .Replace(@"\", @"\\")
+                .Replace("{", @"\{")
+                .Replace("}", @"\}")
+                .Replace("_", @"\_");
+        }
+
+        private static string EscapeLatexText(string s)
+        {
+            return s
+                .Replace(@"\", @"\\")
+                .Replace("{", @"\{")
+                .Replace("}", @"\}");
         }
 
         private static void AppendReportCss(StringBuilder sb)
