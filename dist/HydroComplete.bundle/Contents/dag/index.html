@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>HydroComplete — Model Builder</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: #0d1117; font-family: 'Segoe UI', Arial, sans-serif; color: #c9d1d9; }
+
+/* ── Layout ──────────────────────────────────────────────────────── */
+#app { display: flex; flex-direction: column; height: 100%; }
+
+/* ── Toolbar ─────────────────────────────────────────────────────── */
+#toolbar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 10px; background: #161b22;
+  border-bottom: 1px solid #30363d; flex-shrink: 0;
+}
+#toolbar h1 { font-size: 13px; color: #c9d1d9; font-weight: 700; margin-right: 6px; white-space: nowrap; }
+.tbtn {
+  padding: 3px 10px; font-size: 11px; font-weight: 600; border-radius: 4px;
+  border: 1px solid #30363d; cursor: pointer; color: #c9d1d9;
+  background: #21262d; white-space: nowrap;
+}
+.tbtn:hover { background: #30363d; }
+.tbtn.primary { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+.tbtn.primary:hover { background: #388bfd; }
+.tbtn.run { background: #238636; border-color: #238636; color: #fff; font-size: 12px; }
+.tbtn.run:hover { background: #2ea043; }
+.tbtn.danger { background: #da3633; border-color: #da3633; color: #fff; }
+.sep { width: 1px; height: 20px; background: #30363d; }
+#status { font-size: 10px; color: #8b949e; margin-left: auto; white-space: nowrap; }
+
+/* ── Main ────────────────────────────────────────────────────────── */
+#main { display: flex; flex: 1; overflow: hidden; }
+
+/* ── Palette ─────────────────────────────────────────────────────── */
+#palette {
+  width: 185px; flex-shrink: 0;
+  background: #161b22; border-right: 1px solid #30363d;
+  overflow-y: auto; padding: 6px 0;
+  user-select: none;
+}
+.cat-hdr {
+  padding: 6px 8px 3px; font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em; color: #8b949e;
+}
+.pnode {
+  margin: 2px 6px; padding: 6px 8px; border-radius: 5px; cursor: grab;
+  border-left: 3px solid transparent; background: #21262d; font-size: 11px;
+  font-weight: 600; transition: background .1s;
+}
+.pnode:hover { background: #30363d; }
+.pnode .desc { font-size: 9px; font-weight: 400; color: #8b949e; margin-top: 1px; }
+
+/* ── Canvas wrap ─────────────────────────────────────────────────── */
+#canvas-wrap { flex: 1; position: relative; overflow: hidden; min-width: 0; }
+#dag-canvas { display: block; width: 100%; height: 100%; cursor: default; outline: none; }
+
+/* ── Config panel ────────────────────────────────────────────────── */
+#config-panel {
+  width: 220px; flex-shrink: 0; display: none;
+  background: #161b22; border-left: 1px solid #30363d;
+  overflow-y: auto; padding: 0;
+}
+#config-panel.open { display: flex; flex-direction: column; }
+#config-header {
+  padding: 8px 10px 6px; border-bottom: 1px solid #30363d;
+  display: flex; align-items: center; justify-content: space-between;
+}
+#config-title { font-size: 12px; font-weight: 700; }
+#config-close { cursor: pointer; color: #8b949e; font-size: 16px; line-height: 1; }
+#config-close:hover { color: #c9d1d9; }
+#config-body { padding: 8px 10px; flex: 1; overflow-y: auto; }
+.field-group { margin-bottom: 10px; }
+.field-group label { display: block; font-size: 10px; color: #8b949e; margin-bottom: 2px; }
+.field-group input, .field-group select {
+  width: 100%; padding: 4px 6px; background: #0d1117;
+  border: 1px solid #30363d; border-radius: 4px;
+  color: #c9d1d9; font-size: 11px;
+}
+.field-group input:focus, .field-group select:focus {
+  outline: none; border-color: #1f6feb;
+}
+.field-unit { font-size: 9px; color: #8b949e; margin-top: 1px; }
+#config-run { margin: 8px 0; width: 100%; }
+
+/* ── Results strip ───────────────────────────────────────────────── */
+#results-bar {
+  display: none; padding: 4px 10px;
+  background: #0a3622; border-top: 1px solid #238636;
+  font-size: 10px; color: #56d364; flex-shrink: 0;
+  white-space: nowrap; overflow-x: auto;
+}
+#results-bar.open { display: block; }
+
+/* ── Zoom controls ───────────────────────────────────────────────── */
+#zoom-ctrl {
+  position: absolute; bottom: 10px; right: 10px;
+  display: flex; gap: 3px;
+}
+.zcbtn {
+  width: 26px; height: 26px; font-size: 15px; font-weight: 700;
+  background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
+  border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.zcbtn:hover { background: #30363d; }
+
+/* ── Help hint ───────────────────────────────────────────────────── */
+#help {
+  position: absolute; bottom: 10px; left: 6px;
+  font-size: 9px; color: #30363d; pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Toolbar -->
+  <div id="toolbar">
+    <h1>HC Model Builder</h1>
+    <div class="sep"></div>
+    <button class="tbtn" id="btn-new">New</button>
+    <button class="tbtn" id="btn-save">Save</button>
+    <button class="tbtn" id="btn-load">Load</button>
+    <div class="sep"></div>
+    <button class="tbtn run" id="btn-run">▶ Run</button>
+    <button class="tbtn danger" id="btn-del">Delete</button>
+    <div class="sep"></div>
+    <span id="status">Ready</span>
+  </div>
+
+  <!-- Main row -->
+  <div id="main">
+
+    <!-- Palette -->
+    <div id="palette"></div>
+
+    <!-- Canvas -->
+    <div id="canvas-wrap">
+      <canvas id="dag-canvas" tabindex="0"></canvas>
+      <div id="zoom-ctrl">
+        <button class="zcbtn" id="btn-zi">+</button>
+        <button class="zcbtn" id="btn-zr">⌂</button>
+        <button class="zcbtn" id="btn-zo">−</button>
+      </div>
+      <div id="help">Drag from palette · Connect ports · Scroll=zoom · Mid-drag=pan · Del=remove · Click=inspect</div>
+    </div>
+
+    <!-- Config / inspector panel -->
+    <div id="config-panel">
+      <div id="config-header">
+        <span id="config-title">Inspector</span>
+        <span id="config-close">✕</span>
+      </div>
+      <div id="config-body">
+        <p style="font-size:10px;color:#8b949e">Select a node to configure.</p>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+  <!-- Results strip (shown after run) -->
+  <div id="results-bar"></div>
+
+</div><!-- /app -->
+
+<script type="module">
+import init, { DagEditor } from './pkg/hydrocomplete_dag.js';
+
+await init();
+
+// ── Canvas setup ──────────────────────────────────────────────────────────
+const canvas  = document.getElementById('dag-canvas');
+const wrap    = document.getElementById('canvas-wrap');
+const status  = document.getElementById('status');
+const cfgPanel = document.getElementById('config-panel');
+const cfgBody  = document.getElementById('config-body');
+const cfgTitle = document.getElementById('config-title');
+const resultsBar = document.getElementById('results-bar');
+
+function resizeCanvas() {
+  canvas.width  = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  editor.resize();
+}
+new ResizeObserver(resizeCanvas).observe(wrap);
+resizeCanvas();
+
+const editor = new DagEditor('dag-canvas');
+
+// ── Palette metadata from WASM ────────────────────────────────────────────
+const PALETTE = JSON.parse(DagEditor.palette_json());
+const NODE_SCHEMA = Object.fromEntries(PALETTE.map(n => [n.kind, n]));
+
+const sidebar = document.getElementById('palette');
+let currentCat = null;
+for (const item of PALETTE) {
+  if (item.category !== currentCat) {
+    currentCat = item.category;
+    const h = document.createElement('div');
+    h.className = 'cat-hdr';
+    h.textContent = item.category;
+    sidebar.appendChild(h);
+  }
+  const el = document.createElement('div');
+  el.className = 'pnode';
+  el.style.borderLeftColor = item.header_fill;
+  el.dataset.kind = item.kind;
+  el.innerHTML = `<div>${item.label}</div><div class="desc">${item.description}</div>`;
+  sidebar.appendChild(el);
+}
+
+// ── Config panel ──────────────────────────────────────────────────────────
+let configNodeId = null;
+
+function showConfig(nodeJson) {
+  if (!nodeJson) { hideConfig(); return; }
+  const node = JSON.parse(nodeJson);
+  configNodeId = node.id['0'];
+  const schema = NODE_SCHEMA[node.kind];
+  if (!schema) { hideConfig(); return; }
+
+  cfgTitle.textContent = schema.label;
+  cfgBody.innerHTML = '';
+
+  if (!schema.config_fields || schema.config_fields.length === 0) {
+    cfgBody.innerHTML = '<p style="font-size:10px;color:#8b949e">No parameters.</p>';
+  } else {
+    for (const f of schema.config_fields) {
+      const group = document.createElement('div');
+      group.className = 'field-group';
+      const label = document.createElement('label');
+      label.textContent = f.label;
+      group.appendChild(label);
+
+      let input;
+      if (f.field_type === 'select') {
+        input = document.createElement('select');
+        for (const opt of f.options) {
+          const o = document.createElement('option');
+          o.value = opt.value; o.textContent = opt.label;
+          input.appendChild(o);
+        }
+        const cur = (node.config && node.config[f.key]) ?? f.default_str;
+        input.value = cur;
+      } else {
+        input = document.createElement('input');
+        input.type = f.field_type === 'number' ? 'number' : 'text';
+        input.step = 'any';
+        const cur = (node.config && node.config[f.key] !== undefined) ? node.config[f.key] : f.default_num;
+        input.value = cur;
+      }
+
+      input.dataset.key = f.key;
+      input.dataset.type = f.field_type;
+      input.addEventListener('change', () => flushConfig());
+      group.appendChild(input);
+
+      if (f.unit) {
+        const u = document.createElement('div');
+        u.className = 'field-unit'; u.textContent = f.unit;
+        group.appendChild(u);
+      }
+      cfgBody.appendChild(group);
+    }
+  }
+
+  // Show output values if present
+  if (node.outputs && Object.keys(node.outputs).length > 0) {
+    const sep = document.createElement('hr');
+    sep.style.cssText = 'border:none;border-top:1px solid #30363d;margin:8px 0';
+    cfgBody.appendChild(sep);
+    const h = document.createElement('div');
+    h.style.cssText = 'font-size:10px;font-weight:700;color:#56d364;margin-bottom:6px';
+    h.textContent = 'Results';
+    cfgBody.appendChild(h);
+    for (const [k, v] of Object.entries(node.outputs)) {
+      if (k === 'steps') continue;
+      const row = document.createElement('div');
+      row.style.cssText = 'font-size:10px;display:flex;justify-content:space-between;margin-bottom:3px';
+      const portName = getPortName(schema, k);
+      row.innerHTML = `<span style="color:#8b949e">${portName}</span><span style="color:#c9d1d9;font-weight:600">${fmtVal(v)}</span>`;
+      cfgBody.appendChild(row);
+    }
+    if (node.outputs.steps) {
+      const s = document.createElement('div');
+      s.style.cssText = 'font-size:9px;color:#484f58;margin-top:6px;word-break:break-all';
+      s.textContent = node.outputs.steps;
+      cfgBody.appendChild(s);
+    }
+  }
+
+  cfgPanel.classList.add('open');
+}
+
+function getPortName(schema, key) {
+  const idx = parseInt(key);
+  if (!isNaN(idx) && schema.n_outputs > idx) {
+    // Use port label from WASM palette_json — we don't have port names here
+    // Fallback to "Output N"
+    return `Output ${idx + 1}`;
+  }
+  return key;
+}
+
+function fmtVal(v) {
+  if (typeof v === 'number') return v.toFixed(Math.abs(v) >= 100 ? 1 : 3);
+  if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+  if (typeof v === 'object') return JSON.stringify(v).substring(0, 30);
+  return String(v).substring(0, 30);
+}
+
+function hideConfig() {
+  cfgPanel.classList.remove('open');
+  configNodeId = null;
+}
+
+function flushConfig() {
+  if (configNodeId === null) return;
+  const config = {};
+  cfgBody.querySelectorAll('[data-key]').forEach(el => {
+    const key = el.dataset.key;
+    const type = el.dataset.type;
+    config[key] = type === 'number' ? parseFloat(el.value) : el.value;
+  });
+  editor.set_node_config(configNodeId, JSON.stringify(config));
+}
+
+document.getElementById('config-close').addEventListener('click', hideConfig);
+
+// ── Palette drag ──────────────────────────────────────────────────────────
+let palDragging = false, palKind = null;
+
+sidebar.addEventListener('mousedown', e => {
+  const nd = e.target.closest('.pnode');
+  if (!nd) return;
+  palDragging = true; palKind = nd.dataset.kind;
+  editor.palette_drag_start(palKind);
+  const r = canvas.getBoundingClientRect();
+  editor.palette_drag_move(e.clientX - r.left, e.clientY - r.top);
+});
+
+// ── Canvas events ─────────────────────────────────────────────────────────
+canvas.addEventListener('mousedown', e => {
+  if (palDragging) return;
+  editor.mouse_down(e.offsetX, e.offsetY, e.button);
+  e.preventDefault();
+
+  // Show config panel for selected node after click
+  setTimeout(() => {
+    const j = editor.get_selected_node_json();
+    if (j) showConfig(j); else hideConfig();
+  }, 0);
+});
+
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+window.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  const sx = e.clientX - r.left, sy = e.clientY - r.top;
+  if (palDragging) { editor.palette_drag_move(sx, sy); }
+  else             { editor.mouse_move(sx, sy); }
+});
+
+window.addEventListener('mouseup', e => {
+  const r  = canvas.getBoundingClientRect();
+  const sx = e.clientX - r.left, sy = e.clientY - r.top;
+  const onCanvas = sx >= 0 && sy >= 0 && sx <= canvas.width && sy <= canvas.height;
+  if (palDragging) {
+    if (onCanvas) {
+      editor.palette_drop(sx, sy);
+      setStatus(`Added ${NODE_SCHEMA[palKind]?.label ?? palKind}`);
+      setTimeout(() => {
+        const j = editor.get_selected_node_json();
+        if (j) showConfig(j);
+      }, 0);
+    } else {
+      editor.palette_cancel();
+    }
+    palDragging = false; palKind = null;
+  } else {
+    editor.mouse_up(sx, sy);
+  }
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  editor.wheel(e.deltaY, e.offsetX, e.offsetY);
+}, { passive: false });
+
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (editor.key_down(e.key)) {
+      hideConfig();
+      e.preventDefault();
+      setStatus('Deleted');
+    }
+  }
+  if (e.key === 'Escape') hideConfig();
+});
+
+// ── Toolbar ───────────────────────────────────────────────────────────────
+document.getElementById('btn-new').addEventListener('click', () => {
+  if (confirm('Clear diagram?')) { editor.clear(); hideConfig(); setStatus('Cleared'); }
+});
+
+document.getElementById('btn-save').addEventListener('click', () => {
+  const blob = new Blob([editor.to_json()], { type: 'application/json' });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob), download: 'hc-model.json',
+  });
+  a.click(); URL.revokeObjectURL(a.href);
+  setStatus('Saved');
+});
+
+document.getElementById('btn-load').addEventListener('click', () => {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.json';
+  inp.onchange = async e => {
+    const text = await e.target.files[0].text();
+    if (editor.from_json(text)) { hideConfig(); setStatus('Loaded'); }
+    else setStatus('Load failed — invalid JSON');
+  };
+  inp.click();
+});
+
+document.getElementById('btn-del').addEventListener('click', () => {
+  if (editor.key_down('Delete')) { hideConfig(); setStatus('Deleted'); }
+});
+
+document.getElementById('btn-run').addEventListener('click', () => {
+  flushConfig(); // make sure latest config is saved
+  const dag   = JSON.parse(editor.to_json());
+  const order = JSON.parse(editor.execution_order_json());
+  const msg   = { type: 'HC_RUN', dag, order };
+  if (window.chrome?.webview) {
+    window.chrome.webview.postMessage(JSON.stringify(msg));
+  } else if (window.parent !== window) {
+    window.parent.postMessage(msg, '*');
+  } else {
+    // No host — show a "not connected" message
+    setStatus('No Civil 3D host detected — run HC_DAG inside Civil 3D');
+    return;
+  }
+  setStatus('Running model…');
+});
+
+document.getElementById('btn-zi').addEventListener('click', () => editor.zoom_in());
+document.getElementById('btn-zo').addEventListener('click', () => editor.zoom_out());
+document.getElementById('btn-zr').addEventListener('click', () => editor.zoom_reset());
+
+// ── Receive results from C# ───────────────────────────────────────────────
+window.addEventListener('message', e => {
+  const msg = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+  if (!msg || msg.type !== 'HC_RESULT') return;
+  const resultJson = typeof msg.dag === 'string' ? msg.dag : JSON.stringify(msg.dag);
+  if (editor.apply_results_json(resultJson)) {
+    setStatus('Results applied');
+    // Update config panel if a node is selected
+    const j = editor.get_selected_node_json();
+    if (j) showConfig(j);
+    // Show summary strip
+    showResultsBar(JSON.parse(resultJson));
+  }
+});
+
+function showResultsBar(dag) {
+  const summaries = (dag.nodes || [])
+    .filter(n => n.outputs && n.outputs['0'] !== undefined)
+    .map(n => {
+      const schema = NODE_SCHEMA[n.kind];
+      const label  = schema ? schema.label : n.kind;
+      const val    = fmtVal(n.outputs['0']);
+      const portLbl = schema && schema.n_outputs > 0 ? 'out' : '';
+      return `${label}: ${val}`;
+    });
+  if (summaries.length > 0) {
+    resultsBar.textContent = '▶ ' + summaries.join('  |  ');
+    resultsBar.classList.add('open');
+  }
+}
+
+function setStatus(s) { status.textContent = s; }
+</script>
+</body>
+</html>
