@@ -203,6 +203,7 @@ html, body { height: 100%; background: #0d1117; font-family: 'Segoe UI', Arial, 
     <button class="tbtn" id="btn-save">Save</button>
     <button class="tbtn" id="btn-load">Load</button>
     <button class="tbtn" id="btn-report" title="Export results as HTML report">Report</button>
+    <button class="tbtn" id="btn-svg"    title="Export diagram as SVG vector">SVG</button>
     <div class="sep"></div>
     <button class="tbtn run" id="btn-run">▶ Run</button>
     <button class="tbtn danger" id="btn-del">Delete</button>
@@ -1137,6 +1138,61 @@ function runStandaloneEngine(dagJson, orderJson) {
           outs['steps'] = `Rv=${Rv.toFixed(3)}, WQV=${WQV.toFixed(0)} cf`;
           break;
         }
+        case 'gvf_profile': {
+          // Standard Step Method — trapezoidal channel, M1/S1 profiles
+          const Q   = input(nodeId, 0, cfg(node,'design_q_cfs',5));
+          const TW  = input(nodeId, 1, cfg(node,'tailwater_ft',0));
+          const b   = cfg(node,'bottom_width_ft',4);
+          const z   = cfg(node,'side_slope',3);
+          const S0  = cfg(node,'slope',0.01);
+          const n   = cfg(node,'manning_n',0.035);
+          const L   = cfg(node,'length_ft',500);
+          // Critical depth by bisection
+          let ylo=0.01, yhi=20;
+          for (let i=0;i<40;i++){
+            const ym=(ylo+yhi)/2, A=(b+z*ym)*ym, T=b+2*z*ym;
+            if ((Q*Q*T)/(9.81*A*A*A) > 1) ylo=ym; else yhi=ym;
+          }
+          const yc=(ylo+yhi)/2;
+          // Normal depth
+          ylo=0.01; yhi=20;
+          for (let i=0;i<40;i++){
+            const ym=(ylo+yhi)/2, A=(b+z*ym)*ym, P=b+2*ym*Math.sqrt(1+z*z), R=A/P;
+            if ((1.486/n)*A*Math.pow(R,2/3)*Math.pow(S0,0.5)<Q) ylo=ym; else yhi=ym;
+          }
+          const yn=(ylo+yhi)/2;
+          // Boundary condition
+          const y0 = TW > 0 ? TW : Math.max(yc, yn);
+          // Step upstream 10 sections
+          let y=y0; const dL=L/10;
+          for (let i=0;i<10;i++){
+            const A=(b+z*y)*y, P=b+2*y*Math.sqrt(1+z*z), R=A/P, V=Q/A;
+            const Sf=Math.pow(n*Q/(1.486*A*Math.pow(R,2/3)),2);
+            const dy=dL*(S0-Sf)/(1-V*V/(9.81*(A/(b+2*z*y))));
+            y=Math.max(yc*0.5, y+dy);
+          }
+          outs['0'] = +y.toFixed(3);
+          outs['yn_ft'] = +yn.toFixed(3);
+          outs['yc_ft'] = +yc.toFixed(3);
+          outs['steps'] = `yn=${yn.toFixed(3)} ft, yc=${yc.toFixed(3)} ft, y_upstream=${y.toFixed(3)} ft`;
+          break;
+        }
+        case 'pond_chain': {
+          // Series of identical ponds — route through sequentially (simplified)
+          const area  = cfg(node,'area_acres',5);
+          const CN    = cfg(node,'curve_number',80);
+          const P     = cfg(node,'rainfall_in',4.2);
+          const tc    = cfg(node,'tc_min',20)/60;
+          const S = 1000/CN-10, Ia = 0.2*S;
+          const Q = P>Ia ? Math.pow(P-Ia,2)/(P-Ia+S) : 0;
+          const qp = (484*area*Q)/(2.67*tc+tc);
+          const nPonds = Math.max(1, Math.round(cfg(node,'n_ponds',2)));
+          // Each pond attenuates ~30%
+          const qOut = qp * Math.pow(0.70, nPonds);
+          outs['0'] = +qOut.toFixed(2);
+          outs['steps'] = `${nPonds} ponds in series, Qp_in=${qp.toFixed(2)} → Qp_out=${qOut.toFixed(2)} cfs`;
+          break;
+        }
         case 'outfall':
           outs['received'] = input(nodeId, 0, 0);
           break;
@@ -1262,6 +1318,95 @@ const shortcutsOverlay = document.getElementById('shortcuts-overlay');
 shortcutsOverlay.addEventListener('click', e => {
   if (e.target === shortcutsOverlay) shortcutsOverlay.classList.remove('open');
 });
+
+// ── SVG export ────────────────────────────────────────────────────────────────
+document.getElementById('btn-svg').addEventListener('click', exportSvg);
+
+function exportSvg() {
+  const dag = JSON.parse(editor.to_json());
+  if (!dag.nodes?.length) { setStatus('Nothing to export'); return; }
+
+  const NW = 180, NH = 84, HDRH = 26, PAD = 50;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const n of dag.nodes) {
+    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y);
+    maxX = Math.max(maxX, n.x + NW); maxY = Math.max(maxY, n.y + NH);
+  }
+  const W = maxX - minX + PAD*2, H = maxY - minY + PAD*2;
+  const ox = -minX + PAD, oy = -minY + PAD;
+
+  const e = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  const parts = [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`,
+    `<style>text{font-family:'Segoe UI',Arial,sans-serif;font-size:11px}</style>`,
+    `<defs><marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">`,
+    `<polygon points="0 0,8 3,0 6" fill="#455a64"/></marker></defs>`,
+    `<rect width="${W}" height="${H}" fill="#f8f9fa"/>`,
+  ];
+
+  // Edges first (behind nodes)
+  for (const edge of dag.edges) {
+    const fn = dag.nodes.find(n => n.id[0] === edge.from_node[0]);
+    const tn = dag.nodes.find(n => n.id[0] === edge.to_node[0]);
+    if (!fn || !tn) continue;
+    const x1 = fn.x + NW + ox, y1 = fn.y + NH/2 + oy;
+    const x2 = tn.x + ox,      y2 = tn.y + NH/2 + oy;
+    const dx = Math.abs(x2-x1)*0.5;
+    parts.push(`<path d="M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}" fill="none" stroke="#455a64" stroke-width="1.5" marker-end="url(#arr)"/>`);
+  }
+
+  // Nodes
+  for (const node of dag.nodes) {
+    const s  = NODE_SCHEMA[node.kind] ?? {};
+    const nx = node.x + ox, ny = node.y + oy;
+    const hf = s.header_fill ?? '#546e7a';
+    const bf = s.body_fill   ?? '#eceff1';
+    const bd = s.border      ?? '#455a64';
+    const lbl = e(node.label ? `${s.label ?? node.kind} — ${node.label}` : (s.label ?? node.kind));
+    const desc = e(s.description ?? '');
+
+    // Body
+    parts.push(`<rect x="${nx}" y="${ny}" width="${NW}" height="${NH}" rx="8" fill="${bf}" stroke="${bd}" stroke-width="1.5"/>`);
+    // Header bg
+    parts.push(`<clipPath id="hc${node.id[0]}"><rect x="${nx}" y="${ny}" width="${NW}" height="${HDRH}" rx="8"/></clipPath>`);
+    parts.push(`<rect x="${nx}" y="${ny}" width="${NW}" height="${HDRH}" fill="${hf}" clip-path="url(#hc${node.id[0]})"/>`);
+    parts.push(`<rect x="${nx}" y="${ny+HDRH-4}" width="${NW}" height="4" fill="${hf}"/>`);
+    // Header text
+    parts.push(`<text x="${nx+NW/2}" y="${ny+HDRH/2+1}" text-anchor="middle" font-weight="600" font-size="11" fill="white">${lbl}</text>`);
+
+    // Result or description in body
+    const v0 = node.outputs?.['0'];
+    if (v0 !== undefined && v0 !== null) {
+      const val = typeof v0 === 'number' ? v0.toFixed(3) : String(v0).substring(0,18);
+      const portLbl = e(s.n_outputs > 0 ? 'Result' : '→');
+      parts.push(`<text x="${nx+NW/2}" y="${ny+HDRH+22}" text-anchor="middle" font-size="10" font-weight="600" fill="#1b5e20">${portLbl}: ${e(val)}</text>`);
+    } else {
+      parts.push(`<text x="${nx+NW/2}" y="${ny+HDRH+22}" text-anchor="middle" font-size="9" fill="#78909c">${desc}</text>`);
+    }
+
+    // Input/output port dots
+    const nIn  = s.n_inputs  ?? 0;
+    const nOut = s.n_outputs ?? 0;
+    for (let i = 0; i < nIn; i++) {
+      const py = ny + HDRH + (NH-HDRH)*(i+1)/(nIn+1);
+      parts.push(`<circle cx="${nx}" cy="${py}" r="5" fill="white" stroke="${bd}" stroke-width="1.5"/>`);
+    }
+    for (let i = 0; i < nOut; i++) {
+      const py = ny + HDRH + (NH-HDRH)*(i+1)/(nOut+1);
+      parts.push(`<circle cx="${nx+NW}" cy="${py}" r="5" fill="white" stroke="${bd}" stroke-width="1.5"/>`);
+    }
+  }
+
+  parts.push('</svg>');
+  const blob = new Blob([parts.join('\n')], { type: 'image/svg+xml' });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: `hc-dag-${new Date().toISOString().slice(0,10)}.svg`,
+  });
+  a.click(); URL.revokeObjectURL(a.href);
+  setStatus('SVG exported');
+}
 
 // ── Persistent DAG (localStorage) ────────────────────────────────────────────
 const LS_KEY = 'hc_dag_autosave';

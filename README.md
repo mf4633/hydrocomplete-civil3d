@@ -5,7 +5,7 @@ drawing** — read pipe networks and catchments, compute on public-domain method
 and show every formula. This is the desktop companion behind
 [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d).
 
-Status: **v1.4.0** — KaTeX HTML reports, live SSURGO (`HC_SOIL`), network diagram export (`HC_NETWORK_DIAGRAM`), online Pro activation. See [User validation](#user-validation) below.
+Status: **v1.7.0** — DAG editor panel (`HC_DAG`), KaTeX HTML reports, live SSURGO (`HC_SOIL`), network diagram export (`HC_NETWORK_DIAGRAM`), Free/Pro licensing (`HC_ACTIVATE` / `HC_LICENSE`). **Commercial (paid) add-in** — see [`docs/COMMERCIAL.md`](docs/COMMERCIAL.md). User validation below.
 
 **Autodesk App Store:** Listing copy, submission checklist, and screenshot shot list live in [`dist/app-store/`](dist/app-store/) (`LISTING.md`, `SUBMISSION_CHECKLIST.md`, `SCREENSHOTS.md`).
 

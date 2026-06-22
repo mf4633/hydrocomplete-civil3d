@@ -214,6 +214,86 @@ namespace HydroComplete.Civil3D.Commands
                 ["to_port"]   = JsonValue.Create(toPort),
             };
 
+        // ── Save / Load ───────────────────────────────────────────────────────
+
+        /// Save the current DAG to a .hcdag file alongside the drawing.
+        [CommandMethod("HC_DAG_SAVE")]
+        public void SaveDag()
+        {
+            Document doc = AcadApp.DocumentManager.MdiActiveDocument;
+            Editor ed = doc.Editor;
+
+            if (_palette == null || !_palette.Visible)
+            {
+                ed.WriteMessage("\nHC_DAG must be open to save. Run HC_DAG first.\n");
+                return;
+            }
+
+            try
+            {
+                string dagJson = _palette.GetDagJsonAsync().GetAwaiter().GetResult();
+                if (string.IsNullOrWhiteSpace(dagJson) || dagJson == "{}")
+                {
+                    ed.WriteMessage("\nDAG is empty — nothing to save.\n");
+                    return;
+                }
+
+                string dagPath = DagFilePath(doc.Name);
+                System.IO.File.WriteAllText(dagPath, dagJson, System.Text.Encoding.UTF8);
+                ed.WriteMessage($"\nDAG saved: {dagPath}\n");
+            }
+            catch (System.Exception ex)
+            {
+                ed.WriteMessage($"\nHC_DAG_SAVE error: {ex.Message}\n");
+            }
+        }
+
+        /// Load a .hcdag file alongside the drawing into the DAG editor.
+        [CommandMethod("HC_DAG_LOAD")]
+        public void LoadDag()
+        {
+            Document doc = AcadApp.DocumentManager.MdiActiveDocument;
+            Editor ed = doc.Editor;
+
+            string dagPath = DagFilePath(doc.Name);
+            if (!System.IO.File.Exists(dagPath))
+            {
+                ed.WriteMessage($"\nNo saved DAG found for this drawing.\n  Expected: {dagPath}\n  Run HC_DAG to create one, then HC_DAG_SAVE.\n");
+                return;
+            }
+
+            try
+            {
+                string dagJson = System.IO.File.ReadAllText(dagPath, System.Text.Encoding.UTF8);
+
+                // Open the panel if not already open
+                if (_palette == null || !_palette.Visible)
+                {
+                    _palette = new DagPaletteSet();
+                    _palette.OnRunRequested += async (dj, oj) => await RunDagAsync(doc, dj, oj);
+                    _palette.Visible = true;
+                }
+
+                _ = _palette.SeedDagAsync(dagJson);
+                ed.WriteMessage($"\nDAG loaded from {dagPath}\n");
+            }
+            catch (System.Exception ex)
+            {
+                ed.WriteMessage($"\nHC_DAG_LOAD error: {ex.Message}\n");
+            }
+        }
+
+        private static string DagFilePath(string drawingPath)
+        {
+            if (string.IsNullOrWhiteSpace(drawingPath))
+            {
+                return System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "HydroComplete", "untitled.hcdag");
+            }
+            return System.IO.Path.ChangeExtension(drawingPath, ".hcdag");
+        }
+
         // ── Run handler ───────────────────────────────────────────────────────
 
         private static async Task RunDagAsync(Document doc, string dagJson, string orderJson)

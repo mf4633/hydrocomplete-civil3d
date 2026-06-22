@@ -40,6 +40,22 @@ try {
         Write-Host "net48 bundle copied to Contents/net48 (Civil 3D 2024)"
     }
 
+    # Copy DAG WASM editor into the bundle (build-dag-wasm.ps1 produces www/)
+    $dagSrc = Join-Path $root '..\hydrocomplete-dag\www'
+    $dagDst = Join-Path $root 'dist\HydroComplete.bundle\Contents\dag'
+    if (Test-Path $dagSrc) {
+        if (Test-Path $dagDst) { Remove-Item $dagDst -Recurse -Force }
+        New-Item -ItemType Directory -Force -Path $dagDst | Out-Null
+        Copy-Item (Join-Path $dagSrc 'index.html') $dagDst -Force
+        if (Test-Path (Join-Path $dagSrc 'pkg')) {
+            Copy-Item (Join-Path $dagSrc 'pkg') $dagDst -Recurse -Force
+        }
+        Write-Host "DAG editor copied to bundle/Contents/dag/"
+    } else {
+        Write-Host "WARN: hydrocomplete-dag/www not found - HC_DAG panel will use dev fallback path."
+        Write-Host "      Run: wasm-pack build --target web --out-dir www/pkg  in hydrocomplete-dag/"
+    }
+
     $bundle = Join-Path $root 'dist\HydroComplete.bundle'
     $dest = Join-Path $env:APPDATA 'Autodesk\ApplicationPlugins\HydroComplete.bundle'
 

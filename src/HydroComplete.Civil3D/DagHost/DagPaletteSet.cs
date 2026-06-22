@@ -96,6 +96,20 @@ namespace HydroComplete.Civil3D.DagHost
             catch { }
         }
 
+        /// Retrieves the current DAG JSON from the editor.
+        public async Task<string> GetDagJsonAsync()
+        {
+            if (_webView == null || !_webViewReady) return "{}";
+            try
+            {
+                // ExecuteScriptAsync returns the JS value JSON-encoded; a string gets double-quoted.
+                string raw = await _webView.ExecuteScriptAsync("editor.to_json()");
+                // Unescape: raw is a JSON-encoded string → deserialize it
+                return System.Text.Json.JsonSerializer.Deserialize<string>(raw) ?? "{}";
+            }
+            catch { return "{}"; }
+        }
+
         /// Send a seed DAG to the editor (e.g. auto-populated from drawing data).
         public async Task SeedDagAsync(string dagJson)
         {

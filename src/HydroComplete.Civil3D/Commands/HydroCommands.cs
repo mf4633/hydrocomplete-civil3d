@@ -30,7 +30,7 @@ namespace HydroComplete.Civil3D.Commands
         public void About()
         {
             Editor ed = Active().Editor;
-            ed.WriteMessage("\n=== HydroComplete for Civil 3D 1.6.0 ===");
+            ed.WriteMessage("\n=== HydroComplete for Civil 3D 1.7.0 ===");
             ed.WriteMessage("\n  HC_NETWORK       Per-network summary (pipes, length, inverts, diameters, structures)");
             ed.WriteMessage("\n  HC_PIPES         Manning capacity of every pipe-network pipe (circular, box, arch)");
             ed.WriteMessage("\n  HC_PIPES_WRITE   Label Qfull/Vfull on layer HC-CAPACITY");
@@ -78,6 +78,8 @@ namespace HydroComplete.Civil3D.Commands
             ed.WriteMessage("\n  HC_CONTINUOUS  Multi-year continuous simulation (17 cities, Hargreaves ET, pollutant loads)");
             ed.WriteMessage("\n  HC_WQ_DIAGRAM  HTML/SVG treatment-train node diagram from catchment land use + BMP chain");
             ed.WriteMessage("\n  HC_DAG         Visual model builder — drag-and-drop node DAG editor (WebView2 panel, net8 only)");
+            ed.WriteMessage("\n  HC_DAG_SAVE    Save the current DAG to a .hcdag file alongside the drawing");
+            ed.WriteMessage("\n  HC_DAG_LOAD    Load a .hcdag file and open it in the DAG editor");
             ed.WriteMessage("\n  HC_ACTIVATE    Activate Pro with email + beta token (hc_live_*)");
             ed.WriteMessage("\n  HC_LICENSE     Show Free/Pro license status and activation info");
             ed.WriteMessage("\n  HC_ABOUT       This list");
