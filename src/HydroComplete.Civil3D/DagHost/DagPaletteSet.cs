@@ -96,6 +96,16 @@ namespace HydroComplete.Civil3D.DagHost
             catch { }
         }
 
+        /// Send a seed DAG to the editor (e.g. auto-populated from drawing data).
+        public async Task SeedDagAsync(string dagJson)
+        {
+            if (_webView == null || !_webViewReady) return;
+            // Escape for JS string — use JSON.stringify round-trip via script
+            string escaped = dagJson.Replace("\\", "\\\\").Replace("'", "\\'");
+            string script  = $"if(typeof editor!=='undefined')editor.from_json('{escaped}'),editor.zoom_fit()";
+            await _webView.ExecuteScriptAsync(script);
+        }
+
         public async Task SendResultAsync(string resultDagJson)
         {
             if (_webView == null || !_webViewReady) return;
