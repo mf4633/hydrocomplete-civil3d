@@ -147,6 +147,13 @@ html, body { height: 100%; background: #0d1117; font-family: 'Segoe UI', Arial, 
     <button class="tbtn run" id="btn-run">▶ Run</button>
     <button class="tbtn danger" id="btn-del">Delete</button>
     <div class="sep"></div>
+    <button class="tbtn" id="btn-undo" title="Ctrl+Z" disabled>↩</button>
+    <button class="tbtn" id="btn-redo" title="Ctrl+Y" disabled>↪</button>
+    <div class="sep"></div>
+    <select id="tmpl-select" style="font-size:11px;background:#21262d;color:#c9d1d9;border:1px solid #30363d;border-radius:4px;padding:3px 6px;cursor:pointer">
+      <option value="">Templates…</option>
+    </select>
+    <div class="sep"></div>
     <span id="status">Ready</span>
   </div>
 
@@ -422,6 +429,7 @@ window.addEventListener('mouseup', e => {
   if (palDragging) {
     if (onCanvas) {
       editor.palette_drop(sx, sy);
+      updateUndoRedo();
       setStatus(`Added ${NODE_SCHEMA[palKind]?.label ?? palKind}`);
       setTimeout(() => {
         const j = editor.get_selected_node_json();
@@ -443,9 +451,19 @@ canvas.addEventListener('wheel', e => {
 
 window.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+    e.preventDefault();
+    if (editor.undo()) { hideConfig(); updateUndoRedo(); setStatus('Undo'); }
+    return;
+  }
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) {
+    e.preventDefault();
+    if (editor.redo()) { hideConfig(); updateUndoRedo(); setStatus('Redo'); }
+    return;
+  }
   if (e.key === 'Delete' || e.key === 'Backspace') {
     if (editor.key_down(e.key)) {
-      hideConfig();
+      hideConfig(); updateUndoRedo();
       e.preventDefault();
       setStatus('Deleted');
     }
@@ -455,7 +473,7 @@ window.addEventListener('keydown', e => {
 
 // ── Toolbar ───────────────────────────────────────────────────────────────
 document.getElementById('btn-new').addEventListener('click', () => {
-  if (confirm('Clear diagram?')) { editor.clear(); hideConfig(); setStatus('Cleared'); }
+  if (confirm('Clear diagram?')) { editor.clear(); hideConfig(); updateUndoRedo(); setStatus('Cleared'); }
 });
 
 document.getElementById('btn-save').addEventListener('click', () => {
@@ -483,25 +501,222 @@ document.getElementById('btn-del').addEventListener('click', () => {
 });
 
 document.getElementById('btn-run').addEventListener('click', () => {
-  flushConfig(); // make sure latest config is saved
-  const dag   = JSON.parse(editor.to_json());
-  const order = JSON.parse(editor.execution_order_json());
-  const msg   = { type: 'HC_RUN', dag, order };
+  flushConfig();
+  const dagJson   = editor.to_json();
+  const orderJson = editor.execution_order_json();
+  const dag   = JSON.parse(dagJson);
+  const order = JSON.parse(orderJson);
+
   if (window.chrome?.webview) {
-    window.chrome.webview.postMessage(JSON.stringify(msg));
+    // Civil 3D WebView2 host
+    window.chrome.webview.postMessage(JSON.stringify({ type: 'HC_RUN', dag, order }));
+    setStatus('Running model in Civil 3D…');
   } else if (window.parent !== window) {
-    window.parent.postMessage(msg, '*');
+    // Embedded iframe host
+    window.parent.postMessage({ type: 'HC_RUN', dag, order }, '*');
+    setStatus('Running model…');
   } else {
-    // No host — show a "not connected" message
-    setStatus('No Civil 3D host detected — run HC_DAG inside Civil 3D');
-    return;
+    // Standalone browser — use the JS fallback engine
+    setStatus('Running (standalone mode)…');
+    try {
+      const resultJson = runStandaloneEngine(dagJson, orderJson);
+      if (editor.apply_results_json(resultJson)) {
+        const j = editor.get_selected_node_json();
+        if (j) showConfig(j);
+        showResultsBar(JSON.parse(resultJson));
+        setStatus('Results applied (standalone — limited engines)');
+      }
+    } catch(e) {
+      setStatus(`Standalone run error: ${e}`);
+    }
   }
-  setStatus('Running model…');
 });
 
 document.getElementById('btn-zi').addEventListener('click', () => editor.zoom_in());
 document.getElementById('btn-zo').addEventListener('click', () => editor.zoom_out());
 document.getElementById('btn-zr').addEventListener('click', () => editor.zoom_reset());
+
+// ── Undo / Redo ───────────────────────────────────────────────────────────────
+const btnUndo = document.getElementById('btn-undo');
+const btnRedo = document.getElementById('btn-redo');
+
+function updateUndoRedo() {
+  btnUndo.disabled = !editor.can_undo();
+  btnRedo.disabled = !editor.can_redo();
+  btnUndo.style.opacity = editor.can_undo() ? '1' : '0.4';
+  btnRedo.style.opacity = editor.can_redo() ? '1' : '0.4';
+}
+
+btnUndo.addEventListener('click', () => { if (editor.undo()) { hideConfig(); updateUndoRedo(); setStatus('Undo'); } });
+btnRedo.addEventListener('click', () => { if (editor.redo()) { hideConfig(); updateUndoRedo(); setStatus('Redo'); } });
+
+// ── Templates ─────────────────────────────────────────────────────────────────
+const tmplSelect = document.getElementById('tmpl-select');
+const catalog = JSON.parse(DagEditor.template_catalog_json());
+for (const t of catalog) {
+  const opt = document.createElement('option');
+  opt.value = t.id;
+  opt.title = t.description;
+  opt.textContent = t.label;
+  tmplSelect.appendChild(opt);
+}
+tmplSelect.addEventListener('change', () => {
+  const id = tmplSelect.value;
+  if (!id) return;
+  tmplSelect.value = '';
+  if (editor.load_template(id)) {
+    hideConfig();
+    updateUndoRedo();
+    setStatus(`Loaded template: ${catalog.find(t => t.id === id)?.label}`);
+  }
+});
+
+// ── Standalone JS engine (runs without Civil 3D host) ────────────────────────
+// Implements the same node calculations as DagExecutor.cs in JavaScript.
+// Only used when no WebView2 host is detected on ▶ Run.
+
+function runStandaloneEngine(dagJson, orderJson) {
+  const dag   = JSON.parse(dagJson);
+  const order = JSON.parse(orderJson);
+
+  const nodeById = Object.fromEntries(dag.nodes.map(n => [n.id[0], n]));
+  const edgeMap  = {};
+  for (const e of dag.edges) {
+    edgeMap[`${e.to_node[0]},${e.to_port}`] = [e.from_node[0], e.from_port];
+  }
+
+  function getOutput(nodeId, port) {
+    const n = nodeById[nodeId];
+    return n?.outputs?.[String(port)] ?? 0;
+  }
+  function input(nodeId, port, fallback = 0) {
+    const key = `${nodeId},${port}`;
+    if (edgeMap[key]) {
+      const [fn, fp] = edgeMap[key];
+      const v = getOutput(fn, fp);
+      return typeof v === 'number' ? v : fallback;
+    }
+    return fallback;
+  }
+  function cfg(node, key, fallback) {
+    const v = node.config?.[key];
+    return v !== undefined ? Number(v) : fallback;
+  }
+  function cfgStr(node, key, fallback) {
+    return node.config?.[key] ?? fallback;
+  }
+
+  for (const nodeId of order) {
+    const node = nodeById[nodeId];
+    if (!node) continue;
+    const kind = node.kind;
+    const outs = {};
+    try {
+      switch(kind) {
+        case 'catchment':
+          outs['0'] = cfg(node, 'area_acres', 5);
+          outs['1'] = cfg(node, 'curve_number', 75);
+          break;
+        case 'rainfall_event':
+          outs['0'] = cfg(node, 'depth_in', 3.5);
+          break;
+        case 'rational_method': {
+          const A = input(nodeId, 0, cfg(node, 'area_acres', 5));
+          const C = cfg(node, 'runoff_c', 0.7);
+          const i = cfg(node, 'intensity_in_hr', 2.5);
+          outs['0'] = C * i * A;
+          outs['steps'] = `Q = ${C}×${i}×${A.toFixed(2)} = ${outs['0'].toFixed(2)} cfs`;
+          break;
+        }
+        case 'scs_runoff': {
+          const CN  = input(nodeId, 0, cfg(node, 'curve_number', 75));
+          const P   = input(nodeId, 1, cfg(node, 'rainfall_in', 3.5));
+          const area = cfg(node, 'area_acres', 5);
+          const S = 1000/CN - 10; const Ia = 0.2*S;
+          const Q = P > Ia ? Math.pow(P-Ia,2)/(P-Ia+S) : 0;
+          outs['0'] = +Q.toFixed(4);
+          outs['volume_cf'] = +(Q * area * 43560 / 12).toFixed(0);
+          outs['steps'] = `CN=${CN}, S=${S.toFixed(2)}, Ia=${Ia.toFixed(2)}, Q=${Q.toFixed(3)} in`;
+          break;
+        }
+        case 'manning_pipe': {
+          const D = cfg(node,'diameter_ft',1.5);
+          const S = cfg(node,'slope',0.005);
+          const n = cfg(node,'manning_n',0.013);
+          const A = Math.PI*D*D/4; const R = D/4;
+          const Qfull = (1.486/n)*A*Math.pow(R,2/3)*Math.pow(S,0.5);
+          const Qdes = input(nodeId, 0, cfg(node,'design_q_cfs',5));
+          const ratio = Qfull > 0 ? Qdes/Qfull : 0;
+          outs['0'] = +Qfull.toFixed(3);
+          outs['q_ratio'] = +ratio.toFixed(3);
+          outs['surcharged'] = ratio > 1 ? 1 : 0;
+          outs['steps'] = `Qfull=${Qfull.toFixed(2)} cfs, Q/Qfull=${ratio.toFixed(2)}`;
+          break;
+        }
+        case 'water_quality_volume': {
+          const area  = input(nodeId, 0, cfg(node,'area_acres',5));
+          const I     = cfg(node,'impervious_pct',50)/100;
+          const P     = input(nodeId, 1, cfg(node,'design_storm_in',1));
+          const Rv    = 0.05 + 0.009*I*100;
+          const WQV   = Rv * P * area * 43560 / 12;
+          outs['0'] = +WQV.toFixed(0);
+          outs['rv'] = +Rv.toFixed(3);
+          outs['steps'] = `Rv=${Rv.toFixed(3)}, WQV=${WQV.toFixed(0)} cf`;
+          break;
+        }
+        case 'rusle_erosion': {
+          const R_fac = cfg(node,'r_factor',180);
+          const K     = cfg(node,'k_factor',0.28);
+          const LS_val= cfg(node,'ls_factor',1.5);
+          const C_fac = cfg(node,'c_factor',0.20);
+          const P_fac = cfg(node,'p_factor',1.0);
+          const area  = cfg(node,'area_acres',1);
+          const A_val = R_fac * K * LS_val * C_fac * P_fac;
+          outs['0'] = +A_val.toFixed(3);
+          outs['total_tons_yr'] = +(A_val * area).toFixed(2);
+          outs['steps'] = `A=${A_val.toFixed(2)} t/ac/yr`;
+          break;
+        }
+        case 'treatment_bmp':
+        case 'treatment_train': {
+          // Simplified removal using BMP library defaults
+          const BMP_ETA = {'bioretention':[0.85,0.45,0.60],'wet-pond':[0.80,0.40,0.50],
+                           'constructed-wetland':[0.85,0.35,0.45],'vegetated-swale':[0.65,0.35,0.40],
+                           'sand-filter':[0.85,0.35,0.50]};
+          const chain = kind === 'treatment_train'
+            ? cfgStr(node,'bmp_chain','bioretention').split(',')
+            : [cfgStr(node,'bmp_type','bioretention')];
+          // compute influent from area + runoff
+          const area = cfg(node,'area_acres',5);
+          const runoff = input(nodeId, 0, cfg(node,'runoff_in',0.5));
+          const vol  = runoff * area * 43560 / 12;
+          const conc = [100, 2.0, 0.35]; // TSS mg/L, TN, TP
+          let eff    = conc.map(c => c * vol * 7.48 * 8.34 / 1e6);
+          for (const bmp of chain) {
+            const eta = BMP_ETA[bmp.trim()] || [0.5,0.3,0.35];
+            eff = eff.map((e,i) => e*(1-eta[i]));
+          }
+          outs['1'] = +((1-eff[0]/(conc[0]*vol*7.48*8.34/1e6))*100).toFixed(1);
+          outs['tss_out_lbs'] = +eff[0].toFixed(3);
+          outs['tn_out_lbs']  = +eff[1].toFixed(3);
+          outs['tp_out_lbs']  = +eff[2].toFixed(3);
+          outs['tss_in_lbs']  = +(conc[0]*vol*7.48*8.34/1e6).toFixed(3);
+          outs['tn_in_lbs']   = +(conc[1]*vol*7.48*8.34/1e6).toFixed(3);
+          outs['tp_in_lbs']   = +(conc[2]*vol*7.48*8.34/1e6).toFixed(3);
+          outs['steps'] = `Chain: ${chain.join('→')}, TSS η=${outs['1']}%`;
+          break;
+        }
+        case 'outfall':
+          outs['received'] = input(nodeId, 0, 0);
+          break;
+        default:
+          outs['note'] = `${kind} — connect to Civil 3D for full calculation`;
+      }
+    } catch(e) { outs['error'] = String(e); }
+    node.outputs = outs;
+  }
+  return JSON.stringify(dag);
+}
 
 // ── Receive results from C# ───────────────────────────────────────────────
 window.addEventListener('message', e => {
