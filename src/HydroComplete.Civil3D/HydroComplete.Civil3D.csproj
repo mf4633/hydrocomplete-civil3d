@@ -16,9 +16,10 @@
     <PlatformTarget>x64</PlatformTarget>
     <!-- Ribbon command handlers implement System.Windows.Input.ICommand (WPF). -->
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>HydroComplete.Civil3D</AssemblyName>
     <RootNamespace>HydroComplete.Civil3D</RootNamespace>
-    <Version>1.5.0</Version>
+    <Version>1.6.0</Version>
     <!-- AutoCAD loads the DLL into its own process; never copy the host
          assemblies (Private=false), but ship PDFsharp and other NuGet deps. -->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -106,6 +107,12 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
     <PackageReference Include="PDFsharp" Version="6.2.0" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2849.39" />
+  </ItemGroup>
+  <!-- DAG panel (WebView2) is net8-only; Civil 3D 2024 net48 build excludes it -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <Compile Remove="DagHost\*.cs" />
+    <Compile Remove="Commands\DagPanelCommands.cs" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
     <!-- PDFsharp 1.5 â€” net48-compatible; same PdfSharp.Drawing / PdfSharp.Pdf namespaces. -->

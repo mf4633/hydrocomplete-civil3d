@@ -29,6 +29,9 @@ using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.WaterQualityCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.ContinuousSimCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.DiagramCommands))]
+#if NET8_0_OR_GREATER
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.DagPanelCommands))]
+#endif
 
 namespace HydroComplete.Civil3D
 {
@@ -47,7 +50,7 @@ namespace HydroComplete.Civil3D
             {
                 var doc = AcadApp.DocumentManager?.MdiActiveDocument;
                 doc?.Editor.WriteMessage(
-                    $"\n{ProductName} for Civil 3D 1.5.0 loaded. Type HC_ABOUT for commands.\n");
+                    $"\n{ProductName} for Civil 3D 1.6.0 loaded. Type HC_ABOUT for commands.\n");
             }
             catch
             {
