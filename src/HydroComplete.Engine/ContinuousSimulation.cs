@@ -462,6 +462,10 @@ namespace HydroComplete.Engine
 
         internal static IReadOnlyDictionary<string, LocationClimateStats> ClimateStats => CreateClimateStats();
 
+        /// <summary>Returns the slug keys of all cities available for continuous simulation.</summary>
+        public static IReadOnlyList<string> AvailableLocations() =>
+            new List<string>(CreateClimateStats().Keys);
+
         private static void ApplyWetlandRemoval(
             WaterQualityEngine.EventPollutantLoadResult loads,
             IReadOnlyDictionary<string, WetlandRouting.PollutantRemovalEfficiency> removal,
@@ -587,10 +591,161 @@ namespace HydroComplete.Engine
                     MonthlyTminF = D(33, 36, 43, 51, 60, 67, 71, 70, 64, 53, 43, 35),
                     MonthlyTmaxF = D(52, 57, 65, 73, 81, 87, 90, 89, 83, 73, 63, 54),
                     MaxDryDays = 22,
-                    AnnualPeaksIn = new Dictionary<int, double>
-                    {
-                        [2] = 3.0, [5] = 3.8, [10] = 4.6, [25] = 5.5, [50] = 6.4, [100] = 7.3,
-                    },
+                    AnnualPeaksIn = new Dictionary<int, double> { [2]=3.0,[5]=3.8,[10]=4.6,[25]=5.5,[50]=6.4,[100]=7.3 },
+                },
+                ["new-york-ny"] = new LocationClimateStats
+                {
+                    LatitudeDeg = 40.71,
+                    RainDaysPerMonth = D(9,8,10,10,10,10,10,9,9,8,9,9),
+                    MeanEventDepthIn = D(0.40,0.36,0.41,0.41,0.42,0.44,0.46,0.47,0.46,0.49,0.42,0.43),
+                    StdDevDepthIn = D(0.48,0.42,0.50,0.48,0.50,0.52,0.55,0.55,0.54,0.58,0.48,0.50),
+                    MonthlyTminF = D(26,28,34,44,53,63,68,67,60,49,39,31),
+                    MonthlyTmaxF = D(39,42,50,62,72,81,85,84,77,65,54,43),
+                    MaxDryDays = 22,
+                    AnnualPeaksIn = new Dictionary<int, double> { [2]=2.7,[5]=3.5,[10]=4.2,[25]=5.2,[50]=6.1,[100]=7.0 },
+                },
+                ["los-angeles-ca"] = new LocationClimateStats
+                {
+                    LatitudeDeg = 34.05,
+                    RainDaysPerMonth = D(5,5,4,2,1,0,0,0,1,2,3,5),
+                    MeanEventDepthIn = D(0.62,0.70,0.59,0.42,0.26,0.06,0.01,0.04,0.21,0.36,0.44,0.50),
+                    StdDevDepthIn = D(0.75,0.82,0.70,0.50,0.32,0.08,0.02,0.06,0.28,0.45,0.55,0.60),
+                    MonthlyTminF = D(48,49,51,53,57,60,63,64,63,58,52,47),
+                    MonthlyTmaxF = D(68,69,70,73,74,78,84,85,83,79,73,68),
+                    MaxDryDays = 60,
+                    AnnualPeaksIn = new Dictionary<int, double> { [2]=2.0,[5]=2.7,[10]=3.3,[25]=4.3,[50]=5.0,[100]=5.8 },
+                },
+                ["chicago-il"] = new LocationClimateStats
+                {
+                    LatitudeDeg = 41.88,
+                    RainDaysPerMonth = D(7,7,9,10,10,10,10,9,8,8,8,8),
+                    MeanEventDepthIn = D(0.26,0.26,0.28,0.36,0.41,0.39,0.38,0.44,0.41,0.38,0.39,0.37),
+                    StdDevDepthIn = D(0.32,0.32,0.35,0.42,0.50,0.48,0.48,0.52,0.48,0.44,0.44,0.42),
+                    MonthlyTminF = D(18,21,31,41,51,61,67,66,58,46,34,23),
+                    MonthlyTmaxF = D(32,36,47,59,70,80,84,82,75,63,49,36),
+                    MaxDryDays = 24,
+                    AnnualPeaksIn = new Dictionary<int, double> { [2]=2.2,[5]=2.8,[10]=3.4,[25]=4.2,[50]=4.8,[100]=5.5 },
+                },
+                ["dallas-tx"] = new LocationClimateStats
+                {
+                    LatitudeDeg = 32.78,
+                    RainDaysPerMonth = D(5,6,7,7,8,7,4,4,6,7,6,5),
+                    MeanEventDepthIn = D(0.45,0.47,0.51,0.48,0.61,0.54,0.54,0.54,0.47,0.60,0.48,0.55),
+                    StdDevDepthIn = D(0.55,0.58,0.62,0.58,0.75,0.68,0.70,0.68,0.58,0.72,0.58,0.65),
+                    MonthlyTminF = D(36,40,48,56,65,73,77,77,69,58,47,38),
+                    MonthlyTmaxF = D(57,62,70,78,86,94,98,98,91,80,68,58),
+                    MaxDryDays = 35,
+                    AnnualPeaksIn = new Dictionary<int, double> { [2]=2.8,[5]=3.7,[10]=4.5,[25]=5.6,[50]=6.6,[100]=7.7 },
+                },
+                ["houston-tx"] = new LocationClimateStats
+                {
+                    LatitudeDeg = 29.76,
+                    RainDaysPerMonth = D(7,6,7,6,8,9,7,8,8,7,7,7),
+                    MeanEventDepthIn = D(0.48,0.47,0.48,0.58,0.65,0.63,0.55,0.59,0.63,0.67,0.55,0.53),
+                    StdDevDepthIn = D(0.60,0.58,0.60,0.72,0.82,0.78,0.70,0.75,0.78,0.82,0.68,0.65),
+                    MonthlyTminF = D(42,45,52,59,67,73,75,75,70,60,51,44),
+                    MonthlyTmaxF = D(63,67,73,80,87,93,95,96,91,83,73,64),
+                    MaxDryDays = 30,
+                    AnnualPeaksIn = new Dictionary<int, double> { [2]=3.5,[5]=4.6,[10]=5.6,[25]=7.0,[50]=8.2,[100]=9.5 },
+                },
+                ["washington-dc"] = new LocationClimateStats
+                {
+                    LatitudeDeg = 38.91,
+                    RainDaysPerMonth = D(8,8,9,9,10,10,10,9,8,7,7,8),
+                    MeanEventDepthIn = D(0.36,0.33,0.39,0.33,0.40,0.38,0.39,0.37,0.42,0.44,0.42,0.42),
+                    StdDevDepthIn = D(0.42,0.38,0.46,0.38,0.48,0.44,0.46,0.44,0.50,0.52,0.48,0.48),
+                    MonthlyTminF = D(28,30,37,46,56,65,70,69,62,50,40,32),
+                    MonthlyTmaxF = D(44,48,57,68,77,85,89,87,81,69,58,47),
+                    MaxDryDays = 22,
+                    AnnualPeaksIn = new Dictionary<int, double> { [2]=2.5,[5]=3.2,[10]=3.9,[25]=4.8,[50]=5.5,[100]=6.4 },
+                },
+                ["miami-fl"] = new LocationClimateStats
+                {
+                    LatitudeDeg = 25.76,
+                    RainDaysPerMonth = D(5,5,6,6,10,14,12,13,14,12,7,5),
+                    MeanEventDepthIn = D(0.40,0.43,0.47,0.56,0.59,0.66,0.54,0.61,0.57,0.53,0.51,0.46),
+                    StdDevDepthIn = D(0.52,0.55,0.60,0.70,0.75,0.82,0.68,0.78,0.72,0.68,0.62,0.58),
+                    MonthlyTminF = D(60,62,65,68,73,76,77,77,76,73,67,62),
+                    MonthlyTmaxF = D(76,78,80,83,87,90,91,91,89,86,82,78),
+                    MaxDryDays = 30,
+                    AnnualPeaksIn = new Dictionary<int, double> { [2]=3.6,[5]=4.8,[10]=5.8,[25]=7.4,[50]=8.7,[100]=10.1 },
+                },
+                ["philadelphia-pa"] = new LocationClimateStats
+                {
+                    LatitudeDeg = 39.95,
+                    RainDaysPerMonth = D(8,7,9,9,9,9,10,9,8,7,8,9),
+                    MeanEventDepthIn = D(0.38,0.38,0.42,0.36,0.40,0.41,0.43,0.42,0.43,0.42,0.39,0.43),
+                    StdDevDepthIn = D(0.44,0.44,0.50,0.42,0.48,0.48,0.52,0.50,0.52,0.50,0.46,0.50),
+                    MonthlyTminF = D(25,27,34,43,53,62,68,66,59,47,37,29),
+                    MonthlyTmaxF = D(40,44,53,64,74,83,87,85,78,66,55,44),
+                    MaxDryDays = 22,
+                    AnnualPeaksIn = new Dictionary<int, double> { [2]=2.5,[5]=3.2,[10]=3.9,[25]=4.8,[50]=5.6,[100]=6.4 },
+                },
+                ["phoenix-az"] = new LocationClimateStats
+                {
+                    LatitudeDeg = 33.45,
+                    RainDaysPerMonth = D(3,3,3,1,1,0,3,3,2,2,2,3),
+                    MeanEventDepthIn = D(0.22,0.23,0.25,0.28,0.12,0.01,0.33,0.31,0.32,0.33,0.33,0.22),
+                    StdDevDepthIn = D(0.30,0.32,0.35,0.35,0.18,0.02,0.42,0.40,0.40,0.42,0.42,0.30),
+                    MonthlyTminF = D(44,47,52,58,67,76,83,82,75,63,51,43),
+                    MonthlyTmaxF = D(67,71,78,86,95,105,107,105,101,90,77,66),
+                    MaxDryDays = 90,
+                    AnnualPeaksIn = new Dictionary<int, double> { [2]=1.4,[5]=1.8,[10]=2.2,[25]=2.7,[50]=3.1,[100]=3.6 },
+                },
+                ["boston-ma"] = new LocationClimateStats
+                {
+                    LatitudeDeg = 42.36,
+                    RainDaysPerMonth = D(9,8,10,10,9,9,8,8,8,9,9,9),
+                    MeanEventDepthIn = D(0.38,0.39,0.40,0.37,0.37,0.39,0.42,0.43,0.45,0.43,0.42,0.40),
+                    StdDevDepthIn = D(0.44,0.46,0.48,0.42,0.44,0.46,0.50,0.52,0.54,0.52,0.48,0.46),
+                    MonthlyTminF = D(22,23,30,40,49,59,65,64,57,46,37,27),
+                    MonthlyTmaxF = D(36,39,46,56,67,76,82,80,73,62,51,41),
+                    MaxDryDays = 20,
+                    AnnualPeaksIn = new Dictionary<int, double> { [2]=2.4,[5]=3.1,[10]=3.7,[25]=4.6,[50]=5.3,[100]=6.1 },
+                },
+                ["detroit-mi"] = new LocationClimateStats
+                {
+                    LatitudeDeg = 42.33,
+                    RainDaysPerMonth = D(7,7,8,9,9,9,8,8,8,8,8,8),
+                    MeanEventDepthIn = D(0.28,0.28,0.30,0.33,0.37,0.37,0.40,0.39,0.38,0.31,0.34,0.25),
+                    StdDevDepthIn = D(0.34,0.34,0.36,0.40,0.44,0.44,0.48,0.46,0.46,0.38,0.40,0.32),
+                    MonthlyTminF = D(19,20,27,38,48,58,63,62,54,43,33,24),
+                    MonthlyTmaxF = D(33,36,46,58,70,80,84,82,74,61,48,37),
+                    MaxDryDays = 24,
+                    AnnualPeaksIn = new Dictionary<int, double> { [2]=1.9,[5]=2.5,[10]=3.0,[25]=3.7,[50]=4.3,[100]=4.9 },
+                },
+                ["seattle-wa"] = new LocationClimateStats
+                {
+                    LatitudeDeg = 47.61,
+                    RainDaysPerMonth = D(15,12,13,10,8,7,4,4,6,10,15,16),
+                    MeanEventDepthIn = D(0.37,0.32,0.29,0.26,0.25,0.22,0.18,0.22,0.26,0.32,0.38,0.39),
+                    StdDevDepthIn = D(0.42,0.36,0.34,0.30,0.30,0.26,0.22,0.28,0.32,0.38,0.44,0.44),
+                    MonthlyTminF = D(36,36,38,41,47,52,56,56,52,45,40,36),
+                    MonthlyTmaxF = D(47,50,54,59,65,70,76,76,71,60,51,46),
+                    MaxDryDays = 35,
+                    AnnualPeaksIn = new Dictionary<int, double> { [2]=1.6,[5]=2.1,[10]=2.5,[25]=3.1,[50]=3.5,[100]=4.1 },
+                },
+                ["minneapolis-mn"] = new LocationClimateStats
+                {
+                    LatitudeDeg = 44.98,
+                    RainDaysPerMonth = D(5,5,7,8,9,10,9,9,8,7,6,5),
+                    MeanEventDepthIn = D(0.18,0.16,0.25,0.36,0.38,0.43,0.42,0.47,0.38,0.30,0.30,0.29),
+                    StdDevDepthIn = D(0.24,0.22,0.32,0.42,0.46,0.52,0.50,0.56,0.46,0.38,0.36,0.36),
+                    MonthlyTminF = D(6,11,24,37,49,59,65,62,53,40,26,13),
+                    MonthlyTmaxF = D(24,30,42,57,69,79,84,81,72,58,41,28),
+                    MaxDryDays = 28,
+                    AnnualPeaksIn = new Dictionary<int, double> { [2]=2.1,[5]=2.7,[10]=3.2,[25]=3.9,[50]=4.6,[100]=5.3 },
+                },
+                ["denver-co"] = new LocationClimateStats
+                {
+                    LatitudeDeg = 39.74,
+                    RainDaysPerMonth = D(4,4,6,7,8,7,8,7,5,4,4,4),
+                    MeanEventDepthIn = D(0.13,0.12,0.22,0.25,0.30,0.27,0.27,0.26,0.26,0.24,0.17,0.15),
+                    StdDevDepthIn = D(0.18,0.16,0.28,0.32,0.38,0.34,0.35,0.33,0.32,0.30,0.22,0.20),
+                    MonthlyTminF = D(17,20,27,34,44,53,59,57,48,36,25,17),
+                    MonthlyTmaxF = D(45,48,56,62,72,83,90,87,79,66,53,44),
+                    MaxDryDays = 35,
+                    AnnualPeaksIn = new Dictionary<int, double> { [2]=1.3,[5]=1.7,[10]=2.1,[25]=2.6,[50]=3.0,[100]=3.5 },
                 },
             };
         }
