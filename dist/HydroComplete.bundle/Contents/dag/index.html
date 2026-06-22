@@ -122,6 +122,49 @@ html, body { height: 100%; background: #0d1117; font-family: 'Segoe UI', Arial, 
 #config-panel { flex-direction: column; }
 #config-header { display: flex; align-items: center; gap: 4px; padding: 5px 8px; border-bottom: 1px solid #30363d; flex-shrink: 0; }
 
+/* ── Context menu ────────────────────────────────────────────────── */
+#ctx-menu {
+  display: none; position: fixed; z-index: 500;
+  background: #21262d; border: 1px solid #30363d; border-radius: 6px;
+  padding: 4px 0; min-width: 150px; box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+}
+.ctx-item {
+  padding: 5px 14px; font-size: 11px; cursor: pointer; color: #c9d1d9;
+  display: flex; justify-content: space-between; gap: 20px;
+}
+.ctx-item:hover { background: #30363d; }
+.ctx-item.disabled { color: #484f58; pointer-events: none; }
+.ctx-item .shortcut { color: #484f58; font-size: 10px; }
+.ctx-sep { height: 1px; background: #30363d; margin: 3px 0; }
+
+/* ── Shortcuts overlay ───────────────────────────────────────────── */
+#shortcuts-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  z-index: 1000; align-items: center; justify-content: center;
+}
+#shortcuts-overlay.open { display: flex; }
+#shortcuts-box {
+  background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+  padding: 20px 24px; max-width: 480px; width: 90%; max-height: 80vh; overflow-y: auto;
+}
+#shortcuts-box h2 { font-size: 14px; margin-bottom: 14px; color: #58a6ff; }
+.sk-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.sk-table td { padding: 4px 8px; border-bottom: 1px solid #21262d; }
+.sk-table td:first-child { color: #8b949e; }
+.sk-table td:last-child { font-family: monospace; color: #e3b341; white-space: nowrap; }
+
+/* ── Status footer ───────────────────────────────────────────────── */
+#footer {
+  display: flex; align-items: center; gap: 10px; padding: 2px 10px;
+  background: #161b22; border-top: 1px solid #30363d;
+  font-size: 10px; color: #484f58; flex-shrink: 0;
+}
+#footer span { white-space: nowrap; }
+#footer .sep-f { width: 1px; height: 12px; background: #30363d; }
+#snap-btn { cursor: pointer; padding: 1px 6px; border-radius: 3px; border: 1px solid transparent; }
+#snap-btn.on { color: #3fb950; border-color: #238636; }
+#snap-btn:hover { border-color: #30363d; }
+
 /* ── Minimap ─────────────────────────────────────────────────────── */
 #minimap-canvas {
   position: absolute; bottom: 40px; right: 10px;
@@ -222,7 +265,60 @@ html, body { height: 100%; background: #0d1117; font-family: 'Segoe UI', Arial, 
   <!-- Results strip (shown after run) -->
   <div id="results-bar"></div>
 
+  <!-- Status footer -->
+  <div id="footer">
+    <span id="ft-nodes">0 nodes</span>
+    <div class="sep-f"></div>
+    <span id="ft-sel"></span>
+    <div class="sep-f"></div>
+    <span id="ft-zoom">100%</span>
+    <div class="sep-f"></div>
+    <span id="snap-btn" title="Toggle snap to grid (G)">Snap</span>
+    <div class="sep-f"></div>
+    <span style="margin-left:auto;color:#30363d">? for shortcuts</span>
+  </div>
+
 </div><!-- /app -->
+
+<!-- Right-click context menu -->
+<div id="ctx-menu">
+  <div class="ctx-item" id="ctx-delete">Delete<span class="shortcut">Del</span></div>
+  <div class="ctx-item" id="ctx-duplicate">Duplicate<span class="shortcut">Ctrl+D</span></div>
+  <div class="ctx-item" id="ctx-copy">Copy<span class="shortcut">Ctrl+C</span></div>
+  <div class="ctx-item" id="ctx-paste">Paste<span class="shortcut">Ctrl+V</span></div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" id="ctx-selall">Select All<span class="shortcut">Ctrl+A</span></div>
+  <div class="ctx-item" id="ctx-layout">Auto-Layout<span class="shortcut">Ctrl+L</span></div>
+  <div class="ctx-item" id="ctx-fit">Fit to View<span class="shortcut">Ctrl+F</span></div>
+</div>
+
+<!-- Keyboard shortcuts overlay -->
+<div id="shortcuts-overlay">
+  <div id="shortcuts-box">
+    <h2>Keyboard Shortcuts</h2>
+    <table class="sk-table">
+      <tr><td>Pan canvas</td><td>Middle-drag / Right-drag</td></tr>
+      <tr><td>Zoom</td><td>Scroll wheel</td></tr>
+      <tr><td>Select node</td><td>Click</td></tr>
+      <tr><td>Add to selection</td><td>Shift+Click</td></tr>
+      <tr><td>Rubber-band select</td><td>Drag on empty canvas</td></tr>
+      <tr><td>Select all</td><td>Ctrl+A</td></tr>
+      <tr><td>Delete selected</td><td>Del / Backspace</td></tr>
+      <tr><td>Copy node</td><td>Ctrl+C</td></tr>
+      <tr><td>Paste node</td><td>Ctrl+V</td></tr>
+      <tr><td>Duplicate node</td><td>Ctrl+D</td></tr>
+      <tr><td>Undo</td><td>Ctrl+Z</td></tr>
+      <tr><td>Redo</td><td>Ctrl+Y / Ctrl+Shift+Z</td></tr>
+      <tr><td>Auto-layout</td><td>Ctrl+L</td></tr>
+      <tr><td>Fit to view</td><td>Ctrl+F</td></tr>
+      <tr><td>Toggle snap-to-grid</td><td>G</td></tr>
+      <tr><td>Connect nodes</td><td>Drag from output port →</td></tr>
+      <tr><td>Close inspector</td><td>Escape</td></tr>
+      <tr><td>Shortcuts</td><td>? (this dialog)</td></tr>
+    </table>
+    <p style="font-size:10px;color:#484f58;margin-top:12px">Click anywhere outside to close.</p>
+  </div>
+</div>
 
 <script type="module">
 import init, { DagEditor } from './pkg/hydrocomplete_dag.js';
@@ -460,7 +556,7 @@ sidebar.addEventListener('mousedown', e => {
 // ── Canvas events ─────────────────────────────────────────────────────────
 canvas.addEventListener('mousedown', e => {
   if (palDragging) return;
-  editor.mouse_down(e.offsetX, e.offsetY, e.button);
+  editor.mouse_down(e.offsetX, e.offsetY, e.button, e.shiftKey);
   e.preventDefault();
 
   // Show config panel for selected node after click
@@ -542,8 +638,20 @@ window.addEventListener('keydown', e => {
   }
   if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
     e.preventDefault();
+    editor.select_all_nodes(); setStatus(`Selected ${editor.selected_node_count()} nodes`);
+    return;
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+    e.preventDefault();
     editor.zoom_fit(); refreshMinimap(); setStatus('Fit to view');
     return;
+  }
+  if (e.key === 'g' || e.key === 'G') {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    toggleSnap(); return;
+  }
+  if (e.key === '?') {
+    shortcutsOverlay.classList.toggle('open'); return;
   }
   if (e.key === 'Delete' || e.key === 'Backspace') {
     if (editor.key_down(e.key)) {
@@ -623,7 +731,7 @@ document.getElementById('btn-layout').addEventListener('click', () => {
   editor.layout(); updateUndoRedo(); refreshMinimap(); setStatus('Auto-layout applied');
 });
 document.getElementById('btn-fit').addEventListener('click', () => {
-  editor.zoom_fit(); refreshMinimap(); setStatus('Fit to view');
+  editor.zoom_fit(); setStatus('Fit to view');
 });
 
 // ── Undo / Redo ───────────────────────────────────────────────────────────────
@@ -1072,6 +1180,114 @@ function showResultsBar(dag) {
 }
 
 function setStatus(s) { status.textContent = s; }
+
+// ── Status footer ─────────────────────────────────────────────────────────────
+function updateFooter() {
+  document.getElementById('ft-nodes').textContent =
+    `${editor.node_count()} node${editor.node_count()===1?'':'s'}, ${editor.edge_count()} edge${editor.edge_count()===1?'':'s'}`;
+  const sel = editor.selected_node_count();
+  document.getElementById('ft-sel').textContent = sel > 0 ? `${sel} selected` : '';
+  document.getElementById('ft-zoom').textContent = editor.zoom_percent() + '%';
+}
+
+// Call updateFooter whenever something renders
+const _origRender = () => { updateFooter(); refreshMinimap(); };
+['palette_drop','mouse_up','key_down','undo','redo','load_template','clear','layout','zoom_fit',
+ 'zoom_in','zoom_out','zoom_reset','select_all_nodes','apply_results_json'].forEach(m => {
+  const orig = editor[m]?.bind(editor);
+  if (orig) Object.defineProperty(editor, m, { value: (...a) => { const r = orig(...a); _origRender(); return r; }});
+});
+
+// ── Snap to grid ─────────────────────────────────────────────────────────────
+const snapBtn = document.getElementById('snap-btn');
+let snapOn = false;
+function toggleSnap() {
+  snapOn = editor.toggle_snap(20);
+  snapBtn.classList.toggle('on', snapOn);
+  snapBtn.textContent = snapOn ? 'Snap ✓' : 'Snap';
+  setStatus(snapOn ? 'Snap to grid ON (20px)' : 'Snap to grid OFF');
+}
+snapBtn.addEventListener('click', toggleSnap);
+
+// ── Context menu ──────────────────────────────────────────────────────────────
+const ctxMenu = document.getElementById('ctx-menu');
+function hideCtxMenu() { ctxMenu.style.display = 'none'; }
+document.addEventListener('click', hideCtxMenu);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { hideCtxMenu(); } });
+
+canvas.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  // Re-register mouse_down to update selection on right-click position too
+  editor.mouse_down(e.offsetX, e.offsetY, 0, e.shiftKey);
+
+  const hasSel    = editor.selected_node_count() > 0 || editor.selected_node_id() !== 4294967295;
+  const hasClip   = true; // can't check clipboard from JS, always show paste
+
+  document.getElementById('ctx-delete').classList.toggle('disabled', !hasSel);
+  document.getElementById('ctx-duplicate').classList.toggle('disabled', editor.selected_node_count() === 0);
+  document.getElementById('ctx-copy').classList.toggle('disabled', editor.selected_node_count() === 0);
+
+  ctxMenu.style.display = 'block';
+  ctxMenu.style.left = Math.min(e.clientX, window.innerWidth - 170) + 'px';
+  ctxMenu.style.top  = Math.min(e.clientY, window.innerHeight - 220) + 'px';
+
+  // Update inspector for newly selected node
+  setTimeout(() => { const j = editor.get_selected_node_json(); if (j) showConfig(j); }, 0);
+});
+
+document.getElementById('ctx-delete').addEventListener('click', () => {
+  if (editor.key_down('Delete')) { hideConfig(); updateUndoRedo(); setStatus('Deleted'); }
+});
+document.getElementById('ctx-duplicate').addEventListener('click', () => {
+  editor.copy_selected(); if (editor.paste()) { updateUndoRedo(); setStatus('Duplicated'); }
+});
+document.getElementById('ctx-copy').addEventListener('click', () => {
+  if (editor.copy_selected()) setStatus('Copied');
+});
+document.getElementById('ctx-paste').addEventListener('click', () => {
+  if (editor.paste()) { updateUndoRedo(); setStatus('Pasted'); }
+});
+document.getElementById('ctx-selall').addEventListener('click', () => {
+  editor.select_all_nodes(); setStatus(`Selected ${editor.selected_node_count()} nodes`);
+});
+document.getElementById('ctx-layout').addEventListener('click', () => {
+  editor.layout(); updateUndoRedo(); setStatus('Auto-layout applied');
+});
+document.getElementById('ctx-fit').addEventListener('click', () => {
+  editor.zoom_fit(); setStatus('Fit to view');
+});
+
+// ── Keyboard shortcuts overlay ────────────────────────────────────────────────
+const shortcutsOverlay = document.getElementById('shortcuts-overlay');
+shortcutsOverlay.addEventListener('click', e => {
+  if (e.target === shortcutsOverlay) shortcutsOverlay.classList.remove('open');
+});
+
+// ── Persistent DAG (localStorage) ────────────────────────────────────────────
+const LS_KEY = 'hc_dag_autosave';
+function autosave() {
+  try { localStorage.setItem(LS_KEY, editor.to_json()); } catch {}
+}
+function loadAutosave() {
+  try {
+    const saved = localStorage.getItem(LS_KEY);
+    if (saved && saved !== '{}' && JSON.parse(saved).nodes?.length > 0) {
+      if (editor.from_json(saved)) {
+        editor.zoom_fit();
+        setStatus('Restored previous session');
+        return true;
+      }
+    }
+  } catch {}
+  return false;
+}
+
+// Autosave on every run + save + structural change
+document.getElementById('btn-save').addEventListener('click', () => { autosave(); });
+document.getElementById('btn-run').addEventListener('click', () => { autosave(); }, { capture: true });
+
+// Load on startup if no template opened
+setTimeout(() => { if (editor.node_count() === 0) loadAutosave(); updateFooter(); }, 100);
 </script>
 </body>
 </html>
