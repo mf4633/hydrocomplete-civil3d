@@ -35,11 +35,19 @@ html, body { height: 100%; background: #0d1117; font-family: 'Segoe UI', Arial, 
 #main { display: flex; flex: 1; overflow: hidden; }
 
 /* ── Palette ─────────────────────────────────────────────────────── */
-#palette {
-  width: 185px; flex-shrink: 0;
+#palette-wrap {
+  width: 185px; flex-shrink: 0; display: flex; flex-direction: column;
   background: #161b22; border-right: 1px solid #30363d;
-  overflow-y: auto; padding: 6px 0;
   user-select: none;
+}
+#palette-search-wrap { padding: 5px 6px; border-bottom: 1px solid #30363d; flex-shrink: 0; }
+#palette-search {
+  width: 100%; background: #0d1117; border: 1px solid #30363d; border-radius: 4px;
+  color: #c9d1d9; font-size: 10px; padding: 3px 6px;
+}
+#palette-search:focus { outline: none; border-color: #1f6feb; }
+#palette {
+  flex: 1; overflow-y: auto; padding: 4px 0;
 }
 .cat-hdr {
   padding: 6px 8px 3px; font-size: 9px; font-weight: 700;
@@ -114,6 +122,14 @@ html, body { height: 100%; background: #0d1117; font-family: 'Segoe UI', Arial, 
 #config-panel { flex-direction: column; }
 #config-header { display: flex; align-items: center; gap: 4px; padding: 5px 8px; border-bottom: 1px solid #30363d; flex-shrink: 0; }
 
+/* ── Minimap ─────────────────────────────────────────────────────── */
+#minimap-canvas {
+  position: absolute; bottom: 40px; right: 10px;
+  width: 140px; height: 90px; border: 1px solid #30363d;
+  border-radius: 4px; background: #161b22; cursor: default;
+  pointer-events: none; opacity: 0.85;
+}
+
 /* ── Zoom controls ───────────────────────────────────────────────── */
 #zoom-ctrl {
   position: absolute; bottom: 10px; right: 10px;
@@ -143,6 +159,7 @@ html, body { height: 100%; background: #0d1117; font-family: 'Segoe UI', Arial, 
     <button class="tbtn" id="btn-new">New</button>
     <button class="tbtn" id="btn-save">Save</button>
     <button class="tbtn" id="btn-load">Load</button>
+    <button class="tbtn" id="btn-report" title="Export results as HTML report">Report</button>
     <div class="sep"></div>
     <button class="tbtn run" id="btn-run">▶ Run</button>
     <button class="tbtn danger" id="btn-del">Delete</button>
@@ -161,11 +178,17 @@ html, body { height: 100%; background: #0d1117; font-family: 'Segoe UI', Arial, 
   <div id="main">
 
     <!-- Palette -->
-    <div id="palette"></div>
+    <div id="palette-wrap">
+      <div id="palette-search-wrap">
+        <input id="palette-search" type="text" placeholder="🔍 Filter nodes…" autocomplete="off"/>
+      </div>
+      <div id="palette"></div>
+    </div>
 
     <!-- Canvas -->
     <div id="canvas-wrap">
       <canvas id="dag-canvas" tabindex="0"></canvas>
+      <canvas id="minimap-canvas" width="140" height="90"></canvas>
       <div id="zoom-ctrl">
         <button class="zcbtn" id="btn-zi">+</button>
         <button class="zcbtn" id="btn-zr">⌂</button>
@@ -364,6 +387,38 @@ function flushConfig() {
 
 document.getElementById('config-close').addEventListener('click', hideConfig);
 
+// ── Palette search ────────────────────────────────────────────────────────────
+const paletteSearch = document.getElementById('palette-search');
+paletteSearch.addEventListener('input', () => {
+  const q = paletteSearch.value.toLowerCase().trim();
+  document.querySelectorAll('.pnode').forEach(el => {
+    const s = NODE_SCHEMA[el.dataset.kind];
+    const match = !q ||
+      el.textContent.toLowerCase().includes(q) ||
+      s?.category.toLowerCase().includes(q);
+    el.style.display = match ? '' : 'none';
+  });
+  document.querySelectorAll('.cat-hdr').forEach(hdr => {
+    let sib = hdr.nextElementSibling;
+    let any = false;
+    while (sib && !sib.classList.contains('cat-hdr')) {
+      if (sib.style.display !== 'none') any = true;
+      sib = sib.nextElementSibling;
+    }
+    hdr.style.display = any ? '' : 'none';
+  });
+});
+// Clear search on Escape
+paletteSearch.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { paletteSearch.value = ''; paletteSearch.dispatchEvent(new Event('input')); }
+});
+
+// ── Minimap ───────────────────────────────────────────────────────────────────
+const minimapCanvas = document.getElementById('minimap-canvas');
+function refreshMinimap() {
+  editor.render_minimap('minimap-canvas', canvas.width, canvas.height);
+}
+
 // ── Tab switching ─────────────────────────────────────────────────────────────
 const chartTab = document.getElementById('chart-tab');
 const chartCanvas = document.getElementById('chart-canvas-el');
@@ -419,7 +474,7 @@ window.addEventListener('mousemove', e => {
   const r = canvas.getBoundingClientRect();
   const sx = e.clientX - r.left, sy = e.clientY - r.top;
   if (palDragging) { editor.palette_drag_move(sx, sy); }
-  else             { editor.mouse_move(sx, sy); }
+  else             { editor.mouse_move(sx, sy); refreshMinimap(); }
 });
 
 window.addEventListener('mouseup', e => {
@@ -447,6 +502,7 @@ window.addEventListener('mouseup', e => {
 canvas.addEventListener('wheel', e => {
   e.preventDefault();
   editor.wheel(e.deltaY, e.offsetX, e.offsetY);
+  refreshMinimap();
 }, { passive: false });
 
 window.addEventListener('keydown', e => {
@@ -570,6 +626,108 @@ tmplSelect.addEventListener('change', () => {
     setStatus(`Loaded template: ${catalog.find(t => t.id === id)?.label}`);
   }
 });
+
+// ── Report generation ─────────────────────────────────────────────────────────
+document.getElementById('btn-report').addEventListener('click', generateReport);
+
+function generateReport() {
+  const dagJson = editor.to_json();
+  const dag     = JSON.parse(dagJson);
+  const order   = JSON.parse(editor.execution_order_json());
+  const hasResults = dag.nodes.some(n => Object.keys(n.outputs || {}).length > 0);
+
+  // Capture canvas as PNG for embedding
+  const canvasImg = canvas.toDataURL('image/png', 0.85);
+
+  const now = new Date().toLocaleString();
+  const nodeRows = order.map(id => {
+    const node = dag.nodes.find(n => n.id[0] === id);
+    if (!node) return '';
+    const schema = NODE_SCHEMA[node.kind];
+    const label  = schema?.label ?? node.kind;
+    const userLbl = node.label ? ` — ${node.label}` : '';
+    const cfg    = node.config || {};
+    const outs   = node.outputs || {};
+
+    const configRows = Object.entries(cfg).map(([k, v]) => {
+      const field = schema?.config_fields?.find(f => f.key === k);
+      const lbl   = field?.label ?? k;
+      const unit  = field?.unit ?? '';
+      return `<tr><td class="k">${lbl}</td><td>${v}${unit ? ' ' + unit : ''}</td></tr>`;
+    }).join('');
+
+    const outRows = Object.entries(outs).filter(([k]) => k !== 'steps').map(([k, v]) => {
+      const pIdx = parseInt(k);
+      const portName = !isNaN(pIdx) && schema ? `Output ${pIdx + 1}` : k;
+      const val = typeof v === 'object' ? JSON.stringify(v).substring(0, 60) : String(v).substring(0, 60);
+      return `<tr class="out"><td class="k">${portName}</td><td><strong>${val}</strong></td></tr>`;
+    }).join('');
+
+    const stepsHtml = outs.steps
+      ? `<p class="steps">${String(outs.steps).replace(/;/g, ';<br>')}</p>` : '';
+
+    return `<div class="node-block">
+      <h3>${label}${userLbl}</h3>
+      ${configRows || outRows ? `<table class="param-table">
+        ${configRows ? `<thead><tr><th colspan="2">Parameters</th></tr></thead><tbody>${configRows}</tbody>` : ''}
+        ${outRows ? `<thead><tr><th colspan="2">Results</th></tr></thead><tbody>${outRows}</tbody>` : ''}
+      </table>` : ''}
+      ${stepsHtml}
+    </div>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>HydroComplete DAG Analysis Report</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 860px; margin: 40px auto; color: #1a1a2e; font-size: 13px; }
+  h1 { font-size: 20px; border-bottom: 2px solid #1976d2; padding-bottom: 6px; color: #1565c0; }
+  h2 { font-size: 15px; margin: 28px 0 8px; color: #1976d2; }
+  h3 { font-size: 13px; margin: 0 0 6px; background: #e3f2fd; padding: 4px 8px; border-left: 3px solid #1976d2; }
+  .node-block { margin: 14px 0; border: 1px solid #e0e6ed; border-radius: 6px; overflow: hidden; }
+  table.param-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.param-table td, table.param-table th { border: 1px solid #e0e6ed; padding: 4px 8px; }
+  table.param-table th { background: #f5f7fa; font-weight: 600; font-size: 11px; }
+  td.k { color: #546e7a; width: 45%; }
+  tr.out td { background: #f0fdf4; }
+  tr.out td strong { color: #1b5e20; }
+  .steps { font-size: 10px; color: #78909c; background: #fafbfc; padding: 6px 8px; margin: 0; font-family: monospace; }
+  .diagram { margin: 16px 0; text-align: center; }
+  .diagram img { max-width: 100%; border: 1px solid #e0e6ed; border-radius: 4px; }
+  .disclaimer { margin: 32px 0 0; padding: 10px 14px; background: #fff8e6; border: 1px solid #e6c200; font-size: 11px; }
+  .meta { color: #78909c; font-size: 11px; margin-bottom: 20px; }
+</style>
+</head>
+<body>
+<h1>HydroComplete — Stormwater Analysis Report</h1>
+<p class="meta">Generated: ${now} &nbsp;|&nbsp; Nodes: ${dag.nodes.length} &nbsp;|&nbsp; Edges: ${dag.edges.length}</p>
+
+<h2>Model Diagram</h2>
+<div class="diagram"><img src="${canvasImg}" alt="DAG diagram"/></div>
+
+<h2>Calculation Results</h2>
+${hasResults ? nodeRows : '<p><em>No results yet — press ▶ Run first.</em></p>'}
+
+<div class="disclaimer">
+<strong>Disclaimer:</strong> This report is generated by HydroComplete for preliminary
+stormwater analysis. Verify all inputs, outputs, and assumptions against the engineer's
+design basis and applicable jurisdiction standards. Not a substitute for licensed
+professional engineering judgment.
+</div>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: `hc-dag-report-${new Date().toISOString().slice(0,10)}.html`,
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+  setStatus('Report exported');
+}
 
 // ── Standalone JS engine (runs without Civil 3D host) ────────────────────────
 // Implements the same node calculations as DagExecutor.cs in JavaScript.
@@ -706,6 +864,135 @@ function runStandaloneEngine(dagJson, orderJson) {
           outs['steps'] = `Chain: ${chain.join('→')}, TSS η=${outs['1']}%`;
           break;
         }
+        case 'bmp_sizing': {
+          const area  = input(nodeId, 0, cfg(node,'area_acres',5));
+          const I     = cfg(node,'impervious_pct',50)/100;
+          const P     = cfg(node,'design_storm_in',1);
+          const Rv    = 0.05 + 0.009*I*100;
+          const WQV   = Rv * P * area * 43560 / 12;
+          // Bioretention: 5% of drainage area is typical
+          outs['0'] = +(area * 43560 * 0.05).toFixed(0);
+          outs['steps'] = `WQV=${WQV.toFixed(0)} cf, BMP area ≈ 5% of site`;
+          break;
+        }
+        case 'detention_pond': {
+          // Simplified: SCS triangular hydrograph + prismatic pond
+          const area  = cfg(node,'area_acres',5);
+          const CN    = cfg(node,'curve_number',80);
+          const P     = cfg(node,'rainfall_in',4.2);
+          const tc    = cfg(node,'tc_min',20)/60; // hours
+          const S = 1000/CN - 10; const Ia = 0.2*S;
+          const Q = P > Ia ? Math.pow(P-Ia,2)/(P-Ia+S) : 0;
+          const qp = (484 * area * Q) / (2.67 * tc + tc); // SCS triangular peak
+          const bArea = cfg(node,'bottom_area_sf',5000);
+          const zSlope = cfg(node,'side_slope',3);
+          const maxD = cfg(node,'max_depth_ft',6);
+          const oDia = cfg(node,'orifice_dia_in',6) / 12; // ft
+          const vol = (bArea + (bArea + 2*zSlope*maxD) * (2*zSlope*maxD/bArea)) * maxD / 3;
+          // Approximate attenuation: 30-60% for typical pond
+          const atten = Math.min(60, 30 + 10*(maxD/qp));
+          const qPeakOut = qp * (1 - atten/100);
+          outs['0'] = +qPeakOut.toFixed(2);
+          outs['1'] = +vol.toFixed(0);
+          outs['attenuation_pct'] = +atten.toFixed(1);
+          outs['steps'] = `Qp_in=${qp.toFixed(2)} cfs, Vol≈${vol.toFixed(0)} cf, atten≈${atten.toFixed(0)}%`;
+          break;
+        }
+        case 'continuous_sim': {
+          const area = input(nodeId, 0, cfg(node,'area_acres',5));
+          const CN   = cfg(node,'curve_number',75);
+          const yrs  = cfg(node,'years',3);
+          // Approximate annual runoff using monthly average from Charlotte data
+          const ANNUAL_RAIN_IN = 43.0; // Charlotte average
+          const S = 1000/CN - 10; const Ia = 0.2*S;
+          const annQ = ANNUAL_RAIN_IN > Ia ? Math.pow(ANNUAL_RAIN_IN-Ia,2)/(ANNUAL_RAIN_IN-Ia+S) : 0;
+          const annRun = annQ * area * 43560/12; // ac-in/yr
+          const tss = annRun * 7.48 * 8.34 * 100e-6; // rough EMC 100mg/L
+          outs['0'] = +(annQ).toFixed(2);
+          outs['tss_lbs_yr'] = +tss.toFixed(1);
+          outs['steps'] = `Annual Q≈${annQ.toFixed(2)} in, Runoff≈${annRun.toFixed(0)} cf/yr`;
+          break;
+        }
+        case 'manning_channel': {
+          const b  = cfg(node,'bottom_width_ft',4);
+          const z  = cfg(node,'side_slope',3);
+          const S  = cfg(node,'slope',0.01);
+          const n  = cfg(node,'manning_n',0.035);
+          const Q  = input(nodeId, 0, cfg(node,'design_q_cfs',5));
+          // Normal depth by bisection
+          let ylo = 0.01, yhi = 20.0;
+          for (let i = 0; i < 40; i++) {
+            const ym = (ylo+yhi)/2;
+            const A = (b + z*ym)*ym;
+            const P = b + 2*ym*Math.sqrt(1+z*z);
+            const R = A/P;
+            const Qm = (1.486/n)*A*Math.pow(R,2/3)*Math.pow(S,0.5);
+            if (Qm < Q) ylo = ym; else yhi = ym;
+          }
+          const y  = (ylo+yhi)/2;
+          const A  = (b + z*y)*y;
+          const v  = Q/A;
+          outs['0'] = +y.toFixed(3);
+          outs['1'] = +v.toFixed(3);
+          outs['steps'] = `y=${y.toFixed(3)} ft, V=${v.toFixed(2)} fps`;
+          break;
+        }
+        case 'sediment_basin': {
+          const Q = input(nodeId, 0, cfg(node,'design_q_cfs',5));
+          const SA = Q * 435; // NCDEQ 435 sf/cfs
+          const vol = SA * 3.5; // 3.5 ft avg depth
+          outs['0'] = 75.0; // ~75% trapping efficiency typical
+          outs['1'] = +vol.toFixed(0);
+          outs['surface_sf'] = +SA.toFixed(0);
+          outs['steps'] = `SA=${SA.toFixed(0)} sf (435 sf/cfs), Vol≈${vol.toFixed(0)} cf`;
+          break;
+        }
+        case 'rusle_erosion': {
+          const R  = cfg(node,'r_factor',180);
+          const K  = cfg(node,'k_factor',0.28);
+          const LS = cfg(node,'ls_factor',1.5);
+          const C  = cfg(node,'c_factor',0.20);
+          const P  = cfg(node,'p_factor',1.0);
+          const area = cfg(node,'area_acres',1);
+          const A  = R*K*LS*C*P;
+          outs['0'] = +A.toFixed(3);
+          outs['total_tons_yr'] = +(A*area).toFixed(2);
+          outs['steps'] = `R=${R}×K=${K}×LS=${LS}×C=${C}×P=${P}=${A.toFixed(2)} t/ac/yr`;
+          break;
+        }
+        case 'time_of_concentration':
+          outs['0'] = cfg(node,'tc_min',20);
+          break;
+        case 'unit_hydrograph': {
+          const area = cfg(node,'area_acres',5);
+          const tc   = input(nodeId, 1, cfg(node,'tc_min',20));
+          const Q_in = input(nodeId, 0, 1.0);
+          const qp   = (484 * area * Q_in) / (0.133 * tc + tc);
+          outs['0'] = +qp.toFixed(2);
+          outs['steps'] = `Qp = 484×${area}×${Q_in.toFixed(3)} / (0.133×${tc}+${tc}) = ${qp.toFixed(2)} cfs`;
+          break;
+        }
+        case 'loss_method': {
+          const P  = input(nodeId, 0, cfg(node,'rainfall_in',3.5));
+          const CN = cfg(node,'curve_number',75);
+          const S  = 1000/CN - 10; const Ia = 0.2*S;
+          const Q  = P > Ia ? Math.pow(P-Ia,2)/(P-Ia+S) : 0;
+          outs['0'] = +Q.toFixed(3);
+          outs['loss_in'] = +(P-Q).toFixed(3);
+          outs['steps']   = `P=${P}, CN=${CN}, Q=${Q.toFixed(3)} in`;
+          break;
+        }
+        case 'water_quality_volume': {
+          const area = input(nodeId, 0, cfg(node,'area_acres',5));
+          const I    = cfg(node,'impervious_pct',50)/100;
+          const P    = input(nodeId, 1, cfg(node,'design_storm_in',1));
+          const Rv   = 0.05 + 0.009*I*100;
+          const WQV  = Rv*P*area*43560/12;
+          outs['0']  = +WQV.toFixed(0);
+          outs['rv'] = +Rv.toFixed(3);
+          outs['steps'] = `Rv=${Rv.toFixed(3)}, WQV=${WQV.toFixed(0)} cf`;
+          break;
+        }
         case 'outfall':
           outs['received'] = input(nodeId, 0, 0);
           break;
@@ -725,6 +1012,7 @@ window.addEventListener('message', e => {
   const resultJson = typeof msg.dag === 'string' ? msg.dag : JSON.stringify(msg.dag);
   if (editor.apply_results_json(resultJson)) {
     setStatus('Results applied — click a node to see charts');
+    refreshMinimap();
     const j = editor.get_selected_node_json();
     if (j) showConfig(j);
     showResultsBar(JSON.parse(resultJson));
