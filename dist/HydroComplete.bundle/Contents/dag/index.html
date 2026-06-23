@@ -348,6 +348,11 @@ const cfgBody  = document.getElementById('config-body');
 const cfgTitle = document.getElementById('config-title');
 const resultsBar = document.getElementById('results-bar');
 
+const editor = new DagEditor('dag-canvas');
+// Expose for E2E tests and DevTools
+window.__editor = editor;
+window.__DagEditor = DagEditor;
+
 function resizeCanvas() {
   canvas.width  = wrap.clientWidth;
   canvas.height = wrap.clientHeight;
@@ -355,11 +360,6 @@ function resizeCanvas() {
 }
 new ResizeObserver(resizeCanvas).observe(wrap);
 resizeCanvas();
-
-const editor = new DagEditor('dag-canvas');
-// Expose for E2E tests and DevTools
-window.__editor = editor;
-window.__DagEditor = DagEditor;
 
 // ── Palette metadata from WASM ────────────────────────────────────────────
 const PALETTE = JSON.parse(DagEditor.palette_json());
