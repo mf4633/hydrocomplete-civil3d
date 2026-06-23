@@ -165,6 +165,14 @@ html, body { height: 100%; background: #0d1117; font-family: 'Segoe UI', Arial, 
 #snap-btn.on { color: #3fb950; border-color: #238636; }
 #snap-btn:hover { border-color: #30363d; }
 
+/* ── Inline label editor ─────────────────────────────────────────── */
+#label-input {
+  display: none; position: absolute; z-index: 200;
+  background: #0d1117; border: 1.5px solid #58a6ff; border-radius: 4px;
+  color: #c9d1d9; font: 600 11px 'Segoe UI',Arial,sans-serif;
+  padding: 2px 6px; outline: none; text-align: center;
+}
+
 /* ── Minimap ─────────────────────────────────────────────────────── */
 #minimap-canvas {
   position: absolute; bottom: 40px; right: 10px;
@@ -234,6 +242,7 @@ html, body { height: 100%; background: #0d1117; font-family: 'Segoe UI', Arial, 
     <!-- Canvas -->
     <div id="canvas-wrap">
       <canvas id="dag-canvas" tabindex="0"></canvas>
+      <input id="label-input" type="text" maxlength="40" autocomplete="off"/>
       <canvas id="minimap-canvas" width="140" height="90"></canvas>
       <div id="zoom-ctrl">
         <button class="zcbtn" id="btn-zi">+</button>
@@ -289,8 +298,10 @@ html, body { height: 100%; background: #0d1117; font-family: 'Segoe UI', Arial, 
   <div class="ctx-item" id="ctx-paste">Paste<span class="shortcut">Ctrl+V</span></div>
   <div class="ctx-sep"></div>
   <div class="ctx-item" id="ctx-selall">Select All<span class="shortcut">Ctrl+A</span></div>
+  <div class="ctx-item" id="ctx-zoomsel">Zoom to Selected<span class="shortcut">S</span></div>
   <div class="ctx-item" id="ctx-layout">Auto-Layout<span class="shortcut">Ctrl+L</span></div>
   <div class="ctx-item" id="ctx-fit">Fit to View<span class="shortcut">Ctrl+F</span></div>
+  <div class="ctx-item" id="ctx-rename">Rename Node<span class="shortcut">F2</span></div>
 </div>
 
 <!-- Keyboard shortcuts overlay -->
@@ -312,6 +323,8 @@ html, body { height: 100%; background: #0d1117; font-family: 'Segoe UI', Arial, 
       <tr><td>Redo</td><td>Ctrl+Y / Ctrl+Shift+Z</td></tr>
       <tr><td>Auto-layout</td><td>Ctrl+L</td></tr>
       <tr><td>Fit to view</td><td>Ctrl+F</td></tr>
+      <tr><td>Zoom to selected</td><td>S</td></tr>
+      <tr><td>Rename selected node</td><td>F2 / Double-click</td></tr>
       <tr><td>Toggle snap-to-grid</td><td>G</td></tr>
       <tr><td>Connect nodes</td><td>Drag from output port →</td></tr>
       <tr><td>Close inspector</td><td>Escape</td></tr>
@@ -486,6 +499,60 @@ function flushConfig() {
 
 document.getElementById('config-close').addEventListener('click', hideConfig);
 
+// ── Inline node label editing ─────────────────────────────────────────────────
+const labelInput = document.getElementById('label-input');
+let labelNodeId = null;
+
+function startLabelEdit(nodeId) {
+  const rectJson = editor.node_screen_rect(nodeId);
+  if (!rectJson || rectJson === '{}') return;
+  const r = JSON.parse(rectJson);
+  const canvasRect = canvas.getBoundingClientRect();
+  labelNodeId = nodeId;
+  labelInput.value = r.label ?? '';
+  labelInput.style.display = 'block';
+  labelInput.style.left  = (canvasRect.left + r.x + 4) + 'px';
+  labelInput.style.top   = (canvasRect.top  + r.y + 4) + 'px';
+  labelInput.style.width = (r.w - 8) + 'px';
+  labelInput.focus();
+  labelInput.select();
+}
+
+function commitLabelEdit() {
+  if (labelNodeId === null) return;
+  editor.set_node_label(labelNodeId, labelInput.value);
+  cancelLabelEdit();
+  const j = editor.get_selected_node_json();
+  if (j) showConfig(j);
+  setStatus('Label updated');
+}
+
+function cancelLabelEdit() {
+  labelInput.style.display = 'none';
+  labelInput.value = '';
+  labelNodeId = null;
+  canvas.focus();
+}
+
+labelInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter')  { e.preventDefault(); commitLabelEdit(); }
+  if (e.key === 'Escape') { e.preventDefault(); cancelLabelEdit(); }
+});
+labelInput.addEventListener('blur', () => {
+  // Small delay so click-on-other-item can cancel
+  setTimeout(commitLabelEdit, 120);
+});
+
+// Double-click canvas → edit node label
+canvas.addEventListener('dblclick', e => {
+  const nodeId = editor.node_at_screen(e.offsetX, e.offsetY);
+  if (nodeId !== 4294967295) { startLabelEdit(nodeId); }
+  else { editor.zoom_fit(); refreshMinimap(); } // dbl-click empty = fit
+});
+
+// Keep label input positioned if window resizes or camera changes
+window.addEventListener('resize', cancelLabelEdit);
+
 // ── Palette search ────────────────────────────────────────────────────────────
 const paletteSearch = document.getElementById('palette-search');
 paletteSearch.addEventListener('input', () => {
@@ -650,6 +717,15 @@ window.addEventListener('keydown', e => {
   if (e.key === 'g' || e.key === 'G') {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
     toggleSnap(); return;
+  }
+  if (e.key === 's' || e.key === 'S') {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    editor.zoom_to_selected(); refreshMinimap(); setStatus('Zoom to selected'); return;
+  }
+  if (e.key === 'F2') {
+    const nid = editor.selected_node_id();
+    if (nid !== 4294967295) startLabelEdit(nid);
+    return;
   }
   if (e.key === '?') {
     shortcutsOverlay.classList.toggle('open'); return;
@@ -1311,6 +1387,13 @@ document.getElementById('ctx-layout').addEventListener('click', () => {
 });
 document.getElementById('ctx-fit').addEventListener('click', () => {
   editor.zoom_fit(); setStatus('Fit to view');
+});
+document.getElementById('ctx-zoomsel').addEventListener('click', () => {
+  editor.zoom_to_selected(); refreshMinimap(); setStatus('Zoom to selected');
+});
+document.getElementById('ctx-rename').addEventListener('click', () => {
+  const nid = editor.selected_node_id();
+  if (nid !== 4294967295) startLabelEdit(nid);
 });
 
 // ── Keyboard shortcuts overlay ────────────────────────────────────────────────

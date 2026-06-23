@@ -124,6 +124,36 @@ try {
         Test-BundleManifest
     }
 
+    # Build the Rust WASM DAG editor if the crate exists alongside this repo
+    $dagCrate = Join-Path (Split-Path -Parent $root) 'hydrocomplete-dag'
+    if (Test-Path (Join-Path $dagCrate 'Cargo.toml')) {
+        $wasmPack = Get-Command wasm-pack -ErrorAction SilentlyContinue
+        if ($wasmPack) {
+            Invoke-Step 'Build DAG WASM editor' {
+                Push-Location $dagCrate
+                try {
+                    cargo test --lib --quiet
+                    wasm-pack build --target web --out-dir www/pkg --release 2>&1 |
+                        Where-Object { $_ -notmatch '^\[INFO\]' } |
+                        ForEach-Object { Write-Host $_ }
+                    # Copy into bundle
+                    $dagDst = Join-Path $root 'dist\HydroComplete.bundle\Contents\dag'
+                    if (Test-Path $dagDst) { Remove-Item $dagDst -Recurse -Force }
+                    New-Item -ItemType Directory -Force -Path $dagDst | Out-Null
+                    Copy-Item 'www\index.html' $dagDst -Force
+                    Copy-Item 'www\pkg' $dagDst -Recurse -Force
+                    Write-Host "  DAG editor staged to $dagDst"
+                } finally { Pop-Location }
+            }
+        } else {
+            Write-Host ""
+            Write-Host "==> Skipping DAG WASM build (wasm-pack not on PATH)"
+        }
+    } else {
+        Write-Host ""
+        Write-Host "==> Skipping DAG WASM build (hydrocomplete-dag not found at $dagCrate)"
+    }
+
     Write-Host ""
     Write-Host "CI passed."
     exit 0

@@ -2,7 +2,7 @@
 
 **Product:** HydroComplete for Civil 3D  
 **Version at submission:** 1.7.1
-**Last updated:** 2026-06-19
+**Last updated:** 2026-06-23
 
 ---
 
@@ -60,6 +60,15 @@ Rational method Â· Kirpich & NRCS time of concentration Â· IDF intensity `i 
 Every engine result carries a `Steps` trace (label, value, units, formula) â€” the same "show your work" data behind HydroComplete's web app and sealable reports.
 
 Learn more: [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d)
+
+### New in v1.7.1
+
+- **`HC_DAG`** *(net8, Civil 3D 2025/2026 only)* — **Visual model builder**: drag-and-drop stormwater node DAG editor in a dockable WebView2 panel. Connects hydrology → hydraulics → water quality engines in one visual pipeline. 20 node types (Catchment, SCS CN, Rational, Unit Hydro, Manning Pipe/Channel, Detention Pond, WQV, BMP Sizing, Treatment Train, RUSLE, Sediment Basin, GVF Profile, Continuous Simulation, and more). Features: palette search, Ctrl+Z/Y undo/redo, multi-select with rubber-band, group copy/paste, auto-layout, snap-to-grid, inline node label editing (F2 / double-click), minimap, Config + Chart inspector tabs, HTML + SVG export, 5 pre-built templates, localStorage autosave, auto-populates from drawing catchments and pipe networks.
+- **`HC_DAG_SAVE` / `HC_DAG_LOAD`** — Persist the DAG alongside the drawing as `<drawing>.hcdag`; `HC_DAG_LOAD` reopens the editor and restores the model.
+- **`HC_LOSS`** — Incremental loss method (Green-Ampt / Horton / SCS CN) on a SCS Type II design storm; reports per-step excess and peak intensity.
+- **`HC_CONTINUOUS`** — Multi-year daily continuous simulation (17 US cities, Hargreaves ET, soil-moisture bucket, moisture-adjusted SCS CN, land-use-specific pollutant loads).
+- **`HC_WQ_DIAGRAM`** — HTML/SVG BMP treatment-train node diagram with per-pollutant removal labels and overall efficiency summary.
+- **47 `HC_*` commands** total, registered for Civil 3D 2024 (R24.3), 2025 (R25.0), and 2026 (R25.1).
 
 ### New in v1.4.0
 
