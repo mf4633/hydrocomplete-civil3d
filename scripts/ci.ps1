@@ -28,9 +28,17 @@ function Invoke-Step {
     )
     Write-Host ""
     Write-Host "==> $Name"
-    & $Action
-    if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
-        throw "$Name failed with exit code $LASTEXITCODE"
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & $Action
+        $code = if ($null -ne $LASTEXITCODE) { $LASTEXITCODE } elseif ($?) { 0 } else { 1 }
+        if ($code -ne 0) {
+            throw "$Name failed with exit code $code"
+        }
+    }
+    finally {
+        $ErrorActionPreference = $prevEap
     }
 }
 
@@ -132,8 +140,9 @@ try {
             Invoke-Step 'Build DAG WASM editor' {
                 Push-Location $dagCrate
                 try {
-                    cargo test --lib --quiet
-                    wasm-pack build --target web --out-dir www/pkg --release 2>&1 |
+                    & cargo test --lib --quiet 2>&1 | Out-Host
+                    if ($LASTEXITCODE -ne 0) { throw 'cargo test (hydrocomplete-dag) failed' }
+                    & wasm-pack build --target web --out-dir www/pkg --release 2>&1 |
                         Where-Object { $_ -notmatch '^\[INFO\]' } |
                         ForEach-Object { Write-Host $_ }
                     # Copy into bundle

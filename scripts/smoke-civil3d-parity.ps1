@@ -20,7 +20,7 @@ if (-not $AcadExe) {
 }
 if (-not (Test-Path $AcadExe)) {
     Write-Host "SKIP: Civil 3D 2026 not found at $AcadExe"
-    exit 0
+    exit 2
 }
 
 if (-not $Drawing) {
@@ -28,7 +28,7 @@ if (-not $Drawing) {
 }
 if (-not (Test-Path $Drawing)) {
     Write-Host "SKIP: Drawing not found: $Drawing"
-    exit 0
+    exit 2
 }
 
 New-Item -ItemType Directory -Force -Path $work | Out-Null

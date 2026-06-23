@@ -357,6 +357,9 @@ new ResizeObserver(resizeCanvas).observe(wrap);
 resizeCanvas();
 
 const editor = new DagEditor('dag-canvas');
+// Expose for E2E tests and DevTools
+window.__editor = editor;
+window.__DagEditor = DagEditor;
 
 // ── Palette metadata from WASM ────────────────────────────────────────────
 const PALETTE = JSON.parse(DagEditor.palette_json());
@@ -1280,6 +1283,8 @@ function runStandaloneEngine(dagJson, orderJson) {
   }
   return JSON.stringify(dag);
 }
+
+window.__runStandaloneEngine = runStandaloneEngine; // for E2E
 
 // ── Receive results from C# ───────────────────────────────────────────────
 window.addEventListener('message', e => {
