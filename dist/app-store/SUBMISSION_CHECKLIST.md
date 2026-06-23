@@ -1,7 +1,7 @@
 # HydroComplete C3D — Release & App Store Checklist
 
-**Target version:** 1.4.0  
-**Last updated:** 2026-06-19
+**Target version:** 1.7.1  
+**Last updated:** 2026-06-23
 
 ### Legend
 
@@ -49,7 +49,11 @@ Run `.\scripts\validation-preflight.ps1` before every release candidate.
 | `hydrocomplete.com/civil3d` HTTP 200 | 🤖 | [x] 2026-06-19 |
 | `hydrocomplete.com/privacy.html` HTTP 200 | 🤖 | [x] 2026-06-19 |
 | Licensing API accepts `hc_live_beta_tester01` | 🤖 | [x] 2026-06-19 — Fly deploy; `JWT_SECRET` fallback |
-| `hydrocomplete.com/api/*` proxy to Fly | 🤖 | [ ] `netlify.toml` ready — deploy from hc-refactored (`bash build.sh && npx netlify deploy --prod`) |
+| `hydrocomplete.com/api/*` proxy to Fly | 🤖 | [x] 2026-06-23 — Netlify proxy live |
+| GitHub CI — hc-refactored test suite (505 tests) | 🤖 | [x] 2026-06-23 — `.github/workflows/ci.yml` |
+| Stripe plugin checkout + key issuance | 🤖 | [x] 2026-06-23 — `create-plugin-checkout` + webhook; set `STRIPE_PRICE_CIVIL3D_PRO` on Fly |
+| Civil 3D landing purchase CTA | 🤖 | [x] 2026-06-23 — `civil3d.html` $199/yr Stripe card |
+| Desktop add-in Terms (Section 12) | 🤖 | [x] 2026-06-23 — `terms.html` civil3d + opencad SKUs |
 | Plugin `HC_ACTIVATE` online URL | 🤖 | [x] points to `hc-refactored.fly.dev` until Netlify proxy live |
 | Release zip + SHA256 (`release.ps1`) | 🤖 | [x] `HydroComplete-1.4.0.zip` SHA256 `2075812B…FD0FE` (2026-06-19 rebuild) |
 | Civil 3D parity smoke (`smoke-civil3d-parity.ps1`) | 🤖 | [x] 2026-06-19 — KaTeX report + network diagram on Pipe Networks-3 |

@@ -14,10 +14,10 @@ License file: `%APPDATA%\HydroComplete\license.json`
 Status: `HC_LICENSE`  
 Gate implementation: `src/HydroComplete.Civil3D/Auth/LicenseGate.cs` + `HydroComplete.Engine/LicenseActivator.cs`
 
-## Path to paid (not flipped yet)
+## Path to paid
 
-1. **Checkout** — Stripe or Lemon Squeezy on hydrocomplete.com; issue `hc_live_*` (or subscription) tokens after purchase.
-2. **Activation API** — production validate/refresh endpoints (partially wired; beta tokens work today).
+1. **Checkout** — Stripe on hydrocomplete.com/civil3d (`POST /api/stripe/create-plugin-checkout`, product `civil3d`). Webhook mints `hc_live_c3d_*` and emails the key. Requires `STRIPE_PRICE_CIVIL3D_PRO` on Fly.
+2. **Activation API** — production validate/refresh live; beta token `hc_live_beta_tester01` works today.
 3. **App Store** — paid listing or in-app purchase per Autodesk policy; listing copy in `dist/app-store/`.
 4. **Enforcement** — expand Pro gate beyond PDF when ready (e.g. batch export, team seats, SLA support); keep a useful Free tier for trial/evaluation.
 5. **Offline grace** — keep 30-day refresh + offline stub for field laptops (same pattern as OCS plugin).
