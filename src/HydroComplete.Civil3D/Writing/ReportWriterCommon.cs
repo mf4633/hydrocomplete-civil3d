@@ -108,10 +108,12 @@ namespace HydroComplete.Civil3D.Writing
 
             if (latex != null)
             {
-                block.AppendLine("<div class=\"hc-formula-equation\"><code class=\"hc-tex-fallback\">" +
-                                 EscapeHtml(latex) + "</code></div>");
-                block.AppendLine("<div class=\"hc-formula-result\"><code class=\"hc-tex-fallback\">" +
-                                 EscapeHtml(resultLatex) + "</code></div>");
+                block.AppendLine("<div class=\"hc-formula-equation\">" +
+                                 "<span class=\"hc-formula-label\">Equation</span>" +
+                                 "<code class=\"hc-tex-fallback\">" + EscapeHtml(latex) + "</code></div>");
+                block.AppendLine("<div class=\"hc-formula-result\">" +
+                                 "<span class=\"hc-formula-label\">Result</span>" +
+                                 "<code class=\"hc-tex-fallback\">" + EscapeHtml(resultLatex) + "</code></div>");
             }
             else
             {
@@ -135,20 +137,38 @@ namespace HydroComplete.Civil3D.Writing
 
         private static string FormatResultLatex(CalcStep step)
         {
-            string units = string.IsNullOrWhiteSpace(step.Units)
-                ? ""
-                : $"\\ \\text{{{EscapeLatexText(step.Units)}}}";
-            return $"{EscapeLatexIdentifier(step.Label)} = {step.Value.ToString("0.####", CultureInfo.InvariantCulture)}{units}";
+            string units = FormatUnitsLatex(step.Units);
+            return $"{FormatLabelLatex(step.Label)} = {step.Value.ToString("0.####", CultureInfo.InvariantCulture)}{units}";
         }
 
-        private static string EscapeLatexIdentifier(string label)
+        private static string FormatLabelLatex(string label)
         {
             if (string.IsNullOrWhiteSpace(label)) return "x";
-            return label
-                .Replace(@"\", @"\\")
-                .Replace("{", @"\{")
-                .Replace("}", @"\}")
-                .Replace("_", @"\_");
+            int underscore = label.IndexOf('_');
+            if (underscore < 0)
+                return EscapeLatexText(label);
+
+            string basePart = label.Substring(0, underscore);
+            string subPart = label.Substring(underscore + 1);
+            string subLatex = subPart.Length == 1
+                ? EscapeLatexText(subPart)
+                : $@"\text{{{EscapeLatexText(subPart)}}}";
+            return $@"{EscapeLatexText(basePart)}_{{{subLatex}}}";
+        }
+
+        private static string FormatUnitsLatex(string units)
+        {
+            if (string.IsNullOrWhiteSpace(units)) return "";
+
+            int caret = units.IndexOf('^');
+            if (caret >= 0)
+            {
+                string baseUnit = units.Substring(0, caret);
+                string exponent = units.Substring(caret + 1);
+                return $@"\,\mathrm{{{EscapeLatexText(baseUnit)}}}^{{{EscapeLatexText(exponent)}}}";
+            }
+
+            return $@"\,\mathrm{{{EscapeLatexText(units)}}}";
         }
 
         private static string EscapeLatexText(string s)
@@ -171,9 +191,14 @@ namespace HydroComplete.Civil3D.Writing
             sb.AppendLine(".hc-formula-panel{margin:12px 0;}");
             sb.AppendLine(".hc-formula-step{border:1px solid #e0e6ed;border-radius:6px;padding:10px 12px;margin:8px 0;background:#fafbfc;}");
             sb.AppendLine(".hc-formula-title{font-weight:600;font-size:0.95rem;margin-bottom:6px;}");
-            sb.AppendLine(".hc-formula-equation,.hc-formula-result{margin:4px 0;}");
+            sb.AppendLine(".hc-formula-equation,.hc-formula-result{margin:6px 0;padding:6px 8px;border-radius:4px;}");
+            sb.AppendLine(".hc-formula-equation{background:#f4f6f8;border-left:3px solid #7a8a9a;}");
+            sb.AppendLine(".hc-formula-result{background:#e8f4ec;border-left:3px solid #2e7d4f;}");
+            sb.AppendLine(".hc-formula-label{display:block;font-size:0.72rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#5a6570;margin-bottom:4px;}");
+            sb.AppendLine(".hc-formula-result .hc-formula-label{color:#2e7d4f;}");
             sb.AppendLine(".hc-formula-desc{font-family:Consolas,monospace;font-size:0.85rem;color:#444;}");
             sb.AppendLine(".hc-tex-fallback{font-family:Consolas,monospace;font-size:0.9rem;}");
+            sb.AppendLine(".hc-formula-equation .katex-display,.hc-formula-result .katex-display{margin:0;}");
             sb.AppendLine(".pass{color:#0a7a2f;font-weight:600;} .failtxt{color:#b00020;font-weight:600;}");
             sb.AppendLine("</style>");
         }
@@ -186,7 +211,7 @@ namespace HydroComplete.Civil3D.Writing
     try {
       var span = document.createElement('span');
       katex.render(latex, span, {
-        displayMode: el.closest('.hc-formula-equation, .hc-formula-result') !== null,
+        displayMode: el.closest('.hc-formula-equation') !== null,
         throwOnError: false,
         strict: false
       });
