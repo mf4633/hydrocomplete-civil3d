@@ -71,12 +71,29 @@ while ($acad.Documents.Count -gt 0) {
     try { $acad.Documents.Item(0).Close($false) } catch { break }
     Start-Sleep -Milliseconds 500
 }
-$null = $acad.Documents.Open($localDwg)
-Start-Sleep -Seconds 8
-if ($acad.ActiveDocument.Name -ne $targetLeaf) {
-    throw "Wrong drawing active: $($acad.ActiveDocument.Name) (expected $targetLeaf)"
+$openedDoc = $false
+for ($try = 0; $try -lt 40; $try++) {
+    try {
+        $null = $acad.Documents.Open($localDwg)
+        $openedDoc = $true
+        break
+    } catch {
+        Start-Sleep -Seconds 2
+    }
 }
-Write-Host "[2/6] COM v$($acad.Version) - $($acad.ActiveDocument.Name)"
+if (-not $openedDoc) { throw "Documents.Open failed for $localDwg" }
+$activeName = ''
+for ($try = 0; $try -lt 40; $try++) {
+    Start-Sleep -Seconds 2
+    try {
+        $activeName = [string]$acad.ActiveDocument.Name
+        if ($activeName -eq $targetLeaf) { break }
+    } catch {}
+}
+if ($activeName -ne $targetLeaf) {
+    throw "Wrong drawing active: '$activeName' (expected $targetLeaf)"
+}
+Write-Host "[2/6] COM v$($acad.Version) - $activeName"
 
 function Send-Cmd([string]$label, [string]$cmd, [int]$waitSec = 8) {
     for ($try = 0; $try -lt 40; $try++) {
@@ -121,7 +138,8 @@ function Wait-LayerCount {
         [string]$Layer,
         [int]$MinCount,
         [int]$MaxAttempts = 6,
-        [int]$SleepSec = 4
+        [int]$SleepSec = 4,
+        [string]$Context = ''
     )
     for ($i = 0; $i -lt $MaxAttempts; $i++) {
         $counts = Get-LayerEntityCounts $Doc @($Layer)
@@ -153,15 +171,20 @@ Send-Cmd 'HC_PIPES_WRITE' "HC_PIPES_WRITE`n" 20
 $capacityLabels = Wait-LayerCount -Doc $acad.ActiveDocument -Layer 'HC-CAPACITY' -MinCount $MinCapacityLabels
 Write-Host "  HC-CAPACITY labels after HC_PIPES_WRITE: $capacityLabels"
 
-$scaledWait = [Math]::Min(180, 12 + [Math]::Ceiling($capacityLabels * 0.4))
+$pollAttempts = [Math]::Min(30, 6 + [Math]::Ceiling($capacityLabels / 8))
+$scaledWait = [Math]::Min(240, 15 + [Math]::Ceiling($capacityLabels * 0.5))
 Send-Cmd 'HC_CAPACITY' "HC_CAPACITY`n`n" $scaledWait
 
 # HC_HGL prompts (no catchments): Q, HEC-22 Yes, momentum No, tailwater(s), profile Yes.
-$hglWait = [Math]::Min(300, 25 + [Math]::Ceiling($capacityLabels * 0.6))
-Send-Cmd 'HC_HGL' "HC_HGL`n`n`n`n`n`n`n`n" $hglWait
-$hglLabels = Wait-LayerCount -Doc $acad.ActiveDocument -Layer 'HC-HGL' -MinCount $MinHglLabels
-$profileCount = Wait-LayerCount -Doc $acad.ActiveDocument -Layer 'HC-HGL-PROFILE' -MinCount $MinProfileEntities
+$hglWait = [Math]::Min(600, 45 + [Math]::Ceiling($capacityLabels * 1.5))
+Write-Host "  (scaled waits: capacity=${scaledWait}s, hgl=${hglWait}s, poll=$pollAttempts)"
+Send-Cmd 'HC_HGL' "HC_HGL`n`n`n`n`n`n`n`n`n`n" $hglWait
+$hglLabels = Wait-LayerCount -Doc $acad.ActiveDocument -Layer 'HC-HGL' -MinCount $MinHglLabels -MaxAttempts $pollAttempts
+$profileCount = Wait-LayerCount -Doc $acad.ActiveDocument -Layer 'HC-HGL-PROFILE' -MinCount $MinProfileEntities -MaxAttempts $pollAttempts
 
+if ($acad.ActiveDocument.Name -ne $targetLeaf) {
+    throw "Active drawing changed during smoke: $($acad.ActiveDocument.Name) (expected $targetLeaf)"
+}
 $after = Get-LayerEntityCounts $acad.ActiveDocument @('HC-CAPACITY', 'HC-HGL', 'HC-HGL-PROFILE')
 Write-Host "[4/6] Layer counts after commands:"
 Write-Host "  HC-CAPACITY:     $($after['HC-CAPACITY'])"
