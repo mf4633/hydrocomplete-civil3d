@@ -1,4 +1,4 @@
-# Civil 3D Validation Session — HydroComplete v1.4.0
+# Civil 3D Validation Session — HydroComplete v1.7.2
 
 **Owner:** Michael (requires live Civil 3D)  
 **Duration:** ~2 hours  
@@ -25,11 +25,11 @@ Run this session **before** App Store submission or direct beta release. Check b
 4. Launch **Civil 3D 2026** (full desktop app, not `accoreconsole`).
 5. Confirm startup banner:
    ```
-   HydroComplete for Civil 3D 1.4.0 loaded. Type HC_ABOUT for commands.
+   HydroComplete for Civil 3D 1.7.2 loaded. Type HC_ABOUT for commands.
    ```
 6. Open `C-STORM`. Save a copy if you will write labels (`*_VALIDATION.dwg`).
 
-**Pass criteria:** banner shows `1.4.0`; no NETLOAD required.
+**Pass criteria:** banner shows `1.7.2`; no NETLOAD required.
 
 ---
 
@@ -37,10 +37,10 @@ Run this session **before** App Store submission or direct beta release. Check b
 
 | Step | Action | Pass? | Notes |
 |------|--------|-------|-------|
-| A1 | Click **HydroComplete › Analysis** ribbon tab | ☐ | Tab visible, not grayed out |
-| A2 | Click **About** button → runs `HC_ABOUT` | ☐ | |
-| A3 | `HC_ABOUT` lists **46** commands | ☐ | Count in command line output |
-| A4 | Spot-check ribbon buttons: Pipe Capacity, HGL Profile, HTML Report, Activate Pro | ☐ | Each invokes without error |
+| A1 | Click **HydroComplete** ribbon tab | ☐ | Tab visible with panels: Network, Hydrology, Stormwater, Hydraulics, Analysis, Model Builder, Tools |
+| A2 | Click **About** button (Tools panel) → runs `HC_ABOUT` | ☐ | |
+| A3 | `HC_ABOUT` lists **52** commands | ☐ | Count in command line output |
+| A4 | Spot-check ribbon buttons: Pipe Capacity, HGL Profile, Open DAG, HTML Report, Activate Pro | ☐ | Each invokes without error |
 
 ---
 
@@ -138,14 +138,16 @@ you@email.com hc_live_beta_tester01
 | G5 | `HC_NETWORK_DIAGRAM` | ☑ | Automated 2026-06-19 (Pipe Networks-3); SVG in OneDrive `Documents\HydroComplete\` |
 | G6 | `HC_SOIL` | ☐ | Cecil name lookup OK; **live geo fetch still needs project DWG** |
 | G7 | `HC_REPORT` | ☑ | User confirmed KaTeX HTML looks good (2026-06-19) |
+| G8 | `HC_DAG` | ☐ | Model Builder panel opens; palette shows node types; Ctrl+Z undo works |
+| G9 | `HC_DAG_SAVE` / `HC_DAG_LOAD` | ☐ | `.hcdag` file written beside drawing; reload restores model |
 
 If catchment DWG available:
 
 | Step | Command | Pass? | What to verify |
 |------|---------|-------|----------------|
-| G8 | `HC_ANALYZE` | ☐ | Full-network summary |
-| G9 | `HC_DETENTION` | ☐ | Pond routing completes |
-| G10 | `HC_PREPOST` | ☐ | Pre/post peak comparison |
+| G10 | `HC_ANALYZE` | ☐ | Full-network summary |
+| G11 | `HC_DETENTION` | ☐ | Pond routing completes |
+| G12 | `HC_PREPOST` | ☐ | Pre/post peak comparison |
 
 ---
 

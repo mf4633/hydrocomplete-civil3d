@@ -5,7 +5,7 @@ drawing** — read pipe networks and catchments, compute on public-domain method
 and show every formula. This is the desktop companion behind
 [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d).
 
-Status: **v1.7.0** — DAG editor panel (`HC_DAG`), KaTeX HTML reports, live SSURGO (`HC_SOIL`), network diagram export (`HC_NETWORK_DIAGRAM`), Free/Pro licensing (`HC_ACTIVATE` / `HC_LICENSE`). **Commercial (paid) add-in** — see [`docs/COMMERCIAL.md`](docs/COMMERCIAL.md). User validation below.
+Status: **v1.7.2** — DAG editor panel (`HC_DAG`), KaTeX HTML reports, live SSURGO (`HC_SOIL`), network diagram export (`HC_NETWORK_DIAGRAM`), Free/Pro licensing (`HC_ACTIVATE` / `HC_LICENSE`). **Commercial (paid) add-in** — see [`docs/COMMERCIAL.md`](docs/COMMERCIAL.md). User validation below.
 
 **Autodesk App Store:** Listing copy, submission checklist, and screenshot shot list live in [`dist/app-store/`](dist/app-store/) (`LISTING.md`, `SUBMISSION_CHECKLIST.md`, `SCREENSHOTS.md`).
 
@@ -24,7 +24,7 @@ not yet re-tested after the listed fix.
 | `NETLOAD` fallback | **validated** | Works when bundle not yet loaded; cannot reload while assembly in memory |
 | `HC_PIPES_WRITE` (Description/XData) | **failed → removed** | All 30 pipes: `eBadDxfSequence` — Civil 3D parts reject arbitrary Description/XData |
 | `HC_PIPES_WRITE` (MText labels, v0.1.1) | **validated** | 30 labels on layer `HC-CAPACITY` at pipe midpoints (auto-load, no NETLOAD) |
-| HydroComplete ribbon tab | *pending* | Not explicitly confirmed in session |
+| HydroComplete ribbon tab | *pending re-test* | v1.7.2 — seven panels (Network, Hydrology, Stormwater, Hydraulics, Analysis, Model Builder, Tools); run Block A in `VALIDATION_SESSION.md` |
 | `HC_RATIONAL` (with catchments) | *pending* | No catchment objects in test drawing |
 | Waitlist page `hydrocomplete.com/civil3d` | *deploy only* | HTTP 200 deployed; signup flow not user-tested |
 | Engine unit tests | **validated** | `dotnet test` — 405 pass, 1 skip (2026-06-19) |

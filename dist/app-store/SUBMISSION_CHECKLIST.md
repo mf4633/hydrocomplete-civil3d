@@ -1,7 +1,7 @@
 # HydroComplete C3D — Release & App Store Checklist
 
-**Target version:** 1.7.1  
-**Last updated:** 2026-06-23
+**Target version:** 1.7.2  
+**Last updated:** 2026-06-24
 
 ### Legend
 
@@ -77,7 +77,7 @@ Follow [`VALIDATION_SESSION.md`](VALIDATION_SESSION.md) on Civil 3D **2026** wit
 
 - [ ] HydroComplete › Analysis ribbon tab visible
 - [ ] Ribbon buttons invoke commands
-- [ ] `HC_ABOUT` lists **46** commands
+- [ ] `HC_ABOUT` lists **52** commands
 
 ### Block B — Core hydraulics (C-STORM)
 

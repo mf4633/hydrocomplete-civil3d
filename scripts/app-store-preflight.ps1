@@ -36,7 +36,7 @@ function Get-ProjectVersion {
 }
 
 function Get-SourceCommands {
-    $pattern = '\[CommandMethod\("([^"]+)"\)\]'
+    $pattern = '\[CommandMethod\("([^"]+)"(?:,\s*[^)]+)?\)\]'
     $found = Get-ChildItem $commandsDir -Filter '*.cs' -Recurse |
         ForEach-Object {
             [regex]::Matches((Get-Content $_.FullName -Raw), $pattern) |

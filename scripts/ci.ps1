@@ -12,7 +12,7 @@ $manifest = Join-Path $root 'dist\HydroComplete.bundle\PackageContents.xml'
 $expectedSeries = @('R25.0', 'R25.1')
 $net48BundleDll = Join-Path $root 'dist\HydroComplete.bundle\Contents\net48\HydroComplete.Civil3D.dll'
 $commandsDir = Join-Path $root 'src\HydroComplete.Civil3D\Commands'
-$commandPattern = '\[CommandMethod\("([^"]+)"\)\]'
+$commandPattern = '\[CommandMethod\("([^"]+)"(?:,\s*[^)]+)?\)\]'
 $expectedCommands = Get-ChildItem $commandsDir -Filter '*.cs' -Recurse |
     ForEach-Object {
         [regex]::Matches((Get-Content $_.FullName -Raw), $commandPattern) |

@@ -961,10 +961,14 @@ function runStandaloneEngine(dagJson, orderJson) {
   const dag   = JSON.parse(dagJson);
   const order = JSON.parse(orderJson);
 
-  const nodeById = Object.fromEntries(dag.nodes.map(n => [n.id[0], n]));
+  // NodeId is serialized as a plain integer from Rust WASM (NodeId(5) → 5)
+  // but as {"0": 5} from C# DagExecutor. Support both.
+  const nid = (v) => typeof v === 'number' ? v : (v?.[0] ?? v?.['0'] ?? 0);
+
+  const nodeById = Object.fromEntries(dag.nodes.map(n => [nid(n.id), n]));
   const edgeMap  = {};
   for (const e of dag.edges) {
-    edgeMap[`${e.to_node[0]},${e.to_port}`] = [e.from_node[0], e.from_port];
+    edgeMap[`${nid(e.to_node)},${e.to_port}`] = [nid(e.from_node), e.from_port];
   }
 
   function getOutput(nodeId, port) {
@@ -1011,7 +1015,9 @@ function runStandaloneEngine(dagJson, orderJson) {
           break;
         }
         case 'scs_runoff': {
-          const CN  = input(nodeId, 0, cfg(node, 'curve_number', 75));
+          // Port 0="Catchment" is topology-only; CN always comes from config.
+          // Port 1="Rainfall" carries the event depth from rainfall_event node.
+          const CN  = cfg(node, 'curve_number', 75);
           const P   = input(nodeId, 1, cfg(node, 'rainfall_in', 3.5));
           const area = cfg(node, 'area_acres', 5);
           const S = 1000/CN - 10; const Ia = 0.2*S;
@@ -1189,8 +1195,8 @@ function runStandaloneEngine(dagJson, orderJson) {
           break;
         case 'unit_hydrograph': {
           const area = cfg(node,'area_acres',5);
-          const tc   = input(nodeId, 1, cfg(node,'tc_min',20));
-          const Q_in = input(nodeId, 0, 1.0);
+          const tc   = cfg(node,'tc_min',20);          // always from config
+          const Q_in = input(nodeId, 0, 1.0);          // runoff depth from SCS
           const qp   = (484 * area * Q_in) / (0.133 * tc + tc);
           outs['0'] = +qp.toFixed(2);
           outs['steps'] = `Qp = 484×${area}×${Q_in.toFixed(3)} / (0.133×${tc}+${tc}) = ${qp.toFixed(2)} cfs`;

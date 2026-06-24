@@ -63,8 +63,6 @@
         <Command Local="HC_LANDXML" Global="HC_LANDXML" />
         <Command Local="HC_LANDXML_IMPORT" Global="HC_LANDXML_IMPORT" />
         <Command Local="HC_NETWORK_EDIT" Global="HC_NETWORK_EDIT" />
-        <Command Local="HC_DAG_LOAD" Global="HC_DAG_LOAD" />
-        <Command Local="HC_DAG_SAVE" Global="HC_DAG_SAVE" />
         <Command Local="HC_NETWORK_DIAGRAM" Global="HC_NETWORK_DIAGRAM" />
         <Command Local="HC_PUMP" Global="HC_PUMP" />
         <Command Local="HC_COST" Global="HC_COST" />
@@ -129,6 +127,7 @@
         <Command Local="HC_LANDXML" Global="HC_LANDXML" />
         <Command Local="HC_LANDXML_IMPORT" Global="HC_LANDXML_IMPORT" />
         <Command Local="HC_NETWORK_EDIT" Global="HC_NETWORK_EDIT" />
+        <Command Local="HC_DAG" Global="HC_DAG" />
         <Command Local="HC_DAG_LOAD" Global="HC_DAG_LOAD" />
         <Command Local="HC_DAG_SAVE" Global="HC_DAG_SAVE" />
         <Command Local="HC_NETWORK_DIAGRAM" Global="HC_NETWORK_DIAGRAM" />
@@ -195,6 +194,7 @@
         <Command Local="HC_LANDXML" Global="HC_LANDXML" />
         <Command Local="HC_LANDXML_IMPORT" Global="HC_LANDXML_IMPORT" />
         <Command Local="HC_NETWORK_EDIT" Global="HC_NETWORK_EDIT" />
+        <Command Local="HC_DAG" Global="HC_DAG" />
         <Command Local="HC_DAG_LOAD" Global="HC_DAG_LOAD" />
         <Command Local="HC_DAG_SAVE" Global="HC_DAG_SAVE" />
         <Command Local="HC_NETWORK_DIAGRAM" Global="HC_NETWORK_DIAGRAM" />
