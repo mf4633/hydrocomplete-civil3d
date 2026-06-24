@@ -33,7 +33,9 @@ not yet re-tested after the listed fix.
 | `HC_REPORT` KaTeX HTML | **validated** | v1.4.0 — user confirmed report renders in browser (2026-06-19); `hc-formula-panel` + KaTeX CDN |
 | `HC_ACTIVATE` online (production API) | *partial* | v1.4.0 — Fly API accepts `hc_live_beta_tester01` (`validation-preflight`); in-C3D `HC_ACTIVATE` flow pending |
 | `HC_HGL` tailwater backwater (engine) | **validated** | `Hgl.SteadyBackwaterFromOutfall` anchors at outfall tailwater, steps upstream (`HglBackwaterTests`) |
-| `HC_HGL` (labels + profile in Civil 3D) | *pending re-test* | v0.6.0 — tailwater prompt at outfall; labels on `HC-HGL`, polyline on `HC-HGL-PROFILE`; close C3D → `install.ps1` → run on `C-STORM` |
+| `HC_HGL` (labels + profile in Civil 3D) | **validated** | v1.7.2 — COM smoke on Pipe Networks-3 (11 pipes): 11 `HC-HGL` labels + 1 `HC-HGL-PROFILE` polyline (2026-06-24) |
+| `HC_PIPES_WRITE` (MText labels) | **validated** | v1.7.2 — COM smoke: 11 labels on `HC-CAPACITY` (Pipe Networks-3, 2026-06-24) |
+| `HC_CAPACITY` (design Q vs Q_full) | **validated** | v1.7.2 — COM smoke dispatched on Pipe Networks-3 (2026-06-24) |
 | `HC_HGL` (normal-depth + HEC-22 losses) | *pending re-test* | Superseded directionally by tailwater backwater; confirm command table + surcharge flags still match hand check |
 | `HC_CAPACITY` (design Q vs Q_full) | *pending* | v0.4.0 — overload check with Q_des/Q_full, d/D, surcharge flags |
 | `HC_CAPACITY_WRITE` (overload labels) | *pending* | v0.4.0 — MText on `HC-CAPACITY`; overload-only or all-pipes mode |

@@ -51,9 +51,17 @@ if (-not (Test-Path $dll)) {
 & (Join-Path $repoRoot 'scripts\activate-license.ps1') -Email $Email -Token $Token
 
 function Send-Cmd([string]$label, [string]$cmd, [int]$waitSec = 10) {
-    $acad.ActiveDocument.SendCommand($cmd)
-    Write-Host "  $label"
-    Start-Sleep -Seconds $waitSec
+    for ($try = 0; $try -lt 30; $try++) {
+        try {
+            $acad.ActiveDocument.SendCommand($cmd)
+            Write-Host "  $label"
+            Start-Sleep -Seconds $waitSec
+            return
+        } catch {
+            Start-Sleep -Milliseconds 1500
+        }
+    }
+    throw "SendCommand failed: $label"
 }
 
 Send-Cmd 'SECURELOAD' "_.SECURELOAD`n0`n" 3

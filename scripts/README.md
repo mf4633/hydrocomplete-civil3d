@@ -126,6 +126,20 @@ Output:
 
 Before first release, ensure `dist/HydroComplete.bundle/Contents/PackageIcon.png` exists (96×96 PNG).
 
+## Civil 3D hydraulics smoke (`smoke-civil3d-hydraulics.ps1`)
+
+Automated write-back check via COM: runs `HC_PIPES_WRITE`, `HC_CAPACITY`, and `HC_HGL`, then counts entities on layers `HC-CAPACITY`, `HC-HGL`, and `HC-HGL-PROFILE`.
+
+```powershell
+.\scripts\smoke-civil3d-hydraulics.ps1
+
+# Your storm sewer DWG (e.g. C-STORM, 30 pipes)
+.\scripts\smoke-civil3d-hydraulics.ps1 -Drawing "D:\Projects\C-STORM.dwg" -MinCapacityLabels 30 -MinHglLabels 30
+```
+
+- **Exit 0** when label/profile layer counts meet thresholds (defaults suit Pipe Networks-3 tutorial).
+- **Exit 1** on failure; **exit 2** when Civil 3D or seed drawing is missing.
+
 ## Civil 3D parity smoke (`smoke-civil3d-parity.ps1`)
 
 Automated v1.4.0 check via COM: launches Civil 3D 2026, runs `HC_REPORT`, `HC_NETWORK_DIAGRAM`, and `HC_SOIL`, then verifies HTML outputs under `Documents\HydroComplete\` (respects OneDrive folder redirection).
