@@ -68,7 +68,8 @@ try {
             Write-Host "Bundle locked (Civil 3D open?) - updating files in place..."
             New-Item -ItemType Directory -Force -Path (Join-Path $dest 'Contents') | Out-Null
             Copy-Item "$bundle\PackageContents.xml" $dest -Force
-            Copy-Item "$bundle\Contents\*" (Join-Path $dest 'Contents') -Force -ErrorAction Stop
+            # -Recurse required so Contents/dag/pkg WASM is fully refreshed (not just the folder node).
+            Copy-Item "$bundle\Contents\*" (Join-Path $dest 'Contents') -Recurse -Force -ErrorAction Stop
         }
     }
     else {

@@ -62,10 +62,23 @@ namespace HydroComplete.Civil3D.DagHost
                 wv.CoreWebView2.WebMessageReceived += OnWebMessage;
                 wv.CoreWebView2.Settings.IsWebMessageEnabled = true;
 
-                string indexPath = ResolveIndexHtml();
-                wv.CoreWebView2.Navigate(File.Exists(indexPath)
-                    ? new Uri(indexPath).AbsoluteUri
-                    : $"data:text/html,{Uri.EscapeDataString(FallbackHtml(indexPath))}");
+                string dagFolder = ResolveDagFolder();
+                string indexPath = Path.Combine(dagFolder, "index.html");
+                if (Directory.Exists(dagFolder) && File.Exists(indexPath))
+                {
+                    // file:// blocks ES-module + WASM loads in WebView2; virtual host serves correct MIME types.
+                    const string vhost = "hydrocomplete.app";
+                    wv.CoreWebView2.SetVirtualHostNameToFolderMapping(
+                        vhost,
+                        dagFolder,
+                        CoreWebView2HostResourceAccessKind.Allow);
+                    wv.CoreWebView2.Navigate($"https://{vhost}/index.html");
+                }
+                else
+                {
+                    wv.CoreWebView2.Navigate(
+                        $"data:text/html,{Uri.EscapeDataString(FallbackHtml(indexPath))}");
+                }
 
                 _webViewReady = true;
             }
@@ -127,14 +140,20 @@ namespace HydroComplete.Civil3D.DagHost
             await _webView.ExecuteScriptAsync(script);
         }
 
-        private static string ResolveIndexHtml()
+        private static string ResolveDagFolder()
         {
             string dll = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? ".";
-            string bundled = Path.Combine(dll, "dag", "index.html");
-            if (File.Exists(bundled)) return bundled;
-            return Path.Combine(
+            string bundled = Path.Combine(dll, "dag");
+            if (Directory.Exists(bundled) && File.Exists(Path.Combine(bundled, "index.html")))
+                return bundled;
+
+            string dev = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "dev", "hydrocomplete-dag", "www", "index.html");
+                "dev", "hydrocomplete-dag", "www");
+            if (Directory.Exists(dev) && File.Exists(Path.Combine(dev, "index.html")))
+                return dev;
+
+            return bundled;
         }
 
         private static string FallbackHtml(string path) =>

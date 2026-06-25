@@ -55,6 +55,15 @@ if (Test-Path $built) {
 } else {
     Write-Host "DLL: present (build output not found for comparison)"
 }
+$dagIndex = Join-Path $dest 'Contents\dag\index.html'
+$dagWasm = Join-Path $dest 'Contents\dag\pkg\hydrocomplete_dag_bg.wasm'
+$dagJs = Join-Path $dest 'Contents\dag\pkg\hydrocomplete_dag.js'
+if ((Test-Path $dagIndex) -and (Test-Path $dagWasm) -and (Test-Path $dagJs)) {
+    Write-Host "DAG bundle: OK (index.html + WASM)"
+}
+else {
+    Write-Host "DAG bundle: INCOMPLETE - close Civil 3D, run install.ps1 (dag/pkg missing for HC_DAG)"
+}
 Select-String -Path $manifest -Pattern 'LoadOnAutoCADStartup|Platform|AppVersion' | ForEach-Object { Write-Host $_.Line.Trim() }
 Write-Host ""
 Write-Host "Launch Civil 3D 2024, 2025, or 2026 full app (not core console)."
