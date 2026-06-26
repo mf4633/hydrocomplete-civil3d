@@ -1,4 +1,4 @@
-# HydroComplete C3D — Release & App Store Checklist
+﻿# HydroComplete C3D — Release & App Store Checklist
 
 **Target version:** 1.7.2  
 **Last updated:** 2026-06-24
@@ -44,7 +44,7 @@ Run `.\scripts\validation-preflight.ps1` before every release candidate.
 |------|-------|--------|
 | Engine unit tests (`dotnet test`) — 405+ pass | 🤖 | [x] 2026-06-19 |
 | CI build + manifest command sync (`ci.ps1`) | 🤖 | [x] 2026-06-19 — fixed AcadDir quoting bug |
-| App Store preflight (`app-store-preflight.ps1`) exits 0 | 🤖 | [x] 2026-06-19 — 46 commands |
+| App Store preflight (`app-store-preflight.ps1`) exits 0 | 🤖 | [x] 2026-06-26 — 52 commands |
 | Bundle DLLs present and non-trivial size | 🤖 | [x] C3D 304 KB, Engine 513 KB |
 | `hydrocomplete.com/civil3d` HTTP 200 | 🤖 | [x] 2026-06-19 |
 | `hydrocomplete.com/privacy.html` HTTP 200 | 🤖 | [x] 2026-06-19 |

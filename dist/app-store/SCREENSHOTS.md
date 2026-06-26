@@ -1,4 +1,4 @@
-# Screenshot Capture Guide
+﻿# Screenshot Capture Guide
 
 Shot list for Michael to capture in **Civil 3D 2026** on a storm-sewer test drawing.
 Target resolution: **1920×1080** (or Publisher portal minimum). Save as PNG.
@@ -21,15 +21,16 @@ Target resolution: **1920×1080** (or Publisher portal minimum). Save as PNG.
 
 ---
 
-## Command reference (46 commands — v1.4.0)
+## Command reference (52 commands — v1.7.2)
 
 | Category | Commands |
 |---|---|
 | **Network & capacity** | `HC_NETWORK`, `HC_PIPES`, `HC_PIPES_WRITE`, `HC_CAPACITY`, `HC_CAPACITY_WRITE`, `HC_SIZE`, `HC_VALIDATE`, `HC_MULTIRP`, `HC_NETWORK_EDIT`, `HC_NETWORK_DIAGRAM`, `HC_COST` |
-| **Hydrology & analysis** | `HC_RATIONAL`, `HC_TC`, `HC_SCS`, `HC_UNIT_HYDRO`, `HC_HYDROGRAPH`, `HC_ROUTE_HYDRO`, `HC_ATLAS14`, `HC_ANALYZE`, `HC_PREPOST`, `HC_OPTIMIZE` |
+| **Hydrology & analysis** | `HC_RATIONAL`, `HC_TC`, `HC_SCS`, `HC_UNIT_HYDRO`, `HC_HYDROGRAPH`, `HC_ROUTE_HYDRO`, `HC_ATLAS14`, `HC_LOSS`, `HC_CONTINUOUS`, `HC_ANALYZE`, `HC_PREPOST`, `HC_OPTIMIZE` |
 | **Hydraulics & structures** | `HC_HGL`, `HC_INLETS`, `HC_CULVERT`, `HC_GVF`, `HC_PUMP`, `HC_PROFILE`, `HC_PROFILE_DXF` |
-| **BMPs & detention** | `HC_WQV`, `HC_DETENTION`, `HC_BMP_SIZE`, `HC_WQ_TRAIN`, `HC_SEDIMENT`, `HC_SEDIMENT_BASIN`, `HC_BIORETENTION`, `HC_WETLAND`, `HC_SOIL` |
+| **BMPs & detention** | `HC_WQV`, `HC_DETENTION`, `HC_BMP_SIZE`, `HC_WQ_TRAIN`, `HC_WQ_DIAGRAM`, `HC_SEDIMENT`, `HC_SEDIMENT_BASIN`, `HC_BIORETENTION`, `HC_WETLAND`, `HC_SOIL` |
 | **Compliance & exchange** | `HC_REVIEW`, `HC_LANDXML`, `HC_LANDXML_IMPORT`, `HC_REPORT`, `HC_REPORT_PDF`, `HC_BACKGROUND` |
+| **Visual model builder** | `HC_DAG`, `HC_DAG_SAVE`, `HC_DAG_LOAD` (net8, Civil 3D 2025/2026 only) |
 | **License & help** | `HC_ACTIVATE`, `HC_LICENSE`, `HC_ABOUT` |
 
 ---

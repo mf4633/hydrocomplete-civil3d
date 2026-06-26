@@ -68,7 +68,7 @@ Learn more: [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d)
 - **`HC_LOSS`** — Incremental loss method (Green-Ampt / Horton / SCS CN) on a SCS Type II design storm; reports per-step excess and peak intensity.
 - **`HC_CONTINUOUS`** — Multi-year daily continuous simulation (17 US cities, Hargreaves ET, soil-moisture bucket, moisture-adjusted SCS CN, land-use-specific pollutant loads).
 - **`HC_WQ_DIAGRAM`** — HTML/SVG BMP treatment-train node diagram with per-pollutant removal labels and overall efficiency summary.
-- **47 `HC_*` commands** total, registered for Civil 3D 2024 (R24.3), 2025 (R25.0), and 2026 (R25.1).
+- **52 `HC_*` commands** total, registered for Civil 3D 2024 (R24.3), 2025 (R25.0), and 2026 (R25.1).
 
 ### New in v1.4.0
 
@@ -143,7 +143,7 @@ Learn more: [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d)
 
 ---
 
-## Command reference (46 commands â€” v1.4.0)
+## Command reference (52 commands â€” v1.7.2)
 
 All commands print formula-transparent `CalcStep` traces where applicable. Type `HC_ABOUT` in Civil 3D for the live list.
 
@@ -174,6 +174,8 @@ All commands print formula-transparent `CalcStep` traces where applicable. Type 
 | `HC_HYDROGRAPH` | Synthetic hydrograph ordinates (SCS, Clark, Snyder) |
 | `HC_ROUTE_HYDRO` | Route catchment hydrographs through pipe network (lag + junction superposition) |
 | `HC_ATLAS14` | List Atlas 14 IDF presets + live PFDS fetch info |
+| HC_LOSS | Incremental loss method (Green-Ampt / Horton / SCS CN) on a SCS Type II design storm; per-step excess and peak intensity |
+| HC_CONTINUOUS | Multi-year daily continuous simulation (17 US cities, Hargreaves ET, soil-moisture bucket, moisture-adjusted SCS CN, pollutant loads) |
 | `HC_ANALYZE` | Full-network analysis (hydrology, routing, HGL, sediment, compliance) |
 | `HC_PREPOST` | Pre/post-development peak comparison (SCS UH, multi-storm state depths) |
 | `HC_OPTIMIZE` | BMP treatment-train cost optimizer (top 3 chains) |
@@ -215,6 +217,13 @@ All commands print formula-transparent `CalcStep` traces where applicable. Type 
 | `HC_REPORT_PDF` | Export formula-transparent PDF Manning + HGL report (Pro) |
 | `HC_BACKGROUND` | Attach georeferenced raster on `HC-BACKGROUND` layer |
 
+### Visual model builder (net8, Civil 3D 2025/2026)
+
+| Command | Description |
+|---|---|
+| `HC_DAG` | Dockable drag-and-drop stormwater node DAG editor (WebView2 panel); 20 node types, 5 templates, undo/redo, multi-select, auto-layout, charts, SVG export |
+| `HC_DAG_SAVE` | Save the current DAG alongside the drawing as `<drawing>.hcdag` |
+| `HC_DAG_LOAD` | Load a `.hcdag` file and reopen the DAG editor |
 ### License & help
 
 | Command | Description |
@@ -227,7 +236,7 @@ All commands print formula-transparent `CalcStep` traces where applicable. Type 
 
 ## Key Features (bullet list for store UI)
 
-- **46 HC_* commands** â€” Network capacity, hydrology, routed hydrographs, HGL, GVF, detention, BMPs, compliance, LandXML, network diagrams, and reports in one auto-load bundle
+- **52 HC_* commands** â€” Network capacity, hydrology, routed hydrographs, HGL, GVF, detention, BMPs, compliance, LandXML, network diagrams, and reports in one auto-load bundle
 - **Design capacity overload check** â€” Design *Q* vs *Q*<sub>full</sub> with *d*/*D* and surcharge flags; optional routed catchment *Q* per pipe; label overloaded pipes on `HC-CAPACITY`
 - **Full-network analysis** â€” `HC_ANALYZE` combines hydrology, routing, HGL, sediment, and compliance in one pass
 - **Detention & BMP suite** â€” `HC_DETENTION`, `HC_BMP_SIZE`, `HC_WQ_TRAIN`, `HC_PREPOST`, `HC_OPTIMIZE` for stormwater quality and peak control
@@ -313,3 +322,4 @@ Civil 3D add-in, PDF report
 ## Legal / Trademark Notice (include in store listing footer)
 
 Civil 3D, AutoCAD, and Storm and Sanitary Analysis are trademarks of Autodesk, Inc. HydroComplete is an independent product and is not affiliated with or endorsed by Autodesk.
+
