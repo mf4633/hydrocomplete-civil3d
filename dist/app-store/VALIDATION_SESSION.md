@@ -157,7 +157,7 @@ Repeat **Setup** + **Block A** + **B2** + **G1** + **G2** on Civil 3D **2024**.
 
 | Step | Pass? | What to verify |
 |------|-------|----------------|
-| H1 Auto-load banner `1.4.0` on 2024 | ☐ | Loads `Contents/net48/` DLLs |
+| H1 Auto-load banner `1.7.2` on 2024 | ☐ | Loads `Contents/net48/` DLLs |
 | H2 `HC_PIPES` on C-STORM | ☐ | Same 30-pipe result as 2026 |
 | H3 `HC_GVF` | ☐ | No assembly load error |
 

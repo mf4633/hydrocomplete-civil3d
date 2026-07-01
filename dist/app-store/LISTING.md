@@ -326,6 +326,39 @@ Civil 3D add-in, PDF report
 
 ---
 
+## Release Notes (Publisher portal — v1.7.2)
+
+Paste into the **What's New** / release-notes field at upload. Trim to portal character limit if needed.
+
+```
+HydroComplete for Civil 3D v1.7.2 — stormwater hydrology and hydraulics inside your Civil 3D drawing.
+
+NEW IN v1.7.x
+• HC_DAG visual model builder (Civil 3D 2025/2026) — drag-and-drop stormwater DAG editor with 20 node types, undo/redo, templates, charts, and SVG export
+• HC_DAG_SAVE / HC_DAG_LOAD — persist models as <drawing>.hcdag beside the DWG
+• HC_LOSS — incremental loss method on SCS Type II design storms
+• HC_CONTINUOUS — multi-year daily continuous simulation with moisture-adjusted SCS CN
+• HC_WQ_DIAGRAM — BMP treatment-train SVG with per-pollutant removal labels
+• 52 HC_* commands registered for Civil 3D 2024, 2025, and 2026
+
+CORE CAPABILITIES
+• Manning pipe capacity, design overload checks, and normal-depth HGL with HEC-22 losses
+• Catchment Q routing through pipe networks for per-reach design flows
+• Live NOAA Atlas 14 IDF from drawing geolocation; 25 embedded US city presets offline
+• Formula-transparent HTML reports (KaTeX equations); Pro unlocks sealable PDF export
+• Network schematic export (HC_NETWORK_DIAGRAM), LandXML exchange, SSURGO soils lookup
+
+SUPPORTED PRODUCTS
+• Autodesk Civil 3D 2024 (R24.3), 2025 (R25.0), and 2026 (R25.1)
+• Windows 10/11 64-bit; auto-load bundle — no NETLOAD for end users
+
+PRICING
+• Free: core analysis and HTML reports
+• Pro ($199/year via hydrocomplete.com/civil3d): sealable PDF reports — activate with HC_ACTIVATE
+```
+
+---
+
 ## Legal / Trademark Notice (include in store listing footer)
 
 Civil 3D, AutoCAD, and Storm and Sanitary Analysis are trademarks of Autodesk, Inc. HydroComplete is an independent product and is not affiliated with or endorsed by Autodesk.

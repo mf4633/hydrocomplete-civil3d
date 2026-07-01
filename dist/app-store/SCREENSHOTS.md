@@ -11,7 +11,7 @@ Target resolution: **1920×1080** (or Publisher portal minimum). Save as PNG.
 
 ## Before you shoot
 
-1. Run `install.ps1` so the bundle auto-loads (banner shows **v1.4.0**).
+1. Run `install.ps1` so the bundle auto-loads (banner shows **v1.7.2**).
 2. Open the test DWG with pipe networks visible in plan.
 3. Set a clean visual style: light background, pipe network color distinct, labels readable.
 4. Hide unrelated palettes if they clutter the frame; keep the Civil 3D ribbon visible in at least one shot.

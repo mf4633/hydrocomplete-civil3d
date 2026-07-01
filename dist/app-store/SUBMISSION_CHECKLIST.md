@@ -208,7 +208,8 @@ See `SCREENSHOTS.md` + `SCREENSHOT_CAPTIONS.md`. Capture at **1920×1080**.
 
 - [ ] Title, short + long description
 - [x] Category — Civil Engineering (`LISTING.md`)
-- [ ] Keywords, release notes
+- [x] Release notes — `LISTING.md` § Release Notes (v1.7.2)
+- [ ] Keywords pasted in portal
 - [ ] Supported products: 2024 (if Block H pass), 2025, 2026
 - [ ] Pricing set in portal — **Free** listing + $199/yr Pro via hydrocomplete.com checkout
 
