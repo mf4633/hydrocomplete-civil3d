@@ -2,7 +2,7 @@
 param(
     [string]$Email = "michaelbflynn@gmail.com",
     [string]$Token = "hc_live_beta_tester01",
-    [string]$ApiBase = "https://hc-refactored.fly.dev"
+    [string]$ApiBase = "https://hydrocomplete.com"
 )
 $ErrorActionPreference = 'Stop'
 $dir = Join-Path $env:APPDATA 'HydroComplete'

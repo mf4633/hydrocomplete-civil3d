@@ -129,8 +129,12 @@ namespace HydroComplete.Civil3D.Auth
 
         private static bool IsDevBypassEnabled()
         {
+#if DEBUG
             string? val = Environment.GetEnvironmentVariable("HYDROCOMPLETE_PRO");
             return string.Equals(val, "1", StringComparison.Ordinal);
+#else
+            return false;
+#endif
         }
     }
 }

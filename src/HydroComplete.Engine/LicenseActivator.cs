@@ -14,9 +14,8 @@ namespace HydroComplete.Engine
     /// </summary>
     public sealed class LicenseActivator
     {
-        /// <summary>hc-refactored route: POST /api/licensing/validate (see server/routes/licensing.js).</summary>
-        /// <remarks>Uses Fly API host until hydrocomplete.com /api/* Netlify proxy is deployed (netlify.toml).</remarks>
-        public const string DefaultValidateUrl = "https://hc-refactored.fly.dev/api/licensing/validate";
+        /// <summary>Production route: POST /api/licensing/validate (Netlify proxy → hc-refactored).</summary>
+        public const string DefaultValidateUrl = "https://hydrocomplete.com/api/licensing/validate";
 
         /// <summary>Beta / offline activation token prefix.</summary>
         public const string TokenPrefix = "hc_live_";

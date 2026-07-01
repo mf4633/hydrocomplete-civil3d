@@ -3,7 +3,7 @@
 param(
     [switch]$SkipBuild,
     [switch]$SkipHttp,
-    [string]$ApiBase = 'https://hc-refactored.fly.dev'
+    [string]$ApiBase = 'https://hydrocomplete.com'
 )
 
 $ErrorActionPreference = 'Stop'

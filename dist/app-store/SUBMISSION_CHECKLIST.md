@@ -54,7 +54,7 @@ Run `.\scripts\validation-preflight.ps1` before every release candidate.
 | Stripe plugin checkout + key issuance | 🤖 | [x] 2026-06-23 — `create-plugin-checkout` + webhook; set `STRIPE_PRICE_CIVIL3D_PRO` on Fly |
 | Civil 3D landing purchase CTA | 🤖 | [x] 2026-06-23 — `civil3d.html` $199/yr Stripe card |
 | Desktop add-in Terms (Section 12) | 🤖 | [x] 2026-06-23 — `terms.html` civil3d + opencad SKUs |
-| Plugin `HC_ACTIVATE` online URL | 🤖 | [x] points to `hc-refactored.fly.dev` until Netlify proxy live |
+| Plugin `HC_ACTIVATE` online URL | 🤖 | [x] 2026-07-01 — `hydrocomplete.com/api/licensing/validate` |
 | Release zip + SHA256 (`release.ps1`) | 🤖 | [x] `HydroComplete-1.4.0.zip` SHA256 `2075812B…FD0FE` (2026-06-19 rebuild) |
 | Civil 3D parity smoke (`smoke-civil3d-parity.ps1`) | 🤖 | [x] 2026-06-19 — KaTeX report + network diagram on Pipe Networks-3 |
 | GitHub remote pushed (`hydrocomplete-civil3d`) | 🤖 | [x] `v1.4.0` tag + master `54752d1` |
@@ -132,7 +132,7 @@ Follow [`VALIDATION_SESSION.md`](VALIDATION_SESSION.md) on Civil 3D **2026** wit
 
 | Item | Owner | Status |
 |------|-------|--------|
-| Pricing model decided (free / paid / freemium) | 👤 | [ ] TBD — see `LISTING.md` § Pricing |
+| Pricing model decided (free / paid / freemium) | 👤 | [x] 2026-07-01 — Freemium: Free + Pro $199/yr (`LISTING.md`, `civil3d.html` Stripe) |
 | PayPal publisher account (if paid on Marketplace) | 👤 ⏳ | [ ] |
 | `hc_live_*` tokens in production licensing API | 🤖 | [x] code ready in `hc-refactored/server/routes/licensing.js` |
 | Deploy licensing API to Fly.io | 👤 | [ ] `flyctl deploy --app hc-refactored` |
@@ -207,9 +207,10 @@ See `SCREENSHOTS.md` + `SCREENSHOT_CAPTIONS.md`. Capture at **1920×1080**.
 ### Listing metadata (copy from `LISTING.md`)
 
 - [ ] Title, short + long description
-- [ ] Category, keywords, release notes
+- [x] Category — Civil Engineering (`LISTING.md`)
+- [ ] Keywords, release notes
 - [ ] Supported products: 2024 (if Block H pass), 2025, 2026
-- [ ] Pricing set in portal
+- [ ] Pricing set in portal — **Free** listing + $199/yr Pro via hydrocomplete.com checkout
 
 ### Upload
 

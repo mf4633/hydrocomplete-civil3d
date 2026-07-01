@@ -12,6 +12,12 @@
 
 ---
 
+## Category
+
+**Civil Engineering** (Autodesk App Store taxonomy — stormwater hydrology/hydraulics analysis for Civil 3D pipe networks)
+
+---
+
 ## Short Description (â‰¤ 80 characters)
 
 ```
@@ -75,7 +81,7 @@ Learn more: [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d)
 - **`HC_NETWORK_DIAGRAM`** â€” Export an HTML/SVG pipe-network schematic from plan topology (structures, pipes, flow direction) to `Documents\HydroComplete\` for review and submittal packages.
 - **KaTeX HTML reports** â€” `HC_REPORT` embeds KaTeX so Manning, IDF, and HGL formulas render as typeset equations in the browser (offline CDN with graceful fallback).
 - **Live SSURGO API** â€” `HC_SOIL` fetches map-unit data from USDA Soil Data Access by lat/lon (30-day cache); regional NRCS fallback when offline or out of coverage.
-- **Online Pro activation** â€” `HC_ACTIVATE` validates `hc_live_*` tokens against the production licensing API (`hc-refactored.fly.dev`).
+- **Online Pro activation** â€” `HC_ACTIVATE` validates `hc_live_*` tokens against the production licensing API (`hydrocomplete.com/api/licensing/validate`).
 - **Manifest** â€” All **46** `HC_*` commands registered for Civil 3D 2024 (R24.3), 2025 (R25.0), and 2026 (R25.1).
 
 ### Also in v1.3.0
@@ -285,14 +291,15 @@ All commands print formula-transparent `CalcStep` traces where applicable. Type 
 
 ## Pricing
 
-**TBD** â€” Pricing model not finalized for App Store launch.
+**Freemium** — Free core analysis; Pro upgrade for sealable PDF export.
 
-- **Planned approach:** Freemium or tiered licensing aligned with [hydrocomplete.com](https://hydrocomplete.com) web app subscriptions.
-- **Early access:** Engineers on the [Civil 3D waitlist](https://hydrocomplete.com/civil3d) may receive introductory pricing before public store listing.
-- **Free tier:** Core Manning, capacity checks, normal-depth HGL (labels + profile polyline), routed catchment *Q*, HTML reports (`HC_REPORT`), and command-line access.
-- **Pro tier:** PDF export (`HC_REPORT_PDF`); activate via `HC_ACTIVATE` (online validation or offline `hc_live_*` stub).
+| Tier | App Store price | Includes |
+|---|---|---|
+| **Free** | $0 | Manning capacity, design overload checks, normal-depth HGL (labels + profile polyline), routed catchment *Q*, 52 `HC_*` commands, formula-transparent HTML reports (`HC_REPORT`) |
+| **Pro** | **$199/year** | Everything in Free, plus sealable PDF reports (`HC_REPORT_PDF`). Purchase at [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d) (Stripe); activate in Civil 3D with `HC_ACTIVATE` (email + `hc_live_*` token). |
 
-*Update this section before final Publisher submission.*
+- **Portal setting:** List as **Free** with in-app Pro upgrade (matches Autodesk freemium + external checkout flow).
+- **Beta / waitlist:** Introductory tokens may be issued manually before public store listing; same `HC_ACTIVATE` flow.
 
 ---
 
