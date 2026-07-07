@@ -1,6 +1,8 @@
 bin/
 obj/
-dist/HydroComplete.bundle/Contents/*.dll
+# Build outputs — the non-recursive glob missed the net48/ subfolder, so the
+# compiled bundle DLLs were being committed. Match nested paths too.
+dist/HydroComplete.bundle/Contents/**/*.dll
 dist/HydroComplete-*.zip
 *.user
 .vs/

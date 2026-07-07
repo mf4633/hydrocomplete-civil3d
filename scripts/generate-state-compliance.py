@@ -3,11 +3,15 @@
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from pathlib import Path
 
-JS_PATH = Path(r"C:\Users\michael.flynn\hc-refactored\src\config\StateConfigurations.js")
+# Path to the hc-refactored StateConfigurations.js. Override via argv[1] or the
+# HC_STATECONFIG env var; defaults to a sibling checkout next to this repo.
+_DEFAULT_JS = Path(__file__).resolve().parents[2] / "hc-refactored" / "src" / "config" / "StateConfigurations.js"
+JS_PATH = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(os.environ.get("HC_STATECONFIG", _DEFAULT_JS))
 OUT_PATH = Path(__file__).resolve().parent.parent / "src" / "HydroComplete.Engine" / "StateComplianceData.cs"
 
 # Drawdown max overrides for states without bmpDrawdown in JS (curated from regulatory manuals).

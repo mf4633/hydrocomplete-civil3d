@@ -14,13 +14,13 @@ Run this session **before** App Store submission or direct beta release. Check b
 ## Setup (10 min)
 
 1. **Quit Civil 3D completely** — Task Manager: no `acad.exe`.
-2. Install the release bundle:
+2. Install the release bundle (from the repo folder):
    ```powershell
-   powershell -File C:\Users\michael.flynn\dev\hydrocomplete-civil3d\install.ps1
+   powershell -File .\install.ps1
    ```
-3. Verify install (optional):
+3. Verify install (optional, from the repo folder):
    ```powershell
-   powershell -File C:\Users\michael.flynn\dev\hydrocomplete-civil3d\verify-install.ps1
+   powershell -File .\verify-install.ps1
    ```
 4. Launch **Civil 3D 2026** (full desktop app, not `accoreconsole`).
 5. Confirm startup banner:

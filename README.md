@@ -147,18 +147,18 @@ Auto-load is a **one-time install**, then every **Civil 3D 2024, 2025, or 2026**
 startup loads the plugin automatically.
 
 1. **Quit Civil 3D completely** (Task Manager: no `acad.exe` still running).
-2. In PowerShell:
+2. In PowerShell, from the repo folder:
    ```
-   powershell -File C:\Users\michael.flynn\dev\hydrocomplete-civil3d\install.ps1
+   powershell -File .\install.ps1
    ```
 3. **Launch Civil 3D 2025 or 2026** from the Start menu (the full desktop app — not
    `accoreconsole`, not plain AutoCAD).
 4. Confirm the command line shows:
    `HydroComplete for Civil 3D 1.1.0 loaded. Type HC_ABOUT for commands.`
 
-Check install any time:
+Check install any time (from the repo folder):
 ```
-powershell -File C:\Users\michael.flynn\dev\hydrocomplete-civil3d\verify-install.ps1
+powershell -File .\verify-install.ps1
 ```
 
 **If commands are still unknown after restart:** the bundle folder must be exactly
