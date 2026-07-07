@@ -78,8 +78,8 @@ namespace HydroComplete.Civil3D.Commands
             ed.WriteMessage("\n  HC_CONTINUOUS  Multi-year continuous simulation (17 cities, Hargreaves ET, pollutant loads)");
             ed.WriteMessage("\n  HC_WQ_DIAGRAM  HTML/SVG treatment-train node diagram from catchment land use + BMP chain");
             ed.WriteMessage("\n  HC_DAG         Visual model builder — drag-and-drop node DAG editor (WebView2 panel, net8 only)");
-            ed.WriteMessage("\n  HC_DAG_SAVE    Save the current DAG to a .hcdag file alongside the drawing");
-            ed.WriteMessage("\n  HC_DAG_LOAD    Load a .hcdag file and open it in the DAG editor");
+            ed.WriteMessage("\n  HC_DAG_SAVE    Save the current DAG to a .hcdag file alongside the drawing (net8 only)");
+            ed.WriteMessage("\n  HC_DAG_LOAD    Load a .hcdag file and open it in the DAG editor (net8 only)");
             ed.WriteMessage("\n  HC_ACTIVATE    Activate Pro with email + beta token (hc_live_*)");
             ed.WriteMessage("\n  HC_LICENSE     Show Free/Pro license status and activation info");
             ed.WriteMessage("\n  HC_ABOUT       This list");
