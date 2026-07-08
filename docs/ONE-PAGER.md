@@ -48,7 +48,7 @@ HDS-5, RUSLE).
 ## Product status
 
 - **v1.7.2**, 52 commands, three Civil 3D versions supported.
-- Dependency-free engine, unit-tested; CI green; manifest App-Store-conformant.
+- Dependency-free engine, unit-tested; manifest App-Store-conformant.
 - **Free / Pro** licensing live (server-validated with offline grace).
 - Web companion at [hydrocomplete.com/civil3d](https://hydrocomplete.com/civil3d)
   with the same transparent-calc approach in the browser.

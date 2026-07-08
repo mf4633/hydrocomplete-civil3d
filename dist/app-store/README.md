@@ -5,7 +5,7 @@ the Autodesk App Store. **Start here**, then work the ordered checklist.
 
 ## The one-screen plan
 
-The engineering is done (v1.7.2, 52 commands, CI green, manifest conformant). Four
+The engineering is done (v1.7.2, 52 commands, manifest conformant). Four
 things gate "Submit," and only one has external lead time.
 
 ```
@@ -79,7 +79,7 @@ plugin activation is used in review:
 
 | Area | State |
 |---|---|
-| Engine + plugin code | ✅ v1.7.2, 52 commands, CI green |
+| Engine + plugin code | ✅ v1.7.2, 52 commands, engine unit-tested |
 | PackageContents.xml | ✅ conformant (schema, GUID, per-release RuntimeRequirements, 52/52 command sync, version synced) |
 | Icon (96×96) | ✅ present |
 | Listing copy + release notes | ✅ ready (`LISTING.md`) |
