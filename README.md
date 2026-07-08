@@ -9,6 +9,17 @@ Status: **v1.7.2** — DAG editor panel (`HC_DAG`), KaTeX HTML reports, live SSU
 
 **Autodesk App Store:** Listing copy, submission checklist, and screenshot shot list live in [`dist/app-store/`](dist/app-store/) (`LISTING.md`, `SUBMISSION_CHECKLIST.md`, `SCREENSHOTS.md`).
 
+### Documentation
+
+| Doc | For |
+|---|---|
+| [`docs/USER-GUIDE.md`](docs/USER-GUIDE.md) | End users — install, activate, workflows by task, methods & references |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Engineers / technical diligence — engine + plugin + backend, licensing flow, build/CI |
+| [`docs/ONE-PAGER.md`](docs/ONE-PAGER.md) | The Autodesk conversation — problem, positioning, model, ask |
+| [`docs/COMMERCIAL.md`](docs/COMMERCIAL.md) | Free/Pro model and path to paid |
+| [`dist/app-store/LAUNCH-PLAN.md`](dist/app-store/LAUNCH-PLAN.md) | Sequenced plan to publish on the Autodesk App Store (critical path, phases, risks) |
+| [`dist/app-store/SUBMISSION_CHECKLIST.md`](dist/app-store/SUBMISSION_CHECKLIST.md) | Line-item submission tracker |
+
 ## User validation
 
 Checked off = confirmed by Michael on Civil 3D 2026 with a live storm-sewer
