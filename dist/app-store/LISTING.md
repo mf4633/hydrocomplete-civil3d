@@ -206,6 +206,7 @@ All commands print formula-transparent `CalcStep` traces where applicable. Type 
 | `HC_DETENTION` | Detention pond routing (Modified Puls, SCS UH inflow, orifice/weir outlets) |
 | `HC_BMP_SIZE` | WQV-based BMP sizing (bioretention, wet pond, sand filter, swale) |
 | `HC_WQ_TRAIN` | BMP treatment train with EMC pollutant loads from catchments |
+| `HC_WQ_DIAGRAM` | HTML/SVG treatment-train node diagram with per-pollutant removal labels |
 | `HC_SEDIMENT` | RUSLE/MUSLE soil loss from catchments |
 | `HC_SEDIMENT_BASIN` | Sediment basin design from peak *Q* (NCDEQ surface-area method) |
 | `HC_BIORETENTION` | Bioretention routing with underdrain/outlet |

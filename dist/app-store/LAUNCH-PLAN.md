@@ -5,7 +5,7 @@ Autodesk App Store**, and what to do in the 90 days after. This is the sequenced
 plan; the line-item status tracker lives in
 [`SUBMISSION_CHECKLIST.md`](SUBMISSION_CHECKLIST.md).
 
-**Current state (verified):** v1.7.2, 52 commands, manifest conformant, CI green,
+**Current state (verified):** v1.7.2, 52 commands, manifest conformant,
 engine unit-tested. Free/Pro licensing live. Web backend deployed.
 **Not done:** code-signing certificate, signed net8 build staged, on-machine
 Civil 3D functional validation, listing screenshots.
