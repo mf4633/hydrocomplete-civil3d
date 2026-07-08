@@ -17,7 +17,10 @@ Status: **v1.7.2** — DAG editor panel (`HC_DAG`), KaTeX HTML reports, live SSU
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Engineers / technical diligence — engine + plugin + backend, licensing flow, build/CI |
 | [`docs/ONE-PAGER.md`](docs/ONE-PAGER.md) | The Autodesk conversation — problem, positioning, model, ask |
 | [`docs/COMMERCIAL.md`](docs/COMMERCIAL.md) | Free/Pro model and path to paid |
+| [**`dist/app-store/README.md`**](dist/app-store/README.md) | **Launch kit — start here.** One-screen plan + index of everything below |
 | [`dist/app-store/LAUNCH-PLAN.md`](dist/app-store/LAUNCH-PLAN.md) | Sequenced plan to publish on the Autodesk App Store (critical path, phases, risks) |
+| [`dist/app-store/PORTAL-FIELDS.md`](dist/app-store/PORTAL-FIELDS.md) | Field-by-field Publisher-portal fill-in runbook |
+| [`dist/app-store/LAUNCH-COMMS.md`](dist/app-store/LAUNCH-COMMS.md) | Waitlist email, LinkedIn/forum posts, ADN outreach — ready to send |
 | [`dist/app-store/SUBMISSION_CHECKLIST.md`](dist/app-store/SUBMISSION_CHECKLIST.md) | Line-item submission tracker |
 
 ## User validation
