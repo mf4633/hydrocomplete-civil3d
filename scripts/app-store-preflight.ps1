@@ -2,7 +2,12 @@
 # Exits non-zero on any failure.
 param(
     [string]$Version,
-    [string]$ZipPath
+    [string]$ZipPath,
+    # Treat an unsigned/invalid bundle as a hard failure. Off by default so the
+    # pre-certificate workflow still passes; auto-enabled once a signing cert is
+    # configured (HC_SIGN_CERT_THUMBPRINT). Pass -RequireSigning for the final
+    # submission build.
+    [switch]$RequireSigning
 )
 
 $ErrorActionPreference = 'Stop'
@@ -187,6 +192,49 @@ if (Test-Path $manifest) {
     }
     else {
         Write-Host "INFO: No Contents/net48 build - R24.3 Civil 3D 2024 not included (expected until net48 is built)"
+    }
+}
+
+# --- Code signing (Authenticode) ---
+# Autodesk App Store expects signed binaries; unsigned assemblies trip SmartScreen
+# and review friction. Signing happens at release time (scripts/sign-release.ps1)
+# once an OV/EV certificate exists. This check WARNS by default so the pre-cert
+# workflow still passes, and becomes a hard failure when -RequireSigning is passed
+# or HC_SIGN_CERT_THUMBPRINT is set (i.e. you have a cert and intend to ship signed).
+$requireSigning = $RequireSigning.IsPresent -or [bool]$env:HC_SIGN_CERT_THUMBPRINT
+$signTargets = @()
+foreach ($name in @('HydroComplete.Civil3D.dll', 'HydroComplete.Engine.dll')) {
+    $net8 = Join-Path $contents $name
+    $net48 = Join-Path $contents "net48\$name"
+    if (Test-Path $net8) { $signTargets += $net8 }
+    if (Test-Path $net48) { $signTargets += $net48 }
+}
+if ($signTargets.Count -eq 0) {
+    Write-Host "INFO: No bundle DLLs staged yet - signing check skipped (build first)."
+}
+elseif (-not (Get-Command Get-AuthenticodeSignature -ErrorAction SilentlyContinue)) {
+    Write-Host "INFO: Get-AuthenticodeSignature unavailable (non-Windows host) - signing check skipped."
+}
+else {
+    foreach ($dll in $signTargets) {
+        $rel = $dll.Substring($root.Length).TrimStart('\')
+        $sig = Get-AuthenticodeSignature $dll
+        if ($sig.Status -eq 'Valid') {
+            $signer = if ($sig.SignerCertificate) { $sig.SignerCertificate.Subject } else { 'unknown signer' }
+            Add-Pass "Signed: $rel ($signer)"
+        }
+        elseif ($requireSigning) {
+            Add-Failure "Unsigned or invalid signature (status: $($sig.Status)): $rel"
+        }
+        else {
+            Write-Host "WARN: $rel is not validly signed (status: $($sig.Status)). Sign before App Store submission (scripts/sign-release.ps1)." -ForegroundColor Yellow
+        }
+    }
+    if ($requireSigning) {
+        Add-Pass "Signing enforced (RequireSigning / HC_SIGN_CERT_THUMBPRINT)"
+    }
+    else {
+        Write-Host "INFO: Signing not enforced. Run with -RequireSigning (or set HC_SIGN_CERT_THUMBPRINT) for the final submission build." -ForegroundColor Yellow
     }
 }
 
