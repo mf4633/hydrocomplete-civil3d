@@ -7,36 +7,15 @@ on:
     branches: [master, main]
 
 jobs:
-  ci:
-    # GitHub-hosted windows-latest does NOT include Autodesk Civil 3D. The build
-    # step in scripts/ci.ps1 needs compile-time references to AcMgd.dll and
-    # related managed APIs under AcadDir (default: AutoCAD 2026 install path).
-    #
-    # Options:
-    #   1. Self-hosted Windows runner with Civil 3D — recommended for green CI.
-    #      See scripts/setup-self-hosted-runner.md for the full checklist.
-    #   2. Keep windows-latest — expect build failure; run ci.ps1 locally before release.
-    #
-    # To use a self-hosted runner, replace the line below with:
-    #   runs-on: [self-hosted, Windows, civil3d]
-    #
-    # If the runner has Civil 3D 2025 instead of 2026, add env and pass AcadDir
-    # to the build step (or set a repo Actions variable ACAD_DIR):
-    #
-    #   env:
-    #     ACAD_DIR: 'C:\Program Files\Autodesk\AutoCAD 2025\'
-    #   ...
-    #   run: |
-    #     dotnet build src/HydroComplete.Civil3D/HydroComplete.Civil3D.csproj -c Release `
-    #       -p:AcadDir="$env:ACAD_DIR"
-    #     # ...or extend ci.ps1 to accept -AcadDir and call that instead.
-    runs-on: windows-latest
-
+  # The hydraulics/hydrology engine is a pure netstandard2.0 library with no
+  # Autodesk dependencies, so it builds and unit-tests on any runner without a
+  # CAD install. This is the substantive numerical validation of the product.
+  engine:
+    name: Engine build & unit tests
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # Unit tests target .NET 7; the Civil 3D plugin targets .NET 8.
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -44,8 +23,28 @@ jobs:
             8.0.x
             7.0.x
 
-      # Requires Civil 3D / AutoCAD managed assemblies on the runner for the
-      # dotnet build step. No acad.exe launch — compile-time refs only.
-      - name: Run CI script
+      - name: Restore & test engine
+        run: dotnet test tests/HydroComplete.Engine.Tests/HydroComplete.Engine.Tests.csproj -c Release
+
+  # The Civil 3D add-in cannot build its net8.0-windows target without the
+  # Autodesk managed assemblies (AcMgd.dll etc.), which GitHub-hosted runners do
+  # not carry. The net48 target compiles offline against the AutoCAD.NET /
+  # Civil3D2024.Base NuGet API stubs, so we compile that target here to prove the
+  # plugin code is sound. A self-hosted runner with Civil 3D installed can build
+  # the net8 target via scripts/ci.ps1 (see that script and setup docs).
+  plugin:
+    name: Civil 3D plugin (net48 offline compile)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build plugin (net48 via NuGet API stubs)
         shell: pwsh
-        run: ./scripts/ci.ps1
+        run: >
+          dotnet build src/HydroComplete.Civil3D/HydroComplete.Civil3D.csproj
+          -c Release -p:BuildNet48=true -f net48
