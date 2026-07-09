@@ -167,9 +167,22 @@ namespace HydroComplete.Engine
             result.Steps.Add(new CalcStep("catchments", input.Catchments.Count, "", "drainage areas"));
             result.Steps.Add(new CalcStep("pipes", input.Pipes.Count, "", "network links"));
 
-            double scsRainfall = input.ScsDesignRainfallInches > 0
-                ? input.ScsDesignRainfallInches
-                : state.DesignStormInches;
+            // Do NOT default the flood SCS design rainfall to the water-quality design storm
+            // (~1 in) — that under-scales the runoff an engineer relies on. When no explicit
+            // depth is supplied, use the 10-yr 24-hr depth from the peak-storm suite as a
+            // conventional minor-system default (callers should pass an explicit depth).
+            double scsRainfall;
+            if (input.ScsDesignRainfallInches > 0)
+            {
+                scsRainfall = input.ScsDesignRainfallInches;
+            }
+            else
+            {
+                IReadOnlyDictionary<string, double> stormSuite = StateCompliance.GetPeakStormSuite(state);
+                scsRainfall = stormSuite.TryGetValue("10-year", out double d10) && d10 > 0
+                    ? d10
+                    : state.DesignStormInches;
+            }
 
             // 1. Hydrology — Rational + SCS per catchment
             foreach (Catchment cm in input.Catchments)
