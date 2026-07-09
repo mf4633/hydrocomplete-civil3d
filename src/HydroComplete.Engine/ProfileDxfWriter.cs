@@ -107,11 +107,18 @@ namespace HydroComplete.Engine
             foreach (ProfileStation station in data.Stations)
             {
                 (double x, double y) = ToDxf(station.ChainageFt, station.InvertFt, options, hScale, vScale);
-                string hgl = station.HglFt.HasValue
-                    ? $"\\nHGL {station.HglFt.Value.ToString("0.00", CultureInfo.InvariantCulture)}"
-                    : "";
-                string text = $"{station.StructureName}\\nSTA {station.ChainageFt.ToString("0.0", CultureInfo.InvariantCulture)}{hgl}";
-                WriteText(sb, LabelLayer, x, y, textH, text);
+                var lines = new List<string>
+                {
+                    station.StructureName,
+                    $"STA {station.ChainageFt.ToString("0.0", CultureInfo.InvariantCulture)}",
+                };
+                if (station.HglFt.HasValue)
+                    lines.Add($"HGL {station.HglFt.Value.ToString("0.00", CultureInfo.InvariantCulture)}");
+
+                // DXF TEXT is a single-line entity — it does not interpret \n (an MTEXT-only
+                // escape). Emit one stacked TEXT entity per line instead of a literal "\n".
+                for (int li = 0; li < lines.Count; li++)
+                    WriteText(sb, LabelLayer, x, y - li * textH * 1.4, textH, lines[li]);
             }
 
             WriteLine(sb, 0, "ENDSEC");

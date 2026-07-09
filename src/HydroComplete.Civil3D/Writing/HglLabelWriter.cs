@@ -45,9 +45,9 @@ namespace HydroComplete.Civil3D.Writing
 
                 foreach (ReadPipe rp in pipes)
                 {
-                    string key = string.IsNullOrEmpty(rp.PipeName)
-                        ? rp.PipeId.Handle.ToString()
-                        : rp.PipeName;
+                    // Drawing-unique key: pipe names restart per network and would collide
+                    // across networks, so the caller keys HGL results by the pipe handle.
+                    string key = rp.PipeId.Handle.ToString();
 
                     if (!midpointHglFt.TryGetValue(key, out double hgl))
                     {

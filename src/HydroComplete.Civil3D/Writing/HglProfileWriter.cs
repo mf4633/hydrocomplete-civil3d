@@ -123,9 +123,9 @@ namespace HydroComplete.Civil3D.Writing
 
         private static string PipeKey(ReadPipe rp)
         {
-            return string.IsNullOrEmpty(rp.PipeName)
-                ? rp.PipeId.Handle.ToString()
-                : rp.PipeName;
+            // Drawing-unique key: pipe names restart per network and would collide across
+            // networks, so HGL results are keyed by the pipe handle on both write and read.
+            return rp.PipeId.Handle.ToString();
         }
 
         private static (Point3d Us, Point3d Ds) GetFlowEndPoints(ReadPipe rp)

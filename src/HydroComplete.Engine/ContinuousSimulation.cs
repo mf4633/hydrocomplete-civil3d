@@ -418,8 +418,8 @@ namespace HydroComplete.Engine
                 TotalRainfallIn = totalRainfall,
                 TotalRunoffAcreIn = totalRunoffAcreIn,
                 TotalEtIn = totalEt,
-                AnnualAvgRunoffAcreIn = totalRunoffAcreIn / siteData.Years,
-                AnnualAvgEtIn = totalEt / siteData.Years,
+                AnnualAvgRunoffAcreIn = siteData.Years > 0 ? totalRunoffAcreIn / siteData.Years : 0.0,
+                AnnualAvgEtIn = siteData.Years > 0 ? totalEt / siteData.Years : 0.0,
             };
 
             foreach (string pollutant in Pollutant.Core)
@@ -520,7 +520,9 @@ namespace HydroComplete.Engine
 
             public double NextDouble()
             {
-                _seed = (_seed * 16807) % 2147483647;
+                // Park-Miller MINSTD: the seed*16807 product overflows int32, so the
+                // multiply must be done in 64-bit before taking the modulus.
+                _seed = (int)((long)_seed * 16807L % 2147483647L);
                 return (double)_seed / 2147483647.0;
             }
 

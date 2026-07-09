@@ -389,13 +389,16 @@ namespace HydroComplete.Engine
                 BuildupResult buildup = CalculateBuildup(antecedentDryDays, pollutant, drainageAreaAcres, landUse);
                 WashoffResult washoff = CalculateWashoff(runoffDepthIn, buildup.TotalBuildupLbs, pollutant, landUse);
 
-                double total = emc.EmcLoadLbs + washoff.WashoffLoadLbs;
+                // The EMC transport load and the buildup/washoff load are two alternative
+                // estimates of the SAME event pollutant mass; summing them double-counts.
+                // Use the EMC estimate as the event load and report washoff separately.
+                double total = emc.EmcLoadLbs;
                 result.LoadsLbs[pollutant] = total;
 
                 result.Steps.Add(new CalcStep($"{pollutant}_EMC", emc.EmcLoadLbs, "lbs", emc.Steps[emc.Steps.Count - 1].Formula));
                 result.Steps.Add(new CalcStep($"{pollutant}_washoff", washoff.WashoffLoadLbs, "lbs", washoff.Steps[washoff.Steps.Count - 1].Formula));
                 result.Steps.Add(new CalcStep($"{pollutant}_total", total, "lbs",
-                    $"L_total = L_EMC + W = {emc.EmcLoadLbs:0.####}+{washoff.WashoffLoadLbs:0.####}"));
+                    $"L_total = L_EMC = {emc.EmcLoadLbs:0.####} (washoff {washoff.WashoffLoadLbs:0.####} reported separately)"));
             }
 
             return result;

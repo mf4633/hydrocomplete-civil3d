@@ -20,7 +20,8 @@ namespace HydroComplete.Engine
             {
                 double w = pipe.WidthFt, h = pipe.HeightFt;
                 double areaFull = w * h;
-                double rFull = areaFull / (w + 2.0 * h);
+                // Full/surcharged box: crown is wetted, so wetted perimeter is 2(w+h).
+                double rFull = areaFull / (2.0 * (w + h));
 
                 return new NetworkReach
                 {
@@ -136,7 +137,8 @@ namespace HydroComplete.Engine
             if (nd.Surcharged)
             {
                 areaFt2 = w * h;
-                hydRadiusFt = areaFt2 / (w + 2.0 * h);
+                // Surcharged box: crown is wetted, so wetted perimeter is 2(w+h).
+                hydRadiusFt = areaFt2 / (2.0 * (w + h));
             }
             else
             {

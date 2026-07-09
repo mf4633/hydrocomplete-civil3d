@@ -382,17 +382,27 @@ namespace HydroComplete.Engine
             double? drawdown = wq.DrawdownHours;
             if (drawdown.HasValue)
             {
+                // A collapsed window (Max <= Min, i.e. min==max in the config) admits only a
+                // single exact value, so a continuously-computed drawdown could essentially
+                // never pass. Treat that as a data-configuration problem and flag for manual
+                // review rather than emitting a spurious Pass/Fail.
+                bool collapsedWindow = config.DrawdownMaxHours <= config.DrawdownMinHours;
                 bool pass = drawdown.Value >= config.DrawdownMinHours
                             && drawdown.Value <= config.DrawdownMaxHours;
+                ComplianceStatus drawdownStatus = collapsedWindow
+                    ? ComplianceStatus.Review
+                    : (pass ? ComplianceStatus.Pass : ComplianceStatus.Fail);
                 var criterion = new ComplianceCriterion
                 {
                     Name = "BMP Drawdown Time",
                     Category = "Water Quality",
                     Required = $"{config.DrawdownMinHours:0.#}-{config.DrawdownMaxHours:0.#} hours",
                     Actual = $"{drawdown.Value:0.#} hours",
-                    Status = pass ? ComplianceStatus.Pass : ComplianceStatus.Fail,
+                    Status = drawdownStatus,
                     Authority = config.RegulatoryBody,
-                    Notes = "Water quality volume drawdown within regulatory window",
+                    Notes = collapsedWindow
+                        ? "Regulatory drawdown window is a single value in the config; verify min/max hours against the source table."
+                        : "Water quality volume drawdown within regulatory window",
                 };
                 criterion.Steps.Add(new CalcStep("drawdown", drawdown.Value, "hr", "BMP drain time"));
                 report.Criteria.Add(criterion);

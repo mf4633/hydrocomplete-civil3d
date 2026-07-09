@@ -83,11 +83,21 @@ namespace HydroComplete.Engine
                     EvaluateInfiltrationBmp(soil, out suitability, out rationale, alternatives);
                     break;
                 case BmpType.WetPond:
-                    suitability = BmpSuitability.Excellent;
-                    rationale = $"HSG {soil.HydrologicSoilGroup} soils are well suited to wet detention; " +
-                                $"infiltration rate ({soil.InfiltrationRateInPerHr:0.##} in/hr) is not limiting.";
                     if (soil.HydrologicSoilGroup == 'A')
+                    {
+                        // High-infiltration HSG A soils cannot sustain a permanent pool without
+                        // a liner, so infiltration IS the limiting condition for a wet pond.
+                        suitability = BmpSuitability.Marginal;
+                        rationale = $"HSG A soils ({soil.InfiltrationRateInPerHr:0.##} in/hr) drain too quickly " +
+                                    $"to hold a permanent pool; a liner is required for a wet pond here.";
                         alternatives.Add("bioretention");
+                    }
+                    else
+                    {
+                        suitability = BmpSuitability.Excellent;
+                        rationale = $"HSG {soil.HydrologicSoilGroup} soils are well suited to wet detention; " +
+                                    $"infiltration rate ({soil.InfiltrationRateInPerHr:0.##} in/hr) is not limiting.";
+                    }
                     break;
                 case "constructed-wetland":
                     suitability = soil.HydrologicSoilGroup is 'C' or 'D'

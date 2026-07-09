@@ -199,6 +199,8 @@ namespace HydroComplete.Engine
             using (var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false))
             {
                 response.EnsureSuccessStatusCode();
+                if (response.Content.Headers.ContentLength > 16L * 1024 * 1024)
+                    throw new InvalidOperationException("Atlas 14 response exceeds the 16 MB cap.");
                 return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             }
         }
@@ -490,19 +492,21 @@ namespace HydroComplete.Engine
             if (!TryParseDurationMinutes(durationToken, out durationMin))
                 return false;
 
+            // Keep empty cells as positional placeholders: discarding them would shift every
+            // later ARI column left, so a blank cell could return a neighboring return period's
+            // intensity for the requested one.
             string[] parts = line.Substring(colon + 1).Split(',');
             var values = new List<string>(parts.Length);
             foreach (string part in parts)
-            {
-                string trimmed = part.Trim();
-                if (trimmed.Length > 0)
-                    values.Add(trimmed);
-            }
+                values.Add(part.Trim());
 
             if (values.Count <= ariColumnIndex) return false;
 
+            string cell = values[ariColumnIndex];
+            if (cell.Length == 0) return false;   // no data for this return period at this duration
+
             return double.TryParse(
-                values[ariColumnIndex],
+                cell,
                 NumberStyles.Float,
                 CultureInfo.InvariantCulture,
                 out intensityInHr);

@@ -110,15 +110,29 @@ namespace HydroComplete.Engine
                 const double cs = 0.0398;
                 const double ys = 0.67;
 
-                double hwUnsub = dFt * (1.0 + ku * Math.Pow(qOverAd05, mu) + ksu * s);
+                // Critical depth (circular, HDS-5 approximation), capped at the crown.
+                double dc = Math.Min(dFt, 0.467 * Math.Pow(
+                    dischargeCfs * dischargeCfs / (G * Math.Pow(dFt, 5.0)), 0.1) * dFt);
+                // Critical-head ratio Hc/D = (dc + Vc^2/2g)/D for the unsubmerged inlet-control
+                // form, instead of pinning it at 1.0 (which floors low-flow inlet headwater at
+                // ~one diameter). Vc is the velocity at critical depth in the circular section.
+                double thetaC = 2.0 * Math.Acos(Math.Max(-1.0, Math.Min(1.0, 1.0 - 2.0 * dc / dFt)));
+                double areaC = (dFt * dFt / 8.0) * (thetaC - Math.Sin(thetaC));
+                double vc = areaC > 0.0 ? dischargeCfs / areaC : 0.0;
+                // Cap Hc/D at 1.0: the unsubmerged form is only valid below the submergence
+                // transition, and this branch is combined with the submerged form via Max().
+                // Uncapped, the critical velocity head makes Hc/D blow up at over-capacity flow
+                // and spuriously beat the (correct) submerged headwater. Capping keeps low-flow
+                // Hc/D < 1 (removing the old one-diameter floor) without distorting high flow.
+                double hcOverD = Math.Min(1.0, (dc + vc * vc / (2.0 * G)) / dFt);
+
+                double hwUnsub = dFt * (hcOverD + ku * Math.Pow(qOverAd05, mu) + ksu * s);
                 double hwSub = dFt * (cs * Math.Pow(qOverAd05, 2.0) + ys - 0.5 * s);
                 hwInlet = Math.Max(hwUnsub, hwSub);
 
                 double r = dFt / 4.0;
-                double frictionCoeff = 19.63 * n * n * l / Math.Pow(r, 4.0 / 3.0);
+                double frictionCoeff = 29.0 * n * n * l / Math.Pow(r, 4.0 / 3.0);
                 double hLoss = (ke + 1.0 + frictionCoeff) * velocity * velocity / (2.0 * G);
-                double dc = 0.467 * Math.Pow(
-                    dischargeCfs * dischargeCfs / (G * Math.Pow(dFt, 5.0)), 0.1) * dFt;
                 double ho = Math.Max(tailwaterFt, (Math.Min(dc, dFt) + dFt) / 2.0);
                 hwOutlet = Math.Max(hLoss + ho - l * s, 0.0);
             }

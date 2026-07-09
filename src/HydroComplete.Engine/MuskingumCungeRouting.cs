@@ -7,6 +7,13 @@ namespace HydroComplete.Engine
     /// <summary>
     /// Variable-parameter Muskingum-Cunge channel routing (Cunge, 1969).
     /// Derives K and X from trapezoidal channel geometry at a reference discharge.
+    ///
+    /// The Muskingum finite-difference recurrence is only valid when the coefficient
+    /// timestep equals the timestep at which the recurrence is stepped. To keep the
+    /// output on the SAME time axis as the input hydrograph (Δt = dtHours) while still
+    /// satisfying the stability window [2KX, 2K(1-X)], each data interval is advanced in
+    /// an integer number of equal sub-steps (Δτ = Δt / subSteps) with the inflow linearly
+    /// interpolated across the interval. Output is recorded only at the data times.
     /// </summary>
     public static class MuskingumCungeRouting
     {
@@ -35,7 +42,12 @@ namespace HydroComplete.Engine
             public double C1 { get; set; }
             public double C2 { get; set; }
             public double C3 { get; set; }
+            /// <summary>Data timestep (hours) — the axis output points are stamped on.</summary>
             public double TimestepHours { get; set; }
+            /// <summary>Number of stable sub-steps the coefficients are computed for, per data interval.</summary>
+            public int SubSteps { get; set; } = 1;
+            /// <summary>Sub-step length (seconds) the C-coefficients were derived at (= dt/SubSteps).</summary>
+            public double SubStepSeconds { get; set; }
             public double Sum => C1 + C2 + C3;
         }
 
@@ -85,17 +97,22 @@ namespace HydroComplete.Engine
             double x = Math.Max(0.0, Math.Min(0.5, xRaw));
 
             double dtSeconds = dtHours * 3600.0;
-            double dtMin = 2.0 * kSeconds * x;
-            double dtMax = 2.0 * kSeconds * (1.0 - x);
-            double dtUsedSeconds = dtSeconds;
-            if (dtUsedSeconds < dtMin && dtMin > 0) dtUsedSeconds = dtMin + 1.0;
-            if (dtUsedSeconds > dtMax && dtMax > 0) dtUsedSeconds = Math.Max(dtMax - 1.0, dtMin + 1.0);
-            if (dtUsedSeconds <= 0) dtUsedSeconds = dtSeconds;
 
-            double denom = 2.0 * kSeconds * (1.0 - x) + dtUsedSeconds;
-            double c1 = (dtUsedSeconds - 2.0 * kSeconds * x) / denom;
-            double c2 = (dtUsedSeconds + 2.0 * kSeconds * x) / denom;
-            double c3 = (2.0 * kSeconds * (1.0 - x) - dtUsedSeconds) / denom;
+            // Keep the recurrence on the data timestep by advancing each data interval in an
+            // integer number of equal sub-steps, each within the stability window. dtMax = 2K(1-X)
+            // is the largest stable step; pick the fewest sub-steps that bring Δτ <= dtMax. Because
+            // X <= 0.5, dtMax >= dtMin = 2KX, so Δτ ~ dtMax also satisfies the lower bound.
+            double dtMax = 2.0 * kSeconds * (1.0 - x);
+            int subSteps = 1;
+            if (dtMax > 0 && dtSeconds > dtMax)
+                subSteps = (int)Math.Ceiling(dtSeconds / dtMax);
+            if (subSteps < 1) subSteps = 1;
+            double subDtSeconds = dtSeconds / subSteps;
+
+            double denom = 2.0 * kSeconds * (1.0 - x) + subDtSeconds;
+            double c1 = (subDtSeconds - 2.0 * kSeconds * x) / denom;
+            double c2 = (subDtSeconds + 2.0 * kSeconds * x) / denom;
+            double c3 = (2.0 * kSeconds * (1.0 - x) - subDtSeconds) / denom;
 
             return new DerivedParameters
             {
@@ -109,7 +126,9 @@ namespace HydroComplete.Engine
                 C1 = c1,
                 C2 = c2,
                 C3 = c3,
-                TimestepHours = dtUsedSeconds / 3600.0,
+                TimestepHours = dtHours,
+                SubSteps = subSteps,
+                SubStepSeconds = subDtSeconds,
             };
         }
 
@@ -125,40 +144,60 @@ namespace HydroComplete.Engine
             var derived = DeriveParameters(inflowCfs, reach, dtHours);
             var result = new RoutingResult { Parameters = derived };
 
-            double oPrev = inflowCfs[0];
+            int subSteps = Math.Max(1, derived.SubSteps);
+            double c1 = derived.C1, c2 = derived.C2, c3 = derived.C3;
+
+            // State carried across sub-steps: previous sub-step inflow and outflow.
+            double iSubPrev = inflowCfs[0];
+            double oSubPrev = inflowCfs[0];
+
             result.Points.Add(new HydrographPoint
             {
                 TimeHours = 0.0,
                 InflowCfs = inflowCfs[0],
-                OutflowCfs = oPrev,
+                OutflowCfs = oSubPrev,
             });
 
+            // Advance each data interval [i-1, i] with the inflow linearly interpolated across
+            // subSteps sub-steps; record only the outflow at the data time i * dtHours.
             for (int i = 1; i < inflowCfs.Count; i++)
             {
-                double iCurr = inflowCfs[i];
-                double iPrev = inflowCfs[i - 1];
-                double oCurr = Math.Max(0.0, derived.C1 * iCurr + derived.C2 * iPrev + derived.C3 * oPrev);
+                double iStart = inflowCfs[i - 1];
+                double iEnd = inflowCfs[i];
+                for (int s = 1; s <= subSteps; s++)
+                {
+                    double iSubCurr = iStart + (iEnd - iStart) * ((double)s / subSteps);
+                    double oSubCurr = Math.Max(0.0, c1 * iSubCurr + c2 * iSubPrev + c3 * oSubPrev);
+                    iSubPrev = iSubCurr;
+                    oSubPrev = oSubCurr;
+                }
+
                 result.Points.Add(new HydrographPoint
                 {
                     TimeHours = i * derived.TimestepHours,
-                    InflowCfs = iCurr,
-                    OutflowCfs = oCurr,
+                    InflowCfs = iEnd,
+                    OutflowCfs = oSubPrev,
                 });
-                oPrev = oCurr;
             }
 
+            // Recession tail: inflow held at zero, advanced on the same data timestep.
             int tailStep = inflowCfs.Count;
             int maxTail = 2000;
-            while (oPrev > 0.01 && maxTail-- > 0)
+            while (oSubPrev > 0.01 && maxTail-- > 0)
             {
-                double oCurr = Math.Max(0.0, derived.C3 * oPrev);
+                for (int s = 0; s < subSteps; s++)
+                {
+                    double oSubCurr = Math.Max(0.0, c1 * 0.0 + c2 * iSubPrev + c3 * oSubPrev);
+                    iSubPrev = 0.0;
+                    oSubPrev = oSubCurr;
+                }
+
                 result.Points.Add(new HydrographPoint
                 {
                     TimeHours = tailStep * derived.TimestepHours,
                     InflowCfs = 0.0,
-                    OutflowCfs = oCurr,
+                    OutflowCfs = oSubPrev,
                 });
-                oPrev = oCurr;
                 tailStep++;
             }
 
@@ -176,6 +215,7 @@ namespace HydroComplete.Engine
             result.Steps.Add(new CalcStep("c", derived.CelerityFps, "ft/s", "(5/3)*V"));
             result.Steps.Add(new CalcStep("K", derived.KHours, "hr", "L/c"));
             result.Steps.Add(new CalcStep("X", derived.X, "-", "Muskingum weight"));
+            result.Steps.Add(new CalcStep("subSteps", derived.SubSteps, "-", "stable sub-steps per Δt"));
             result.Steps.Add(new CalcStep("C_sum", derived.Sum, "-", "C1+C2+C3"));
             return result;
         }

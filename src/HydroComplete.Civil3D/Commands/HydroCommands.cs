@@ -428,13 +428,16 @@ namespace HydroComplete.Civil3D.Commands
                 {
                     ReadPipe rp = net.OrderedPipes[i];
                     HglProfilePoint point = profile[i];
-                    string reachName = reaches[i].Name;
+                    // Key HGL accumulators by the drawing-unique pipe handle, not the pipe name:
+                    // Civil 3D naming templates restart per network, so two networks routinely
+                    // share a name (e.g. "1") and the bare name would collide across networks.
+                    string pipeKey = rp.PipeId.Handle.ToString();
 
                     double hglUs = point.HglUpstreamFt;
                     double hglDs = point.HglFt;
                     double hglMid = 0.5 * (hglUs + hglDs);
-                    allMidHgl[reachName] = hglMid;
-                    pipeHglEnds[reachName] = new HglProfileWriter.HglPipeEnds
+                    allMidHgl[pipeKey] = hglMid;
+                    pipeHglEnds[pipeKey] = new HglProfileWriter.HglPipeEnds
                     {
                         HglUsFt = hglUs,
                         HglDsFt = hglDs,
@@ -444,7 +447,7 @@ namespace HydroComplete.Civil3D.Commands
                         hglUs, hglDs,
                         rp.UpstreamInvertFt, rp.DownstreamInvertFt, rp.Segment.DiameterFt);
                     if (surcharged)
-                        surchargedKeys.Add(reachName);
+                        surchargedKeys.Add(pipeKey);
 
                     string dOverD = reaches[i].FlowSurcharged
                         ? "SURCH"
@@ -505,7 +508,16 @@ namespace HydroComplete.Civil3D.Commands
             if (!TryBuildHydraulicReport(doc, ed, out var pipes, out var capacities, out var hglData, out var capacityData, out string drawingName))
                 return;
 
-            string reportPath = HtmlReportWriter.Write(drawingName, pipes, capacities, hglData, capacityData);
+            string reportPath;
+            try
+            {
+                reportPath = HtmlReportWriter.Write(drawingName, pipes, capacities, hglData, capacityData);
+            }
+            catch (System.Exception ex)
+            {
+                ed.WriteMessage("\n  Could not write report: " + ex.Message + "\n");
+                return;
+            }
             ed.WriteMessage($"\n--- HydroComplete: HTML report written ---");
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
                 "\n  Manning capacity + steady HGL (Q={0:0.0} cfs) -> {1}", hglData.DesignFlowCfs, reportPath));
@@ -529,7 +541,16 @@ namespace HydroComplete.Civil3D.Commands
             if (!TryBuildHydraulicReport(doc, ed, out var pipes, out var capacities, out var hglData, out var capacityData, out string drawingName))
                 return;
 
-            string reportPath = PdfReportWriter.Write(drawingName, pipes, capacities, hglData, capacityData);
+            string reportPath;
+            try
+            {
+                reportPath = PdfReportWriter.Write(drawingName, pipes, capacities, hglData, capacityData);
+            }
+            catch (System.Exception ex)
+            {
+                ed.WriteMessage("\n  Could not write report: " + ex.Message + "\n");
+                return;
+            }
             ed.WriteMessage($"\n--- HydroComplete: PDF report written ---");
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
                 "\n  Manning capacity + steady HGL (Q={0:0.0} cfs) -> {1}", hglData.DesignFlowCfs, reportPath));
