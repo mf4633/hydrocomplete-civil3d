@@ -140,9 +140,12 @@ namespace HydroComplete.Engine
         {
             if (runoffC < 0 || runoffC > 1)
                 throw new ArgumentOutOfRangeException(nameof(runoffC), "C must be 0..1.");
-            if (runoffC <= 0.05) return 55.0;
 
-            double cn = 1000.0 / (10.0 + 17.67 * runoffC);
+            // C and CN are both monotonically-increasing measures of runoff potential:
+            // a higher runoff coefficient must map to a higher curve number. Drive the SCS
+            // maximum retention S from (1 - C) so S decreases (CN increases) as C rises.
+            // (There is no canonical C->CN formula; this is a bounded, monotonic heuristic.)
+            double cn = 1000.0 / (10.0 + 17.67 * (1.0 - runoffC));
             return Math.Min(98.0, Math.Max(30.0, cn));
         }
 

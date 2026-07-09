@@ -10,7 +10,7 @@ namespace HydroComplete.Engine
     /// Geometry (AISI / NCSPA pipe-arch intrados, public-domain culvert references):
     ///   Span B = inside width at spring line (ft)
     ///   Rise H = inside height invert to crown (ft)
-    ///   Arc radius R = B²/(16H) + H/2
+    ///   Arc radius R = B²/(8H) + H/2
     ///   Spring-line depth y_s = R - sqrt(R² - (B/2)²)
     ///
     /// Partial flow:
@@ -52,12 +52,12 @@ namespace HydroComplete.Engine
 
         /// <summary>
         /// Intrados arc radius from span and rise:
-        /// R = B²/(16H) + H/2.
+        /// R = B²/(8H) + H/2.
         /// </summary>
         public static double ArcRadiusFt(double spanFt, double riseFt)
         {
             ValidateSpanRise(spanFt, riseFt);
-            return spanFt * spanFt / (16.0 * riseFt) + riseFt / 2.0;
+            return spanFt * spanFt / (8.0 * riseFt) + riseFt / 2.0;
         }
 
         /// <summary>Depth from invert to spring line (ft).</summary>
@@ -124,7 +124,7 @@ namespace HydroComplete.Engine
             };
             result.Steps.Add(new CalcStep("B", span, "ft", "inside span at spring line"));
             result.Steps.Add(new CalcStep("H", rise, "ft", "inside rise invert-to-crown"));
-            result.Steps.Add(new CalcStep("R_arc", ArcRadiusFt(span, rise), "ft", "B^2/(16H)+H/2"));
+            result.Steps.Add(new CalcStep("R_arc", ArcRadiusFt(span, rise), "ft", "B^2/(8H)+H/2"));
             result.Steps.Add(new CalcStep("y_s", SpringLineDepthFt(span, rise), "ft", "spring-line depth"));
             result.Steps.Add(new CalcStep("A_full", areaFull, "ft^2", "arc segment + vertical sides + crown"));
             result.Steps.Add(new CalcStep("P_full", perimeterFull, "ft", "wetted perimeter at y=H"));
@@ -281,7 +281,7 @@ namespace HydroComplete.Engine
             if (span <= 0) throw new ArgumentOutOfRangeException(nameof(span));
             if (rise <= 0) throw new ArgumentOutOfRangeException(nameof(rise));
 
-            double r = span * span / (16.0 * rise) + rise / 2.0;
+            double r = span * span / (8.0 * rise) + rise / 2.0;
             if (r + 1e-9 < span / 2.0)
             {
                 throw new ArgumentOutOfRangeException(

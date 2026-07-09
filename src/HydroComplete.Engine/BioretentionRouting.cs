@@ -85,7 +85,9 @@ namespace HydroComplete.Engine
             double udAreaFt2 = Math.PI * Math.Pow(udDiaFt / 2.0, 2.0);
             double avgHead = pondingMax / 2.0 + mediaDepth;
             double qMediaAvgCfPerHr = ksatFtPerHr * surfaceAreaSf * avgHead / mediaDepth;
-            double qUdAvgCfPerHr = udCd * udAreaFt2 * Math.Sqrt(2.0 * GravityFtPerSec2 * mediaDepth / 2.0);
+            // Orifice equation Q = Cd*A*sqrt(2gh) with g in ft/s^2 yields cfs; convert to
+            // cf/hr (x3600) to combine with the Darcy media/native fluxes expressed in ft/hr.
+            double qUdAvgCfPerHr = udCd * udAreaFt2 * Math.Sqrt(2.0 * GravityFtPerSec2 * mediaDepth / 2.0) * 3600.0;
             double qNativeCfPerHr = nativeKsatFtPerHr * surfaceAreaSf;
             double qTotalAvgCfPerHr = qMediaAvgCfPerHr + qUdAvgCfPerHr + qNativeCfPerHr;
 

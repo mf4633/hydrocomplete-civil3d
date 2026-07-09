@@ -115,7 +115,7 @@ namespace HydroComplete.Engine
                 hwInlet = Math.Max(hwUnsub, hwSub);
 
                 double r = dFt / 4.0;
-                double frictionCoeff = 19.63 * n * n * l / Math.Pow(r, 4.0 / 3.0);
+                double frictionCoeff = 29.0 * n * n * l / Math.Pow(r, 4.0 / 3.0);
                 double hLoss = (ke + 1.0 + frictionCoeff) * velocity * velocity / (2.0 * G);
                 double dc = 0.467 * Math.Pow(
                     dischargeCfs * dischargeCfs / (G * Math.Pow(dFt, 5.0)), 0.1) * dFt;
