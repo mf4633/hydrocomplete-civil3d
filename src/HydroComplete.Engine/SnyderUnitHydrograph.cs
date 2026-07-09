@@ -94,8 +94,12 @@ namespace HydroComplete.Engine
             double lMi = channelLengthMi ?? EstimateChannelLengthMi(areaAcres);
             double lcMi = centroidDistanceMi ?? lMi * CentroidDistanceFactor;
             double tp = LagHours(lMi, lcMi, ct);
-            double tb = BaseTimeHours(tp);
             double qp = PeakDischargeCfs(areaAcres, tp, cp);
+            // Base time set so the triangular UH encloses exactly one inch of direct runoff:
+            // V = 0.5*qp*tb must equal one unit of runoff over the area. With qp = 640*Cp*A/tp,
+            // that gives tb = 2.0167*tp/Cp (the old max(5*tp,3) overstated the volume by ~49%
+            // at Cp=0.6). Peak qp still occurs at tp, so peak magnitude and timing are unchanged.
+            double tb = 2.0167 * tp / cp;
             double dt = timeStepHours ?? Math.Max(tp / 10.0, 0.05);
             double recessionHours = Math.Max(tb - tp, dt);
 

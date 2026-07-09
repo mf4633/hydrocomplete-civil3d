@@ -102,5 +102,47 @@ namespace HydroComplete.Engine.Tests
             Assert.Equal(1.0, result.Parameters.Sum, 3);           // C1+C2+C3 = 1
             Assert.True(result.PeakOutflowCfs < result.PeakInflowCfs); // still attenuates
         }
+
+        // F10 — Snyder triangular UH encloses one inch of direct runoff (the old base time
+        // overstated the enclosed volume by ~49%).
+        [Fact]
+        public void SnyderUnitHydrograph_EnclosesOneInchOfRunoff()
+        {
+            double areaAcres = 100.0;
+            var uh = SnyderUnitHydrograph.Generate(areaAcres, channelLengthMi: 1.2, centroidDistanceMi: 0.6);
+            double volumeCf = uh.Ordinates.Sum(o => o.FlowCfs) * uh.TimeStepHours * 3600.0;
+            double expectedCf = areaAcres * 3630.0;  // 1 in over the area
+            Assert.InRange(volumeCf, expectedCf * 0.85, expectedCf * 1.10);
+        }
+
+        // F29 — Atlas 14 duration parsing keeps empty cells positionally, so a requested ARI
+        // column returns its own intensity rather than a left-shifted neighbor's.
+        [Fact]
+        public void Atlas14DurationRow_KeepsColumnAlignment_WithEmptyCells()
+        {
+            bool ok = Atlas14Fetcher.TryParseDurationRow("5-min: 1.0,,3.0,4.0", 2, out _, out double intensity);
+            Assert.True(ok);
+            Assert.Equal(3.0, intensity, 3);   // old left-collapse would have returned 4.0
+
+            // A blank cell at the requested column is "no data", not the next column's value.
+            Assert.False(Atlas14Fetcher.TryParseDurationRow("5-min: 1.0,,3.0,4.0", 1, out _, out _));
+        }
+
+        // F4 — low-flow inlet-control headwater is no longer floored at ~one diameter
+        // (Hc/D was pinned at 1.0 instead of the critical-head ratio).
+        [Fact]
+        public void CulvertInletHeadwater_NotFlooredAtOneDiameter_AtLowFlow()
+        {
+            var culvert = new CulvertHydraulics.CulvertParameters
+            {
+                DiameterIn = 24,
+                LengthFt = 100,
+                SlopeFtPerFt = 0.01,
+                ManningN = 0.013,
+                EntranceLossKe = 0.5,
+            };
+            var hw = CulvertHydraulics.Headwater(5.0, culvert);
+            Assert.True(hw.HeadwaterInletFt < 2.0);   // below D = 24 in / 12 = 2.0 ft
+        }
     }
 }
