@@ -234,8 +234,13 @@ namespace HydroComplete.Engine
                     double hf = sfAvg * dL;
                     double he = eddyLossCoefficient * Math.Abs(v1 * v1 / (2.0 * g) - v2 * v2 / (2.0 * g));
 
-                    // H_known + hf + he = H_unknown (Chow 11-4; prev is the known section)
-                    double residual = e1 + hf + he - e2;
+                    // Energy balance H_up = H_down + hf + he (Chow 11-4). The losses are ADDED
+                    // when the unknown section is upstream (subcritical march runs
+                    // downstream->upstream) and SUBTRACTED when it is downstream (supercritical
+                    // march runs upstream->downstream); otherwise supercritical profiles solve
+                    // to a downstream head higher than upstream.
+                    double dir = isSubcritical ? 1.0 : -1.0;
+                    double residual = e1 + dir * (hf + he) - e2;
 
                     if (Math.Abs(residual) < 1e-6)
                         break;
@@ -249,7 +254,7 @@ namespace HydroComplete.Engine
                     double e2p = stn.InvertElevFt + y2p + v2p * v2p / (2.0 * g);
                     double hfP = sfAvgP * dL;
                     double heP = eddyLossCoefficient * Math.Abs(v1 * v1 / (2.0 * g) - v2p * v2p / (2.0 * g));
-                    double residualP = e1 + hfP + heP - e2p;
+                    double residualP = e1 + dir * (hfP + heP) - e2p;
 
                     double dRdy = (residualP - residual) / dy;
                     if (Math.Abs(dRdy) < 1e-12)

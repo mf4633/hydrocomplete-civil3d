@@ -276,6 +276,18 @@ namespace HydroComplete.Engine
                     writer.WriteAttributeString("length", FormatDouble(pipe.LengthFt));
                 writer.WriteEndElement();
             }
+            else if (pipe.Shape == LandXmlPipeShape.Arch && pipe.WidthFt > 0 && pipe.HeightFt > 0)
+            {
+                // Preserve arch span/rise so an import->export round trip does not collapse an
+                // arch culvert to a circular pipe of its hydraulic-equivalent diameter.
+                writer.WriteStartElement("ArchPipe");
+                writer.WriteAttributeString("span", FormatDouble(pipe.WidthFt));
+                writer.WriteAttributeString("rise", FormatDouble(pipe.HeightFt));
+                writer.WriteAttributeString("manningsN", FormatDouble(pipe.ManningN));
+                if (pipe.LengthFt > 0)
+                    writer.WriteAttributeString("length", FormatDouble(pipe.LengthFt));
+                writer.WriteEndElement();
+            }
             else
             {
                 writer.WriteStartElement("CircPipe");
