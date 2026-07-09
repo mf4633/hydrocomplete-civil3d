@@ -251,7 +251,12 @@ namespace HydroComplete.Engine
                     ? eta
                     : 0.0;
                 double totalRemoved = annualTssLoad * tssRemoval * designLifeYears;
-                double costPerLb = totalRemoved > 0 ? lc.TotalNpv / totalRemoved : double.PositiveInfinity;
+                // A zero SizingFactor (e.g. permeable pavement, green roof) drives footprint
+                // and thus TotalNpv to 0; a costless facility must not dominate the ranking as
+                // "free". Treat non-positive NPV with real removal as infinitely expensive.
+                double costPerLb = (totalRemoved > 0 && lc.TotalNpv > 0)
+                    ? lc.TotalNpv / totalRemoved
+                    : double.PositiveInfinity;
 
                 var entry = new BmpRankingEntry
                 {

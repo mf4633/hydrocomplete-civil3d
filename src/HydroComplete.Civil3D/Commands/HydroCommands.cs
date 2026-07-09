@@ -505,7 +505,16 @@ namespace HydroComplete.Civil3D.Commands
             if (!TryBuildHydraulicReport(doc, ed, out var pipes, out var capacities, out var hglData, out var capacityData, out string drawingName))
                 return;
 
-            string reportPath = HtmlReportWriter.Write(drawingName, pipes, capacities, hglData, capacityData);
+            string reportPath;
+            try
+            {
+                reportPath = HtmlReportWriter.Write(drawingName, pipes, capacities, hglData, capacityData);
+            }
+            catch (System.Exception ex)
+            {
+                ed.WriteMessage("\n  Could not write report: " + ex.Message + "\n");
+                return;
+            }
             ed.WriteMessage($"\n--- HydroComplete: HTML report written ---");
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
                 "\n  Manning capacity + steady HGL (Q={0:0.0} cfs) -> {1}", hglData.DesignFlowCfs, reportPath));
@@ -529,7 +538,16 @@ namespace HydroComplete.Civil3D.Commands
             if (!TryBuildHydraulicReport(doc, ed, out var pipes, out var capacities, out var hglData, out var capacityData, out string drawingName))
                 return;
 
-            string reportPath = PdfReportWriter.Write(drawingName, pipes, capacities, hglData, capacityData);
+            string reportPath;
+            try
+            {
+                reportPath = PdfReportWriter.Write(drawingName, pipes, capacities, hglData, capacityData);
+            }
+            catch (System.Exception ex)
+            {
+                ed.WriteMessage("\n  Could not write report: " + ex.Message + "\n");
+                return;
+            }
             ed.WriteMessage($"\n--- HydroComplete: PDF report written ---");
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
                 "\n  Manning capacity + steady HGL (Q={0:0.0} cfs) -> {1}", hglData.DesignFlowCfs, reportPath));

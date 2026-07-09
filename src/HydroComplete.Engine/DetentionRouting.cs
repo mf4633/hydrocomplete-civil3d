@@ -77,6 +77,8 @@ namespace HydroComplete.Engine
             double minElev = stageStorage[0].ElevationFt;
             double maxElev = maxElevFt ?? stageStorage[stageStorage.Count - 1].ElevationFt * 1.2;
             double step = elevStepFt ?? Math.Max(0.1, (maxElev - minElev) / 64.0);
+            if (step <= 0)
+                throw new ArgumentOutOfRangeException(nameof(elevStepFt), "Elevation step must be > 0.");
 
             var curve = new List<StorageIndicationPoint>();
 

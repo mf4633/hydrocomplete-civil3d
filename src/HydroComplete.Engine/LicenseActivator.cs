@@ -239,42 +239,71 @@ namespace HydroComplete.Engine
                 string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
                 {
+                    // A 4xx is an authoritative client-side denial (bad/expired/unknown token,
+                    // forbidden) — DENY rather than fall through to the offline stub. Only a
+                    // 5xx (transient server fault) counts as a reachability failure.
+                    bool clientDenied = (int)response.StatusCode >= 400 && (int)response.StatusCode < 500;
                     return new OnlineValidationAttempt
                     {
                         WasNetworkAttempt = true,
+                        ServerSaidInvalid = clientDenied,
                         ErrorMessage = $"Server returned {(int)response.StatusCode}.",
                     };
                 }
 
-                using JsonDocument doc = JsonDocument.Parse(responseBody);
-                JsonElement root = doc.RootElement;
-                if (!root.TryGetProperty("valid", out JsonElement validEl) || !validEl.GetBoolean())
+                JsonDocument doc;
+                try
                 {
+                    doc = JsonDocument.Parse(responseBody);
+                }
+                catch (JsonException)
+                {
+                    // A 2xx whose body is not JSON (proxy/captive-portal HTML, a spoofed
+                    // endpoint) is not an affirmation of validity — deny, don't grant the stub.
                     return new OnlineValidationAttempt
                     {
                         WasNetworkAttempt = true,
                         ServerSaidInvalid = true,
-                        ErrorMessage = ReadErrorMessage(root) ?? "License not valid on server.",
+                        ErrorMessage = "Server response was not valid JSON.",
                     };
                 }
 
-                string expires = ReadExpires(root) ?? DateTimeOffset.UtcNow.Add(StubValidity).ToString("o");
-                string storedToken = ReadAccessToken(root) ?? token;
-                var record = new LicenseRecord
+                using (doc)
                 {
-                    Email = email,
-                    Token = storedToken,
-                    Expires = expires,
-                    LastValidated = DateTimeOffset.UtcNow.ToString("o"),
-                    ValidationMode = "online",
-                };
+                    JsonElement root = doc.RootElement;
+                    // Only a literal boolean true affirms validity. false, a non-boolean value,
+                    // or a missing field is an authoritative "not valid" — never a reason to fall
+                    // back to the Pro-granting offline stub.
+                    bool affirmed = root.TryGetProperty("valid", out JsonElement validEl)
+                        && validEl.ValueKind == JsonValueKind.True;
+                    if (!affirmed)
+                    {
+                        return new OnlineValidationAttempt
+                        {
+                            WasNetworkAttempt = true,
+                            ServerSaidInvalid = true,
+                            ErrorMessage = ReadErrorMessage(root) ?? "License not valid on server.",
+                        };
+                    }
 
-                return new OnlineValidationAttempt
-                {
-                    Success = true,
-                    WasNetworkAttempt = true,
-                    Record = record,
-                };
+                    string expires = ReadExpires(root) ?? DateTimeOffset.UtcNow.Add(StubValidity).ToString("o");
+                    string storedToken = ReadAccessToken(root) ?? token;
+                    var record = new LicenseRecord
+                    {
+                        Email = email,
+                        Token = storedToken,
+                        Expires = expires,
+                        LastValidated = DateTimeOffset.UtcNow.ToString("o"),
+                        ValidationMode = "online",
+                    };
+
+                    return new OnlineValidationAttempt
+                    {
+                        Success = true,
+                        WasNetworkAttempt = true,
+                        Record = record,
+                    };
+                }
             }
             catch (OperationCanceledException)
             {

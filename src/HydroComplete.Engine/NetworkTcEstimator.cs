@@ -255,6 +255,12 @@ namespace HydroComplete.Engine
                 return memo[structureId];
             }
 
+            // Cycle guard: mark this node in-progress before recursing so a looped pipe
+            // topology returns the (0, empty) sentinel on the back-edge instead of
+            // recursing forever and overflowing the stack. Overwritten below with the
+            // real longest path once the (acyclic) descendants resolve.
+            memo[structureId] = (0.0, new List<NetworkTcPipe>());
+
             double bestLength = 0.0;
             var bestPath = new List<NetworkTcPipe>();
 
