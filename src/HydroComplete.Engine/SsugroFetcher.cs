@@ -369,6 +369,8 @@ namespace HydroComplete.Engine
             HttpClient client = _httpClientFactory();
             using HttpResponseMessage response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
+            if (response.Content.Headers.ContentLength > 16L * 1024 * 1024)
+                throw new InvalidOperationException("SSURGO response exceeds the 16 MB cap.");
             return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         }
 

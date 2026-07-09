@@ -236,6 +236,13 @@ namespace HydroComplete.Engine
                     .SendAsync(request, cancellationToken)
                     .ConfigureAwait(false);
 
+                if (response.Content.Headers.ContentLength > 16L * 1024 * 1024)
+                    return new OnlineValidationAttempt
+                    {
+                        WasNetworkAttempt = true,
+                        ErrorMessage = "License server response exceeds the 16 MB cap.",
+                    };
+
                 string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
                 {
