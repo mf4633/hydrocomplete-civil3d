@@ -39,7 +39,10 @@ namespace HydroComplete.Engine.Tests
         public async Task ActivateAsync_OfflineStub_WritesOneYearLicense()
         {
             string licensePath = Path.Combine(CreateTempDir(), "license.json");
-            var handler = new StubHttpHandler("{}", HttpStatusCode.NotFound);
+            // A transient/unreachable server (5xx) is a genuine reachability failure, so the
+            // offline stub is the correct fallback. (A 4xx is a denial and must NOT stub —
+            // see ActivateAsync_ClientErrorDenies_WithoutStub.)
+            var handler = new StubHttpHandler("{}", HttpStatusCode.ServiceUnavailable);
             var activator = new LicenseActivator(
                 validateUrl: "https://example.test/api/licensing/validate",
                 httpClientFactory: () => new HttpClient(handler));
@@ -109,6 +112,46 @@ namespace HydroComplete.Engine.Tests
             Assert.False(result.Success);
             Assert.False(File.Exists(licensePath));
             Assert.Contains("revoked", result.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public async Task ActivateAsync_ClientErrorDenies_WithoutStub()
+        {
+            // F28: a reachable-but-denying server (4xx) must NOT fall back to the offline stub,
+            // or a dead/misconfigured endpoint would grant Pro to any well-formed token.
+            string licensePath = Path.Combine(CreateTempDir(), "license.json");
+            var handler = new StubHttpHandler("Forbidden", HttpStatusCode.Forbidden);
+            var activator = new LicenseActivator(
+                validateUrl: "https://example.test/api/licensing/validate",
+                httpClientFactory: () => new HttpClient(handler));
+
+            LicenseActivationResult result = await activator.ActivateAsync(
+                "beta@hydrocomplete.com",
+                ValidToken,
+                licensePath);
+
+            Assert.False(result.Success);
+            Assert.False(File.Exists(licensePath));
+        }
+
+        [Fact]
+        public async Task ActivateAsync_NonJson200_DeniesWithoutStub()
+        {
+            // F28: a 200 whose body is not JSON (captive portal / proxy HTML, a spoofed
+            // endpoint) is not an affirmation of validity and must not grant the stub.
+            string licensePath = Path.Combine(CreateTempDir(), "license.json");
+            var handler = new StubHttpHandler("<html>proxy error</html>", HttpStatusCode.OK);
+            var activator = new LicenseActivator(
+                validateUrl: "https://example.test/api/licensing/validate",
+                httpClientFactory: () => new HttpClient(handler));
+
+            LicenseActivationResult result = await activator.ActivateAsync(
+                "beta@hydrocomplete.com",
+                ValidToken,
+                licensePath);
+
+            Assert.False(result.Success);
+            Assert.False(File.Exists(licensePath));
         }
 
         [Fact]

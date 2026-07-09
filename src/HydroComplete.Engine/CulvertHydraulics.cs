@@ -119,7 +119,12 @@ namespace HydroComplete.Engine
                 double thetaC = 2.0 * Math.Acos(Math.Max(-1.0, Math.Min(1.0, 1.0 - 2.0 * dc / dFt)));
                 double areaC = (dFt * dFt / 8.0) * (thetaC - Math.Sin(thetaC));
                 double vc = areaC > 0.0 ? dischargeCfs / areaC : 0.0;
-                double hcOverD = (dc + vc * vc / (2.0 * G)) / dFt;
+                // Cap Hc/D at 1.0: the unsubmerged form is only valid below the submergence
+                // transition, and this branch is combined with the submerged form via Max().
+                // Uncapped, the critical velocity head makes Hc/D blow up at over-capacity flow
+                // and spuriously beat the (correct) submerged headwater. Capping keeps low-flow
+                // Hc/D < 1 (removing the old one-diameter floor) without distorting high flow.
+                double hcOverD = Math.Min(1.0, (dc + vc * vc / (2.0 * G)) / dFt);
 
                 double hwUnsub = dFt * (hcOverD + ku * Math.Pow(qOverAd05, mu) + ksu * s);
                 double hwSub = dFt * (cs * Math.Pow(qOverAd05, 2.0) + ys - 0.5 * s);

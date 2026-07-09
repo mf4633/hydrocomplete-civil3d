@@ -144,5 +144,41 @@ namespace HydroComplete.Engine.Tests
             var hw = CulvertHydraulics.Headwater(5.0, culvert);
             Assert.True(hw.HeadwaterInletFt < 2.0);   // below D = 24 in / 12 = 2.0 ft
         }
+
+        // F3 — outlet-control friction uses the US-customary HDS-5 constant Ku = 29. A long
+        // culvert is outlet-controlled with a substantially higher headwater than the SI
+        // constant 19.63 would produce (~17.9 ft vs ~11.9 ft here).
+        [Fact]
+        public void CulvertOutletControl_UsesUsCustomaryFrictionConstant()
+        {
+            var longCulvert = new CulvertHydraulics.CulvertParameters
+            {
+                DiameterIn = 24,
+                LengthFt = 600,
+                SlopeFtPerFt = 0.01,
+                ManningN = 0.013,
+                EntranceLossKe = 0.5,
+            };
+            var hw = CulvertHydraulics.Headwater(40.0, longCulvert);
+            Assert.Equal(CulvertHydraulics.ControlType.Outlet, hw.Control);
+            Assert.True(hw.HeadwaterFt > 15.0);   // SI 19.63 constant would give ~11.9 ft
+        }
+
+        // F4 (cap) — at over-capacity flow the inlet headwater stays governed by the submerged
+        // form; the critical-head ratio is capped at 1.0 so it cannot blow up and beat it.
+        [Fact]
+        public void CulvertInletHeadwater_HighFlow_StaysBounded()
+        {
+            var culvert = new CulvertHydraulics.CulvertParameters
+            {
+                DiameterIn = 24,
+                LengthFt = 100,
+                SlopeFtPerFt = 0.01,
+                ManningN = 0.013,
+                EntranceLossKe = 0.5,
+            };
+            var hw = CulvertHydraulics.Headwater(50.0, culvert);
+            Assert.InRange(hw.HeadwaterFt, 10.0, 13.0);   // ~11.4 ft; an uncapped Hc/D gives ~18
+        }
     }
 }
