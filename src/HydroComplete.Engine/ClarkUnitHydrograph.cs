@@ -50,7 +50,9 @@ namespace HydroComplete.Engine
             var hist = new double[numSteps];
             for (int i = 0; i < numSteps; i++)
             {
-                double ratio = (double)i / numSteps;
+                // Sample bin centers so the histogram is never identically zero (numSteps==1,
+                // i.e. Tc <= Δt) and the first bin's area is not dropped.
+                double ratio = ((double)i + 0.5) / numSteps;
                 hist[i] = ratio <= 0.5 ? 2.0 * ratio : 2.0 * (1.0 - ratio);
             }
 
@@ -83,9 +85,13 @@ namespace HydroComplete.Engine
             double c1 = timestepMinutes / (2.0 * rMin + timestepMinutes);
             double c2 = (2.0 * rMin - timestepMinutes) / (2.0 * rMin + timestepMinutes);
 
+            // Convert the time-area translated inflow to cfs. An incremental area (acres)
+            // receiving 1 in of excess rainfall yields ΔA acre-inch of volume delivered over
+            // one timestep; 1 acre-inch = 3630 ft^3, so rate[cfs] = fraction*area*3630/Δt_sec.
+            double acreInchToCfs = 3630.0 / (timestepMinutes * 60.0);
             var translated = new double[nSteps];
             for (int i = 0; i < translationSteps && i < nSteps; i++)
-                translated[i] = timeArea[i] * areaAcres;
+                translated[i] = timeArea[i] * areaAcres * acreInchToCfs;
 
             var routed = new double[nSteps];
             for (int i = 1; i < nSteps; i++)

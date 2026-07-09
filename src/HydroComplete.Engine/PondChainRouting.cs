@@ -176,7 +176,10 @@ namespace HydroComplete.Engine
                     if (pt.ElevationFt > referenceElev)
                     {
                         double freeHead = pt.ElevationFt - referenceElev;
-                        double effHead = Math.Max(0.0, freeHead - tailwaterFt);
+                        // Submerged driving head is the difference of the two water-surface
+                        // elevations on a common datum; referencing the outlet invert once
+                        // (via Max) avoids double-subtracting it under tailwater backwater.
+                        double effHead = Math.Max(0.0, pt.ElevationFt - Math.Max(referenceElev, tailwaterFt));
                         q = DischargeWithHead(outlet, effHead, freeHead, pt, name);
                     }
 
