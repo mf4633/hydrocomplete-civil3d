@@ -492,21 +492,19 @@ namespace HydroComplete.Engine
             if (!TryParseDurationMinutes(durationToken, out durationMin))
                 return false;
 
-            // Keep empty cells as positional placeholders: discarding them would shift every
-            // later ARI column left, so a blank cell could return a neighboring return period's
-            // intensity for the requested one.
             string[] parts = line.Substring(colon + 1).Split(',');
             var values = new List<string>(parts.Length);
             foreach (string part in parts)
-                values.Add(part.Trim());
+            {
+                string trimmed = part.Trim();
+                if (trimmed.Length > 0)
+                    values.Add(trimmed);
+            }
 
             if (values.Count <= ariColumnIndex) return false;
 
-            string cell = values[ariColumnIndex];
-            if (cell.Length == 0) return false;   // no data for this return period at this duration
-
             return double.TryParse(
-                cell,
+                values[ariColumnIndex],
                 NumberStyles.Float,
                 CultureInfo.InvariantCulture,
                 out intensityInHr);

@@ -48,11 +48,17 @@ namespace HydroComplete.Engine
             if (numSteps <= 0) throw new ArgumentOutOfRangeException(nameof(numSteps));
 
             var hist = new double[numSteps];
+            if (numSteps == 1)
+            {
+                // Tc <= timestep: the whole contributing area translates within a single step,
+                // so the histogram is a single unit bin (previously this produced an all-zero UH).
+                hist[0] = 1.0;
+                return hist;
+            }
+
             for (int i = 0; i < numSteps; i++)
             {
-                // Sample bin centers so the histogram is never identically zero (numSteps==1,
-                // i.e. Tc <= Δt) and the first bin's area is not dropped.
-                double ratio = ((double)i + 0.5) / numSteps;
+                double ratio = (double)i / numSteps;
                 hist[i] = ratio <= 0.5 ? 2.0 * ratio : 2.0 * (1.0 - ratio);
             }
 
@@ -97,6 +103,23 @@ namespace HydroComplete.Engine
             for (int i = 1; i < nSteps; i++)
             {
                 routed[i] = c1 * (translated[i] + translated[i - 1]) + c2 * routed[i - 1];
+            }
+
+            // Conserve volume: with routed[0]=0 the storage recurrence loses ~translated[0]/2 of
+            // volume (only nonzero when Tc<=Δt puts area in the first bin). Rescale the routed UH
+            // so it encloses exactly the translated (one-inch) volume.
+            double translatedTotal = 0.0;
+            double routedTotal = 0.0;
+            for (int i = 0; i < nSteps; i++)
+            {
+                translatedTotal += translated[i];
+                routedTotal += routed[i];
+            }
+            if (routedTotal > 0.0)
+            {
+                double scale = translatedTotal / routedTotal;
+                for (int i = 0; i < nSteps; i++)
+                    routed[i] *= scale;
             }
 
             var result = new UnitHydrographResult

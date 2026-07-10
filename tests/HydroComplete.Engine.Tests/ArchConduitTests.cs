@@ -17,14 +17,15 @@ namespace HydroComplete.Engine.Tests
                 Slope = slope,
             };
 
-        // B=2 ft, H=2 ft, n=0.013, S=0.01 -> Q_full ~ 25.5 cfs (hand-checked).
+        // B=2 ft, H=2 ft, n=0.013, S=0.01 -> Q_full ~ 26.8 cfs with the corrected sagitta arc
+        // radius R = B^2/(8H) + H/2 (was 25.5 under the earlier B^2/(16H) bug).
         [Fact]
         public void Capacity_FullBarrel_MatchesHandCalc()
         {
             var pipe = MakeArch(2.0, 2.0);
             var r = ArchConduit.Capacity(pipe);
-            Assert.Equal(25.5, r.FullFlowCfs, 0);
-            Assert.Equal(7.2, r.FullVelocityFps, 0);
+            Assert.Equal(26.8, r.FullFlowCfs, 1);
+            Assert.Equal(7.3, r.FullVelocityFps, 1);
             Assert.True(r.PeakFlowCfs >= r.FullFlowCfs * 0.95);
         }
 
@@ -32,9 +33,10 @@ namespace HydroComplete.Engine.Tests
         public void ArcRadius_MatchesStandardFormula()
         {
             double span = 2.0, rise = 2.0;
-            double expected = span * span / (16.0 * rise) + rise / 2.0;
+            // Correct circular-segment (sagitta) radius: R = B^2/(8H) + H/2.
+            double expected = span * span / (8.0 * rise) + rise / 2.0;
             Assert.Equal(expected, ArchConduit.ArcRadiusFt(span, rise), 6);
-            Assert.Equal(1.125, ArchConduit.ArcRadiusFt(2.0, 2.0), 3);
+            Assert.Equal(1.25, ArchConduit.ArcRadiusFt(2.0, 2.0), 3);
         }
 
         [Fact]
