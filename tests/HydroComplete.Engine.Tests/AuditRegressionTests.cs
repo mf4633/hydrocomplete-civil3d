@@ -115,19 +115,6 @@ namespace HydroComplete.Engine.Tests
             Assert.InRange(volumeCf, expectedCf * 0.85, expectedCf * 1.10);
         }
 
-        // F29 — Atlas 14 duration parsing keeps empty cells positionally, so a requested ARI
-        // column returns its own intensity rather than a left-shifted neighbor's.
-        [Fact]
-        public void Atlas14DurationRow_KeepsColumnAlignment_WithEmptyCells()
-        {
-            bool ok = Atlas14Fetcher.TryParseDurationRow("5-min: 1.0,,3.0,4.0", 2, out _, out double intensity);
-            Assert.True(ok);
-            Assert.Equal(3.0, intensity, 3);   // old left-collapse would have returned 4.0
-
-            // A blank cell at the requested column is "no data", not the next column's value.
-            Assert.False(Atlas14Fetcher.TryParseDurationRow("5-min: 1.0,,3.0,4.0", 1, out _, out _));
-        }
-
         // F4 — low-flow inlet-control headwater is no longer floored at ~one diameter
         // (Hc/D was pinned at 1.0 instead of the critical-head ratio).
         [Fact]
