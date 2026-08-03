@@ -28,7 +28,12 @@ namespace HydroComplete.Civil3D.Commands
             CivilDocument civilDoc = CivilApplication.ActiveDocument;
 
             Directory.CreateDirectory(ReportWriterCommon.OutputFolder);
-            string defaultPath = ReportWriterCommon.OutputFolder;
+            // Default to the HC_LANDXML export path for this drawing, so an
+            // export-then-import round trip works on plain Enter.
+            string defaultPath = Path.Combine(
+                ReportWriterCommon.OutputFolder,
+                ReportWriterCommon.SanitizeFileName(
+                    Path.GetFileNameWithoutExtension(doc.Name)) + "_network.xml");
 
             string inputPath = PromptInputPath(ed, defaultPath);
             if (string.IsNullOrWhiteSpace(inputPath))

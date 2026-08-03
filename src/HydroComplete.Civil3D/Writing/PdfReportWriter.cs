@@ -29,6 +29,7 @@ namespace HydroComplete.Civil3D.Writing
             string path = ReportWriterCommon.BuildReportPath(drawingName, "pdf");
             string generated = DateTime.Now.ToString("f", CultureInfo.CurrentCulture);
 
+            PdfFonts.EnsureFontResolver();
             var document = new PdfDocument();
             document.Info.Title = "HydroComplete Hydraulic Report";
             document.Info.Author = "HydroComplete";
@@ -429,5 +430,54 @@ namespace HydroComplete.Civil3D.Writing
             return new XFont(family, size, XFontStyle.Bold);
 #endif
         }
+
+        /// <summary>
+        /// PDFsharp 6.x Core has no system-font access — XFont("Segoe UI") throws
+        /// unless a resolver is installed. PDFsharp 1.5 (net48) resolves via GDI.
+        /// </summary>
+        public static void EnsureFontResolver()
+        {
+#if NET8_0_OR_GREATER
+            if (PdfSharp.Fonts.GlobalFontSettings.FontResolver == null)
+                PdfSharp.Fonts.GlobalFontSettings.FontResolver = new WindowsFontResolver();
+#endif
+        }
     }
+
+#if NET8_0_OR_GREATER
+    /// <summary>Serves report typefaces straight from C:\Windows\Fonts.</summary>
+    internal sealed class WindowsFontResolver : PdfSharp.Fonts.IFontResolver
+    {
+        private static readonly string FontDir = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Fonts");
+
+        private static readonly Dictionary<string, string> Faces =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["segoe ui"] = "segoeui.ttf",
+                ["segoe ui#b"] = "segoeuib.ttf",
+                ["consolas"] = "consola.ttf",
+                ["consolas#b"] = "consolab.ttf",
+                ["arial"] = "arial.ttf",
+                ["arial#b"] = "arialbd.ttf",
+            };
+
+        public PdfSharp.Fonts.FontResolverInfo? ResolveTypeface(string familyName, bool bold, bool italic)
+        {
+            string key = bold ? familyName + "#b" : familyName;
+            if (!Faces.ContainsKey(key))
+                key = bold ? "arial#b" : "arial";
+            return new PdfSharp.Fonts.FontResolverInfo(key);
+        }
+
+        public byte[]? GetFont(string faceName)
+        {
+            if (!Faces.TryGetValue(faceName, out string? file))
+                return null;
+
+            string path = System.IO.Path.Combine(FontDir, file);
+            return System.IO.File.Exists(path) ? System.IO.File.ReadAllBytes(path) : null;
+        }
+    }
+#endif
 }

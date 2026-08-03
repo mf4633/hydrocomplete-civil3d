@@ -44,12 +44,13 @@ if (-not $Drawing -or -not (Test-Path $Drawing)) {
 New-Item -ItemType Directory -Force -Path $work | Out-Null
 $seedName = [System.IO.Path]::GetFileNameWithoutExtension($Drawing)
 $localDwg = Join-Path $work "$seedName-hydraulics-smoke.dwg"
-Copy-Item $Drawing $localDwg -Force
-
+# Kill before copying — a prior session may still hold the smoke DWG open.
 if (-not $KeepExistingAcad) {
     Get-Process acad -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 3
 }
+
+Copy-Item $Drawing $localDwg -Force
 
 # Blank launch avoids session-restore replacing /i with the last user drawing.
 Start-Process -FilePath $AcadExe -ArgumentList '/product', 'C3D', '/nologo' -WindowStyle Normal | Out-Null
@@ -173,12 +174,15 @@ Write-Host "  HC-CAPACITY labels after HC_PIPES_WRITE: $capacityLabels"
 
 $pollAttempts = [Math]::Min(30, 6 + [Math]::Ceiling($capacityLabels / 8))
 $scaledWait = [Math]::Min(240, 15 + [Math]::Ceiling($capacityLabels * 0.5))
-Send-Cmd 'HC_CAPACITY' "HC_CAPACITY`n`n" $scaledWait
+# HC_CAPACITY prompts (no catchments): uniform Q, then overload-only Yes/No — 2 answer Enters.
+Send-Cmd 'HC_CAPACITY' "HC_CAPACITY`n`n`n" $scaledWait
 
-# HC_HGL prompts (no catchments): Q, HEC-22 Yes, momentum No, tailwater(s), profile Yes.
+# HC_HGL prompts (no catchments, single network): Q, HEC-22 Yes, momentum No, tailwater, profile Yes.
+# Exactly 5 answer Enters — surplus Enters after the command completes repeat HC_HGL
+# (Enter = repeat last command) and strand the session at the rerun's prompts.
 $hglWait = [Math]::Min(600, 45 + [Math]::Ceiling($capacityLabels * 1.5))
 Write-Host "  (scaled waits: capacity=${scaledWait}s, hgl=${hglWait}s, poll=$pollAttempts)"
-Send-Cmd 'HC_HGL' "HC_HGL`n`n`n`n`n`n`n`n`n`n" $hglWait
+Send-Cmd 'HC_HGL' "HC_HGL`n`n`n`n`n`n" $hglWait
 $hglLabels = Wait-LayerCount -Doc $acad.ActiveDocument -Layer 'HC-HGL' -MinCount $MinHglLabels -MaxAttempts $pollAttempts
 $profileCount = Wait-LayerCount -Doc $acad.ActiveDocument -Layer 'HC-HGL-PROFILE' -MinCount $MinProfileEntities -MaxAttempts $pollAttempts
 

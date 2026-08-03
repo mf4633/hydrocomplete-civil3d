@@ -380,7 +380,7 @@ namespace HydroComplete.Engine
                                 new WetlandRouting.WetPondConfig(), designVol, surfaceArea);
                             ApplyWetlandRemoval(loads, routing.RemovalEfficiency, totalTreated, month);
                         }
-                        else if (string.Equals(bmpConfig.BmpType, "constructed-wetland", StringComparison.OrdinalIgnoreCase))
+                        else if (string.Equals(bmpConfig.BmpType, BmpType.ConstructedWetland, StringComparison.OrdinalIgnoreCase))
                         {
                             WetlandRouting.ConstructedWetlandRoutingResult routing =
                                 WetlandRouting.RouteConstructedWetland(

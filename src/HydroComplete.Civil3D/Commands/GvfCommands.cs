@@ -111,7 +111,9 @@ namespace HydroComplete.Civil3D.Commands
                 Result = result,
             };
 
-            string path = HtmlReportWriter.WriteGvf(doc.Name, data);
+            // Bare name, not doc.Name: the full path would be sanitized into the filename.
+            string path = HtmlReportWriter.WriteGvf(
+                System.IO.Path.GetFileNameWithoutExtension(doc.Name), data);
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
                 "\n  HTML report written: {0}", path));
         }

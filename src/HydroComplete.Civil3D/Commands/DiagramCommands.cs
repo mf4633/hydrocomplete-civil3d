@@ -18,10 +18,10 @@ namespace HydroComplete.Civil3D.Commands
     {
         private static readonly string[] BmpTypes =
         {
-            BmpType.Bioretention, BmpType.WetPond, "constructed-wetland",
+            BmpType.Bioretention, BmpType.WetPond, BmpType.ConstructedWetland,
             BmpType.VegetatedSwale, BmpType.SandFilter,
-            "infiltration-trench", "permeable-pavement", "green-roof",
-            "cistern", "level-spreader-filter",
+            BmpType.InfiltrationTrench, BmpType.PermeablePavement, BmpType.GreenRoof,
+            BmpType.Cistern, BmpType.LevelSpreaderFilter,
         };
 
         private static readonly string[] LandUseKeywords =

@@ -18,6 +18,12 @@ namespace HydroComplete.Engine
         public const string WetPond = "wet-pond";
         public const string SandFilter = "sand-filter";
         public const string VegetatedSwale = "vegetated-swale";
+        public const string ConstructedWetland = "constructed-wetland";
+        public const string InfiltrationTrench = "infiltration-trench";
+        public const string PermeablePavement = "permeable-pavement";
+        public const string GreenRoof = "green-roof";
+        public const string Cistern = "cistern";
+        public const string LevelSpreaderFilter = "level-spreader-filter";
     }
 
     /// <summary>Core water-quality pollutants modeled by the IDEAL engine.</summary>
@@ -258,6 +264,115 @@ namespace HydroComplete.Engine
                     bottomWidthFt: 2.0,
                     depthFt: 1.5,
                     minLengthFt: 50.0),
+
+                // Hunt & Doll (2000); Int'l BMP Database (2020); NCDEQ
+                [BmpType.ConstructedWetland] = new BmpDefinition(
+                    BmpType.ConstructedWetland,
+                    "Constructed Wetland",
+                    new Dictionary<string, double>
+                    {
+                        [Pollutant.Tss] = 0.85,
+                        [Pollutant.Tn] = 0.35,
+                        [Pollutant.Tp] = 0.45,
+                    },
+                    volumeReduction: 0.0,
+                    avgDepthFt: 1.0,
+                    surfaceAreaRatio: null,
+                    surfaceLoadingRateGalPerMinPerSf: null,
+                    bottomWidthFt: null,
+                    depthFt: null,
+                    minLengthFt: null),
+
+                // Int'l BMP Database (2020); Schueler (1987)
+                [BmpType.InfiltrationTrench] = new BmpDefinition(
+                    BmpType.InfiltrationTrench,
+                    "Infiltration Trench",
+                    new Dictionary<string, double>
+                    {
+                        [Pollutant.Tss] = 0.90,
+                        [Pollutant.Tn] = 0.40,
+                        [Pollutant.Tp] = 0.55,
+                    },
+                    volumeReduction: 0.80,
+                    avgDepthFt: 4.0,
+                    surfaceAreaRatio: null,
+                    surfaceLoadingRateGalPerMinPerSf: null,
+                    bottomWidthFt: 3.0,
+                    depthFt: 4.0,
+                    minLengthFt: null),
+
+                // Brattebo & Booth (2003); Int'l BMP Database (2020)
+                [BmpType.PermeablePavement] = new BmpDefinition(
+                    BmpType.PermeablePavement,
+                    "Permeable Pavement",
+                    new Dictionary<string, double>
+                    {
+                        [Pollutant.Tss] = 0.90,
+                        [Pollutant.Tn] = 0.45,
+                        [Pollutant.Tp] = 0.60,
+                    },
+                    volumeReduction: 0.50,
+                    avgDepthFt: 2.0,
+                    surfaceAreaRatio: null,
+                    surfaceLoadingRateGalPerMinPerSf: null,
+                    bottomWidthFt: null,
+                    depthFt: null,
+                    minLengthFt: null),
+
+                // Mentens et al. (2006); Int'l BMP Database (2020)
+                [BmpType.GreenRoof] = new BmpDefinition(
+                    BmpType.GreenRoof,
+                    "Green Roof",
+                    new Dictionary<string, double>
+                    {
+                        [Pollutant.Tss] = 0.80,
+                        [Pollutant.Tn] = 0.40,
+                        [Pollutant.Tp] = 0.45,
+                    },
+                    volumeReduction: 0.55,
+                    avgDepthFt: 0.5,
+                    surfaceAreaRatio: null,
+                    surfaceLoadingRateGalPerMinPerSf: null,
+                    bottomWidthFt: null,
+                    depthFt: null,
+                    minLengthFt: null),
+
+                // Jones & Hunt (2010); Int'l BMP Database (2020).
+                // Volume capture only - no pollutant treatment credit.
+                [BmpType.Cistern] = new BmpDefinition(
+                    BmpType.Cistern,
+                    "Cistern (Rainwater Harvesting)",
+                    new Dictionary<string, double>
+                    {
+                        [Pollutant.Tss] = 0.0,
+                        [Pollutant.Tn] = 0.0,
+                        [Pollutant.Tp] = 0.0,
+                    },
+                    volumeReduction: 0.40,
+                    avgDepthFt: 4.0,
+                    surfaceAreaRatio: null,
+                    surfaceLoadingRateGalPerMinPerSf: null,
+                    bottomWidthFt: null,
+                    depthFt: null,
+                    minLengthFt: null),
+
+                // Hunt et al. (2006); NCDEQ BMP Manual
+                [BmpType.LevelSpreaderFilter] = new BmpDefinition(
+                    BmpType.LevelSpreaderFilter,
+                    "Level Spreader Vegetated Filter",
+                    new Dictionary<string, double>
+                    {
+                        [Pollutant.Tss] = 0.75,
+                        [Pollutant.Tn] = 0.30,
+                        [Pollutant.Tp] = 0.40,
+                    },
+                    volumeReduction: 0.30,
+                    avgDepthFt: 0.5,
+                    surfaceAreaRatio: null,
+                    surfaceLoadingRateGalPerMinPerSf: null,
+                    bottomWidthFt: null,
+                    depthFt: null,
+                    minLengthFt: 30.0),
             };
         }
 
