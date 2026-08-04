@@ -81,56 +81,38 @@ namespace HydroComplete.Civil3D.Reading
             return info;
         }
 
+        // Civil 3D 2026 exposes the link as ReferencePipeNetworkStructureId;
+        // the other names cover older releases probed historically.
+        private static readonly string[] ReferenceStructureProperties =
+        {
+            "ReferencePipeNetworkStructureId",
+            "ReferenceStructureId",
+            "OutfallStructureId",
+            "ReferenceStructure",
+        };
+
         private static bool TryReadReferenceStructureId(
             Autodesk.Civil.DatabaseServices.Catchment catchment,
             out ObjectId structureId)
         {
             structureId = ObjectId.Null;
 
-            try
+            foreach (string name in ReferenceStructureProperties)
             {
-                var prop = catchment.GetType().GetProperty(
-                    "ReferenceStructureId",
-                    BindingFlags.Instance | BindingFlags.Public);
-                if (prop != null && prop.PropertyType == typeof(ObjectId))
+                try
                 {
-                    structureId = (ObjectId)prop.GetValue(catchment)!;
-                    if (!structureId.IsNull) return true;
+                    var prop = catchment.GetType().GetProperty(
+                        name, BindingFlags.Instance | BindingFlags.Public);
+                    if (prop != null && prop.PropertyType == typeof(ObjectId))
+                    {
+                        structureId = (ObjectId)prop.GetValue(catchment)!;
+                        if (!structureId.IsNull) return true;
+                    }
                 }
-            }
-            catch
-            {
-                // API surface differs by Civil 3D version.
-            }
-
-            try
-            {
-                var prop = catchment.GetType().GetProperty(
-                    "OutfallStructureId",
-                    BindingFlags.Instance | BindingFlags.Public);
-                if (prop != null && prop.PropertyType == typeof(ObjectId))
+                catch
                 {
-                    structureId = (ObjectId)prop.GetValue(catchment)!;
-                    if (!structureId.IsNull) return true;
+                    // API surface differs by Civil 3D version.
                 }
-            }
-            catch
-            {
-            }
-
-            try
-            {
-                var prop = catchment.GetType().GetProperty(
-                    "ReferenceStructure",
-                    BindingFlags.Instance | BindingFlags.Public);
-                if (prop != null && prop.PropertyType == typeof(ObjectId))
-                {
-                    structureId = (ObjectId)prop.GetValue(catchment)!;
-                    if (!structureId.IsNull) return true;
-                }
-            }
-            catch
-            {
             }
 
             return false;
@@ -179,6 +161,24 @@ namespace HydroComplete.Civil3D.Reading
         {
             centroid = Point3d.Origin;
 
+            // Civil 3D 2026: DischargePoint is the hydraulic outlet location -
+            // the best anchor for nearest-structure matching when no reference
+            // structure is linked.
+            try
+            {
+                var prop = catchment.GetType().GetProperty(
+                    "DischargePoint",
+                    BindingFlags.Instance | BindingFlags.Public);
+                if (prop != null && prop.PropertyType == typeof(Point3d))
+                {
+                    centroid = (Point3d)prop.GetValue(catchment)!;
+                    return true;
+                }
+            }
+            catch
+            {
+            }
+
             try
             {
                 var prop = catchment.GetType().GetProperty(
@@ -187,6 +187,30 @@ namespace HydroComplete.Civil3D.Reading
                 if (prop != null && prop.PropertyType == typeof(Point3d))
                 {
                     centroid = (Point3d)prop.GetValue(catchment)!;
+                    return true;
+                }
+            }
+            catch
+            {
+            }
+
+            // Civil 3D 2026: no outline getter method, but the boundary
+            // polyline is a property - average its vertices.
+            try
+            {
+                var prop = catchment.GetType().GetProperty(
+                    "BoundaryPolyline3d",
+                    BindingFlags.Instance | BindingFlags.Public);
+                object? outline = prop?.GetValue(catchment);
+                if (outline is Point3dCollection propPts && propPts.Count > 0)
+                {
+                    double sx = 0.0, sy = 0.0;
+                    foreach (Point3d pt in propPts)
+                    {
+                        sx += pt.X;
+                        sy += pt.Y;
+                    }
+                    centroid = new Point3d(sx / propPts.Count, sy / propPts.Count, 0.0);
                     return true;
                 }
             }

@@ -94,7 +94,9 @@ namespace HydroComplete.Engine
                 if (excess <= 0.0) continue;
 
                 double startTime = excessStartTimeHours + j * timestepHours;
-                for (int k = 0; k < unitHydroOrdinates.Count - 1; k++)
+                // Include the last UH ordinate: dropping it zeroes out short-Tc
+                // hydrographs whose UH collapses to 2-3 samples.
+                for (int k = 0; k < unitHydroOrdinates.Count; k++)
                 {
                     double uhTime = unitHydroOrdinates[k].TimeHours;
                     int outIdx = (int)Math.Round((startTime + uhTime) / dt);
@@ -110,14 +112,23 @@ namespace HydroComplete.Engine
                 TotalExcessRainfallIn = excessRainfallIn.Sum(),
             };
 
+            // Emit the full uniform grid (trimmed past the recession) so ordinates
+            // and integrated volume describe the same series; gap-filtering here
+            // silently broke downstream re-integration of exported hydrographs.
+            int lastNonZero = 0;
             for (int i = 0; i < outSteps; i++)
             {
-                double t = i * dt;
-                double q = Math.Max(0.0, flows[i]);
-                if (q > 0.001 || t < 1.0)
+                if (flows[i] > 0.0) lastNonZero = i;
+            }
+
+            int emitCount = Math.Min(outSteps, lastNonZero + 2);
+            for (int i = 0; i < emitCount; i++)
+            {
+                result.Ordinates.Add(new HydrographOrdinate
                 {
-                    result.Ordinates.Add(new HydrographOrdinate { TimeHours = t, FlowCfs = q });
-                }
+                    TimeHours = i * dt,
+                    FlowCfs = Math.Max(0.0, flows[i]),
+                });
             }
 
             if (result.Ordinates.Count == 0)
@@ -142,32 +153,66 @@ namespace HydroComplete.Engine
             double tcMinutes,
             double timestepHours)
         {
+            List<UnitHydrographInput> ordinates;
             switch (method)
             {
                 case UnitHydrographMethod.Snyder:
-                    return SnyderUnitHydrograph.Generate(areaAcres, timeStepHours: timestepHours)
+                    ordinates = SnyderUnitHydrograph.Generate(areaAcres, timeStepHours: timestepHours)
                         .Ordinates.Select(o => new UnitHydrographInput
                         {
                             TimeHours = o.TimeHours,
                             FlowCfsPerIn = o.FlowCfs,
                         }).ToList();
+                    break;
 
                 case UnitHydrographMethod.Clark:
-                    return ClarkUnitHydrograph.Generate(areaAcres, tcMinutes, timestepMinutes: timestepHours * 60.0)
+                    ordinates = ClarkUnitHydrograph.Generate(areaAcres, tcMinutes, timestepMinutes: timestepHours * 60.0)
                         .Ordinates.Select(o => new UnitHydrographInput
                         {
                             TimeHours = o.TimeMinutes / 60.0,
                             FlowCfsPerIn = o.FlowCfs,
                         }).ToList();
+                    break;
 
                 default:
-                    return ScsUnitHydrograph.Generate(areaAcres, tcMinutes, timeStepMinutes: timestepHours * 60.0)
+                    ordinates = ScsUnitHydrograph.Generate(areaAcres, tcMinutes, timeStepMinutes: timestepHours * 60.0)
                         .Ordinates.Select(o => new UnitHydrographInput
                         {
                             TimeHours = o.TimeMinutes / 60.0,
                             FlowCfsPerIn = o.FlowCfs,
                         }).ToList();
+                    break;
             }
+
+            return NormalizeToOneInch(ordinates, areaAcres);
+        }
+
+        /// <summary>
+        /// Scale UH ordinates so the enclosed volume equals exactly one inch of
+        /// runoff over the area (3630 cf/ac-in). Sampling a UH onto a coarse
+        /// grid otherwise loses volume - catastrophically so when the timestep
+        /// approaches Tp (a 15-min grid on a Tc=10-min catchment retained ~10%).
+        /// </summary>
+        internal static List<UnitHydrographInput> NormalizeToOneInch(
+            List<UnitHydrographInput> ordinates,
+            double areaAcres)
+        {
+            if (ordinates.Count < 2) return ordinates;
+
+            double volumeCf = 0.0;
+            for (int i = 1; i < ordinates.Count; i++)
+            {
+                double dtSec = (ordinates[i].TimeHours - ordinates[i - 1].TimeHours) * 3600.0;
+                volumeCf += 0.5 * (ordinates[i].FlowCfsPerIn + ordinates[i - 1].FlowCfsPerIn) * dtSec;
+            }
+
+            double targetCf = 3630.0 * areaAcres;
+            if (volumeCf <= 0.0 || targetCf <= 0.0) return ordinates;
+
+            double scale = targetCf / volumeCf;
+            foreach (UnitHydrographInput o in ordinates)
+                o.FlowCfsPerIn *= scale;
+            return ordinates;
         }
 
         /// <summary>

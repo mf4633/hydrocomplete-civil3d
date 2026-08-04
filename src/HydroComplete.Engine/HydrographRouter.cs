@@ -84,8 +84,19 @@ namespace HydroComplete.Engine
                 throw new ArgumentOutOfRangeException(nameof(options), "Storm depth must be >= 0.");
 
             var normalized = NormalizePipes(pipes);
-            var result = new HydrographRouterResult { TimestepHours = options.TimestepHours };
-            double dtHours = options.TimestepHours;
+
+            // Refine the grid so the fastest catchment's UH stays resolved:
+            // TR-20/HEC-1 practice is dt <= Tp/5 (SCS Tp ~= 0.6665*Tc). A coarse
+            // grid aliases the peak and, before renormalization, lost volume.
+            double minTcMinutes = catchments
+                .Select(c => c.TcMinutes > 0 ? c.TcMinutes : options.DefaultTcMinutes)
+                .DefaultIfEmpty(options.DefaultTcMinutes)
+                .Min();
+            double tpHours = 0.6665 * minTcMinutes / 60.0;
+            double autoDtHours = Math.Max(tpHours / 5.0, 0.5 / 60.0);
+            double dtHours = Math.Min(options.TimestepHours, autoDtHours);
+
+            var result = new HydrographRouterResult { TimestepHours = dtHours };
 
             var tributaryByStructure = new Dictionary<string, List<double[]>>(StringComparer.OrdinalIgnoreCase);
             var structureNames = StructureNamesFromPipes(normalized, structureIdToName);
@@ -154,7 +165,7 @@ namespace HydroComplete.Engine
                 : CatchmentAssignmentMethod.AreaWeightedHeadwater;
 
             foreach (var group in normalized.GroupBy(p => p.NetworkName, StringComparer.OrdinalIgnoreCase))
-                RouteNetwork(group.ToList(), tributaryByStructure, options, result);
+                RouteNetwork(group.ToList(), tributaryByStructure, options, dtHours, result);
 
             result.Steps.Add(new CalcStep("catchments", catchments.Count, "-", "TR-20 hydrographs generated"));
             result.Steps.Add(new CalcStep("pipes", result.PipeHydrographs.Count, "-", "routed pipe hydrographs"));
@@ -248,6 +259,7 @@ namespace HydroComplete.Engine
             List<NetworkAnalysisPipe> pipes,
             Dictionary<string, List<double[]>> globalTributary,
             HydrographRouterOptions options,
+            double dtHours,
             HydrographRouterResult result)
         {
             var byUpstream = new Dictionary<string, List<NetworkAnalysisPipe>>(StringComparer.OrdinalIgnoreCase);
@@ -286,7 +298,6 @@ namespace HydroComplete.Engine
                 .OrderBy(s => s, StringComparer.OrdinalIgnoreCase));
 
             var visitedPipes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            double dtHours = options.TimestepHours;
 
             while (ready.Count > 0)
             {
@@ -299,7 +310,16 @@ namespace HydroComplete.Engine
 
                 foreach (NetworkAnalysisPipe link in outgoing.OrderBy(p => p.PipeName, StringComparer.OrdinalIgnoreCase))
                 {
-                    if (!visitedPipes.Add(link.PipeKey)) continue;
+                    if (!visitedPipes.Add(link.PipeKey))
+                    {
+                        // Duplicate pipe key: still release the downstream node
+                        // or the rest of the branch is silently stranded.
+                        string dupDs = link.DownstreamNodeId;
+                        Ensure(dupDs);
+                        if (--inDegree[dupDs] == 0)
+                            ready.Enqueue(dupDs);
+                        continue;
+                    }
 
                     bool useMc = options.ApplyMuskingumCunge
                         && link.LengthFt >= options.MuskingumCungeMinLengthFt;
@@ -383,17 +403,23 @@ namespace HydroComplete.Engine
                 return ordinates;
             }
 
+            // Emit the full uniform grid (trimmed past the recession): filtered
+            // ordinates left gaps that made re-integration of the exported CSV
+            // disagree with the reported volume.
+            int lastNonZero = 0;
             for (int i = 0; i < flows.Count; i++)
             {
-                double q = Math.Max(0.0, flows[i]);
-                if (q > 0.001 || i == 0)
+                if (flows[i] > 0.0) lastNonZero = i;
+            }
+
+            int emitCount = Math.Min(flows.Count, lastNonZero + 2);
+            for (int i = 0; i < emitCount; i++)
+            {
+                ordinates.Add(new RoutedHydrographOrdinate
                 {
-                    ordinates.Add(new RoutedHydrographOrdinate
-                    {
-                        TimeMinutes = i * dtHours * 60.0,
-                        FlowCfs = q,
-                    });
-                }
+                    TimeMinutes = i * dtHours * 60.0,
+                    FlowCfs = Math.Max(0.0, flows[i]),
+                });
             }
 
             if (ordinates.Count == 0)
@@ -413,7 +439,7 @@ namespace HydroComplete.Engine
             {
                 int idx = (int)Math.Round(ord.TimeHours / dtHours);
                 if (idx >= 0 && idx < steps)
-                    flows[idx] = Math.Max(flows[idx], ord.FlowCfs);
+                    flows[idx] += ord.FlowCfs;
             }
 
             return flows;
@@ -560,49 +586,28 @@ namespace HydroComplete.Engine
             IReadOnlyList<NetworkAnalysisPipe> pipes,
             double dtHours)
         {
-            foreach (var group in pipes.GroupBy(p => p.NetworkName, StringComparer.OrdinalIgnoreCase))
+            // Inject each unassigned catchment ONCE, into the largest network
+            // group. Injecting into every group duplicated volume across
+            // networks; and each catchment must contribute 100% of its own
+            // hydrograph (the old area-fraction share summed to A_c/totalA,
+            // silently losing most of the runoff volume).
+            var target = pipes
+                .GroupBy(p => p.NetworkName, StringComparer.OrdinalIgnoreCase)
+                .Select(g => new { Headwaters = FindHeadwaterStructures(g.ToList()), Count = g.Count() })
+                .Where(g => g.Headwaters.Count > 0)
+                .OrderByDescending(g => g.Count)
+                .FirstOrDefault();
+            if (target == null) return;
+
+            var headwaters = target.Headwaters;
+            foreach (CatchmentHydrographResult routed in unassigned)
             {
-                var headwaters = FindHeadwaterStructures(group.ToList());
-                if (headwaters.Count == 0) continue;
-
-                if (headwaters.Count == 1)
+                double share = 1.0 / headwaters.Count;
+                double[] series = ScaleSeries(ToFlowSeries(routed.Hydrograph, dtHours), share);
+                foreach (string hw in headwaters)
                 {
-                    string hw = headwaters[0];
-                    foreach (CatchmentHydrographResult routed in unassigned)
-                    {
-                        AddTributary(tributary, hw, ToFlowSeries(routed.Hydrograph, dtHours));
-                        routed.AssignedStructureId ??= hw;
-                    }
-
-                    continue;
-                }
-
-                double totalArea = unassigned.Sum(r => r.Catchment.AreaAcres);
-                if (totalArea <= 0)
-                {
-                    foreach (CatchmentHydrographResult routed in unassigned)
-                    {
-                        double share = 1.0 / headwaters.Count;
-                        double[] series = ScaleSeries(ToFlowSeries(routed.Hydrograph, dtHours), share);
-                        foreach (string hw in headwaters)
-                        {
-                            AddTributary(tributary, hw, series);
-                            routed.AssignedStructureId ??= hw;
-                        }
-                    }
-
-                    continue;
-                }
-
-                foreach (CatchmentHydrographResult routed in unassigned)
-                {
-                    double areaShare = routed.Catchment.AreaAcres / totalArea;
-                    foreach (string hw in headwaters)
-                    {
-                        double hwShare = areaShare / headwaters.Count;
-                        AddTributary(tributary, hw, ScaleSeries(ToFlowSeries(routed.Hydrograph, dtHours), hwShare));
-                        routed.AssignedStructureId ??= hw;
-                    }
+                    AddTributary(tributary, hw, series);
+                    routed.AssignedStructureId ??= hw;
                 }
             }
         }
