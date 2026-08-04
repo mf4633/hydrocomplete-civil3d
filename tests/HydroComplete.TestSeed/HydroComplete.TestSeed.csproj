@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Test-only Civil 3D command DLL - NEVER shipped in the bundle.
+    NETLOADed by scripts/smoke-catchments.ps1 to seed catchments into a
+    scratch drawing so the catchment compute paths can be exercised headless.
+  -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <PlatformTarget>x64</PlatformTarget>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <AssemblyName>HydroComplete.TestSeed</AssemblyName>
+    <RootNamespace>HydroComplete.TestSeed</RootNamespace>
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
+    <AcadDir Condition="'$(AcadDir)' == ''">C:\Program Files\Autodesk\AutoCAD 2026\</AcadDir>
+    <C3dDir>$(AcadDir)C3D\</C3dDir>
+    <AcaDir>$(AcadDir)ACA\</AcaDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="AcMgd">
+      <HintPath>$(AcadDir)AcMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AcCoreMgd">
+      <HintPath>$(AcadDir)AcCoreMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AcDbMgd">
+      <HintPath>$(AcadDir)AcDbMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AeccDbMgd">
+      <HintPath>$(C3dDir)AeccDbMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AecBaseMgd">
+      <HintPath>$(AcaDir)AecBaseMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>
