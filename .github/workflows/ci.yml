@@ -26,12 +26,21 @@ jobs:
       - name: Restore & test engine
         run: dotnet test tests/HydroComplete.Engine.Tests/HydroComplete.Engine.Tests.csproj -c Release
 
+  # Cross-platform guard: every HC_* [CommandMethod] in source must be registered
+  # in PackageContents.xml, and the per-release ComponentEntry series must be present.
+  manifest:
+    name: Manifest command sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify PackageContents.xml is in sync with source commands
+        run: python3 scripts/verify-manifest.py
+
   # The Civil 3D add-in cannot build its net8.0-windows target without the
   # Autodesk managed assemblies (AcMgd.dll etc.), which GitHub-hosted runners do
   # not carry. The net48 target compiles offline against the AutoCAD.NET /
   # Civil3D2024.Base NuGet API stubs, so we compile that target here to prove the
-  # plugin code is sound. A self-hosted runner with Civil 3D installed can build
-  # the net8 target via scripts/ci.ps1 (see that script and setup docs).
+  # plugin code is sound.
   plugin:
     name: Civil 3D plugin (net48 offline compile)
     runs-on: windows-latest
@@ -48,3 +57,28 @@ jobs:
         run: >
           dotnet build src/HydroComplete.Civil3D/HydroComplete.Civil3D.csproj
           -c Release -p:BuildNet48=true -f net48
+
+  # Full build of the net8.0-windows plugin target (Civil 3D 2025/2026) plus the
+  # whole-solution tests and manifest verification via scripts/ci.ps1. This needs
+  # the Autodesk managed assemblies, so it runs only on a self-hosted Windows runner
+  # with Civil 3D installed and the 'civil3d' label. To enable: register that runner
+  # (see scripts/setup-self-hosted-runner.md) and set the repository variable
+  # HAS_CIVIL3D_RUNNER=true. Until then this job is SKIPPED (not failed), so the
+  # hosted engine/plugin jobs above keep CI green.
+  plugin-net8:
+    name: Civil 3D plugin net8 (self-hosted)
+    if: ${{ vars.HAS_CIVIL3D_RUNNER == 'true' }}
+    runs-on: [self-hosted, Windows, civil3d]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            7.0.x
+
+      - name: Full build + tests + manifest (scripts/ci.ps1)
+        shell: pwsh
+        run: ./scripts/ci.ps1
