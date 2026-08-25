@@ -1,0 +1,145 @@
+AUTODESK APP STORE PORTAL - PASTE-READY FIELDS - HydroComplete for Civil 3D v1.7.4
+Generated 2026-08-25. Pure ASCII.
+
+============================================================
+APP NAME (50 max)  [26 chars]
+============================================================
+
+HydroComplete for Civil 3D
+
+============================================================
+SHORT DESCRIPTION (200 max)  [191 chars]
+============================================================
+
+Storm sewer sizing, HGL, detention, BMPs and PE-ready formula-transparent reports, run straight from your Civil 3D pipe networks and catchments - every equation shown line by line. Free core.
+
+============================================================
+APP DESCRIPTION (4000 max)  [3750 chars]
+============================================================
+
+HydroComplete reads your pipe networks and catchments straight out of the open drawing, runs the hydrology and hydraulics on published public-domain methods, and writes results back onto dedicated layers - with the equation behind every number shown line by line.
+
+Built by a practising professional engineer for the routine sizing, checking and reporting work Civil 3D users do constantly - no re-keying geometry into a separate model. 52 commands on a HydroComplete ribbon tab, all available from the command line.
+
+STORM SEWER HYDRAULICS
+HC_PIPES - Manning full-barrel capacity, normal depth and velocity for every pipe
+HC_CAPACITY - design Q vs full capacity, d/D and surcharge flags, optional labels
+HC_HGL - steady HGL at design Q with HEC-22 junction/exit losses, plan labels and a 3D profile polyline
+HC_PROFILE - chainage profile of invert, crown and HGL
+HC_INLETS - HEC-22 grate-on-grade, sag and curb-opening inlet capacity
+HC_CULVERT - inlet and outlet control check
+HC_GVF - gradually varied flow profile, standard step
+HC_PUMP - pump duty point against the system head curve
+HC_SIZE - diameter and slope sizing; HC_VALIDATE - slope/capacity/velocity/cover review
+HC_NETWORK - topology and connectivity audit
+
+HYDROLOGY
+HC_RATIONAL - Q = CiA from catchment geometry with composite runoff coefficients
+HC_SCS - SCS/NRCS curve number runoff; HC_TC - TR-55 segmented time of concentration
+HC_UNIT_HYDRO, HC_HYDROGRAPH, HC_ROUTE_HYDRO - unit hydrographs and network routing
+HC_ATLAS14 - live NOAA Atlas 14 IDF by drawing geolocation (cached); embedded city presets offline
+HC_LOSS - Green-Ampt, Horton or SCS CN incremental loss on a design storm
+HC_CONTINUOUS - multi-year daily continuous simulation
+HC_DETENTION - Modified Puls routing with multi-stage outlets
+HC_PREPOST - pre vs post development; HC_MULTIRP - multi-return-period
+
+WATER QUALITY, BMPs AND SEDIMENT
+HC_WQV, HC_BMP_SIZE, HC_WQ_TRAIN - water quality volume, BMP sizing, treatment trains
+HC_BIORETENTION, HC_WETLAND - practice-specific sizing
+HC_SEDIMENT, HC_SEDIMENT_BASIN - RUSLE/MUSLE loads and basin sizing
+HC_OPTIMIZE - least-cost BMP selection; HC_REVIEW - state/local criteria check
+
+VISUAL MODEL BUILDER
+HC_DAG - drag-and-drop node editor wiring hydrology, hydraulics and water quality into one pipeline: 20 node types, templates, charts, HTML/SVG export; models saved beside the DWG (HC_DAG_SAVE / HC_DAG_LOAD). Civil 3D 2025 and 2026 only.
+
+REPORTS AND DATA EXCHANGE
+HC_REPORT - HTML report with KaTeX-typeset equations and step-by-step traces
+HC_REPORT_PDF - sealable PDF export (Pro)
+HC_NETWORK_DIAGRAM, HC_WQ_DIAGRAM - HTML/SVG schematics for submittal packages
+HC_LANDXML, HC_LANDXML_IMPORT - LandXML 1.2 export/import incl. box and arch shapes
+HC_PROFILE_DXF, HC_COST, HC_SOIL (live USDA SSURGO), HC_BACKGROUND
+
+METHODS
+Rational | SCS/NRCS CN and unit hydrographs | TR-55 and Kirpich Tc | IDF i = a/(t+b)^c | Manning circular/box/arch, full and partial flow | HEC-22 minor losses and inlets | Modified Puls | Muskingum-Cunge | standard-step GVF | RUSLE/MUSLE. Every result carries a step trace of label, value, units and formula.
+
+FREE AND PRO
+Everything above runs in the free tier. Pro adds sealable PDF report export, activated with HC_ACTIVATE using a token from hydrocomplete.com; HC_LICENSE shows the tier. The plugin works offline - internet is used only for live Atlas 14 and SSURGO lookups and for licence validation.
+
+WHAT IT IS NOT
+Not a replacement for a full hydraulic modelling suite. It targets routine storm sewer sizing, HGL checks and defensible reporting, where the friction is transcription and review. US customary units. Drawing-driven commands need Civil 3D pipe network and catchment objects.
+
+More at https://hydrocomplete.com/civil3d
+
+============================================================
+VERSION NUMBER  [5 chars]
+============================================================
+
+1.7.4
+
+============================================================
+VERSION DESCRIPTION  [687 chars]
+============================================================
+
+v1.7.4 - engine accuracy and reliability release.
+- Hydrograph superposition accuracy: unit-hydrograph renormalization, adaptive timestep, mass-conserving fallback
+- Full engine audit: 30 verified findings fixed with regression tests (Clark and Snyder unit hydrographs, culvert Hc/D cap, HGL key collision, arch-pipe baselines)
+- HC_REPORT_PDF font resolver fix; HC_WQ_DIAGRAM crash fix; LandXML import default corrected
+- Expanded end-to-end coverage: catchment-path sweep and desktop GUI smoke tests
+Earlier in 1.7.x: HC_DAG visual model builder (Civil 3D 2025/2026), HC_LOSS incremental losses, HC_CONTINUOUS simulation, HC_WQ_DIAGRAM; 52 commands across Civil 3D 2024, 2025 and 2026.
+
+============================================================
+GENERAL USAGE INSTRUCTIONS  [1156 chars]
+============================================================
+
+HydroComplete adds a HydroComplete ribbon tab and 52 HC_* commands to Civil 3D (2024-2026). Typical workflow: (1) Open a drawing containing Civil 3D pipe networks and/or catchments. (2) Run HC_PIPES for Manning full-barrel capacity, normal depth and velocity on every pipe; HC_CAPACITY to compare design Q against full capacity with d/D and surcharge flags; HC_HGL for a steady hydraulic grade line with HEC-22 losses, plan labels on layer HC-HGL and an optional 3D profile polyline. (3) With catchments present, run HC_RATIONAL for Q=CiA peak flows; set IDF data from the drawing geolocation with HC_ATLAS14 (live NOAA Atlas 14, embedded city presets offline). (4) Size detention with HC_DETENTION (Modified Puls) and BMPs with HC_WQV / HC_BMP_SIZE; compare pre/post development with HC_PREPOST. (5) Export a formula-transparent HTML report with HC_REPORT - every result carries its equation and step-by-step trace; HC_NETWORK_DIAGRAM writes an SVG schematic for submittal packages. HC_ABOUT lists all commands. Results are written as MText labels on dedicated HC-* layers and report files to DocumentsHydroComplete; your model objects are never modified.
+
+============================================================
+INSTALLATION/UNINSTALLATION (1000 max)  [562 chars]
+============================================================
+
+The installer places HydroComplete.bundle in %APPDATA%AutodeskApplicationPlugins using the standard Autodesk Apps Framework. Civil 3D 2024, 2025 and 2026 auto-load the add-in on next start - no NETLOAD required. To uninstall, use Windows Settings > Apps (or Control Panel > Programs and Features), or delete the HydroComplete.bundle folder from %APPDATA%AutodeskApplicationPlugins and restart Civil 3D. The add-in writes only MText labels on its own HC-* layers and report files to DocumentsHydroComplete; installing or uninstalling never modifies your drawings.
+
+============================================================
+SUPPORT INFORMATION (1000 max)  [376 chars]
+============================================================
+
+Email support@hydrocomplete.com - monitored on weekdays, responses typically within one business day. Product page and documentation: https://hydrocomplete.com/civil3d. The full user guide is included in the package (HydroComplete-UserGuide.txt). When reporting an issue, please include your Civil 3D version (2024/2025/2026), the command you ran, and the command-line output.
+
+============================================================
+ADDITIONAL INFORMATION (2000 max)  [1150 chars]
+============================================================
+
+SYSTEM REQUIREMENTS
+Windows 10 or 11 (64-bit). Autodesk Civil 3D 2024 (.NET Framework 4.8), 2025 or 2026 (.NET 8, included with the host). Under 5 MB installed. Core analysis runs fully offline; internet is used only for live NOAA Atlas 14 fetches, USDA SSURGO soil lookups and Pro license validation.
+
+METHODS (public domain, with references in every report)
+Rational method; SCS/NRCS curve number and unit hydrographs; TR-55 and Kirpich time of concentration; IDF i = a/(t+b)^c; Manning circular, box and arch flow (full and partial); HEC-22 minor losses and inlet capacity; FHWA HDS-5 culverts; Modified Puls detention routing; Muskingum-Cunge channel routing; standard-step GVF; RUSLE/MUSLE. Every engine result carries a step trace of label, value, units and formula.
+
+FREE AND PRO
+All analysis commands and HTML reporting are free. A Pro tier ($199/year, purchased at hydrocomplete.com/civil3d) unlocks sealable PDF report export; activate in-product with HC_ACTIVATE.
+
+Civil 3D, AutoCAD and Storm and Sanitary Analysis are trademarks of Autodesk, Inc. HydroComplete is an independent product and is not affiliated with or endorsed by Autodesk.
+
+============================================================
+KNOWN ISSUES (1000 max)  [710 chars]
+============================================================
+
+- HC_DAG (visual model builder) requires Civil 3D 2025 or 2026; it is not available on 2024.
+- Drawing-driven commands need Civil 3D pipe network objects (HC_PIPES, HC_CAPACITY, HC_HGL) or catchment objects (HC_RATIONAL); on drawings without them the command reports none found.
+- Live NOAA Atlas 14 and USDA SSURGO lookups require an internet connection; embedded presets and regional fallbacks are used offline.
+- When Windows redirects Documents to OneDrive, reports are written to the OneDrive DocumentsHydroComplete folder.
+- US customary units only in this release.
+- Civil 3D pipe parts do not accept custom Description/XData writes; results are written as MText labels on dedicated HC-* layers instead.
+
+============================================================
+LEARN MORE URL  [33 chars]
+============================================================
+
+https://hydrocomplete.com/civil3d
+
+============================================================
+PUBLISHER PRIVACY POLICY  [38 chars]
+============================================================
+
+https://hydrocomplete.com/privacy.html
+

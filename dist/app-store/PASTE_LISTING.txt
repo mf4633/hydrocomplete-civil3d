@@ -1,0 +1,86 @@
+PASTE-READY LISTING TEXT - HydroComplete for Civil 3D v1.7.2
+Pure ASCII, no markdown. Paste directly into the Autodesk portal fields.
+Nothing here needs reformatting; if a character looks wrong after pasting,
+it did not come from this file.
+
+============================================================
+SHORT DESCRIPTION  (80-char field -- this is 77)
+============================================================
+
+Storm sewer sizing, HGL, detention, BMPs and PE-ready reports inside Civil 3D.
+
+============================================================
+LONG DESCRIPTION  (4092 characters)
+============================================================
+
+HydroComplete reads your pipe networks and catchments straight out of the open drawing, runs the hydrology and hydraulics on published public-domain methods, and writes results back onto dedicated layers  -  with the equation behind every number shown line by line.
+
+Built by a practising professional engineer for the routine sizing, checking and reporting work Civil 3D users do constantly  -  no re-keying geometry into a separate model. 52 commands on a HydroComplete ribbon tab, all available from the command line.
+
+STORM SEWER HYDRAULICS
+  HC_PIPES      Manning full-barrel capacity, normal depth and velocity for every pipe
+  HC_CAPACITY   design Q vs full capacity, d/D and surcharge flags, optional labels
+  HC_HGL        steady hydraulic grade line at design Q with HEC-22 junction and exit
+                losses, plan labels and a 3D profile polyline
+  HC_PROFILE    chainage profile of invert, crown and HGL
+  HC_INLETS     HEC-22 grate-on-grade, sag and curb-opening inlet capacity
+  HC_CULVERT    inlet and outlet control check
+  HC_GVF        gradually varied flow profile, standard step
+  HC_PUMP       pump station duty point against the system head curve
+  HC_SIZE       diameter and slope sizing; HC_VALIDATE slope/capacity/velocity/cover review
+  HC_NETWORK    topology and connectivity audit
+
+HYDROLOGY
+  HC_RATIONAL   Q = CiA from catchment geometry with composite runoff coefficients
+  HC_SCS        SCS/NRCS curve number runoff
+  HC_TC         TR-55 segmented time of concentration
+  HC_UNIT_HYDRO, HC_HYDROGRAPH, HC_ROUTE_HYDRO  unit hydrographs, network routing
+  HC_ATLAS14    live NOAA Atlas 14 PFDS IDF by drawing geolocation, cached, with
+                embedded city presets offline
+  HC_LOSS       Green-Ampt, Horton or SCS CN incremental loss on a design storm
+  HC_CONTINUOUS multi-year daily continuous simulation
+  HC_DETENTION  Modified Puls routing with multi-stage outlets
+  HC_PREPOST    pre- versus post-development comparison, HC_MULTIRP multi-return-period
+
+WATER QUALITY, BMPs AND SEDIMENT
+  HC_WQV, HC_BMP_SIZE, HC_WQ_TRAIN  water quality volume, BMP sizing, treatment trains
+  HC_BIORETENTION, HC_WETLAND       practice-specific sizing
+  HC_SEDIMENT, HC_SEDIMENT_BASIN    RUSLE/MUSLE loads and basin sizing
+  HC_OPTIMIZE   least-cost BMP selection against a removal target
+  HC_REVIEW     compliance check against state and local criteria
+
+VISUAL MODEL BUILDER
+  HC_DAG        drag-and-drop node editor wiring hydrology, hydraulics and water quality
+                engines into one pipeline: 20 node types, templates, charts, HTML and SVG
+                export, saved beside the drawing by HC_DAG_SAVE / HC_DAG_LOAD.
+                Civil 3D 2025 and 2026 only.
+
+REPORTS AND DATA EXCHANGE
+  HC_REPORT     HTML report with KaTeX-typeset equations and step-by-step traces
+  HC_REPORT_PDF sealable PDF export (Pro)
+  HC_NETWORK_DIAGRAM, HC_WQ_DIAGRAM   HTML/SVG schematics for submittal packages
+  HC_LANDXML, HC_LANDXML_IMPORT       LandXML 1.2 export and import, box and arch shapes
+  HC_PROFILE_DXF, HC_COST, HC_SOIL (live USDA SSURGO), HC_BACKGROUND
+
+METHODS
+
+Rational  |  SCS/NRCS curve number and unit hydrograph  |  TR-55 and Kirpich Tc  |  IDF
+i = a/(t+b)^c  |  Manning, circular, box and arch, full and partial flow  |  HEC-22 minor
+losses and inlets  |  Modified Puls  |  Muskingum-Cunge  |  standard step GVF  |  RUSLE and
+MUSLE. Every result carries a step trace of label, value, units and formula.
+
+FREE AND PRO
+
+Everything above runs in the free tier. Pro adds sealable PDF report export, activated
+with HC_ACTIVATE using a token from hydrocomplete.com; HC_LICENSE shows the tier. The
+plugin works offline  -  internet is used only for live Atlas 14 and SSURGO lookups and for
+licence validation.
+
+WHAT IT IS NOT
+
+Not a replacement for a full hydraulic modelling suite. It targets routine storm sewer
+sizing, HGL checks and defensible reporting, where the friction is transcription and
+review. US customary units. Drawing-driven commands need Civil 3D pipe network and
+catchment objects.
+
+More at https://hydrocomplete.com/civil3d
