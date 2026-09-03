@@ -274,3 +274,7 @@ The ribbon tab **HydroComplete › Analysis** exposes the same commands.
 Civil 3D, AutoCAD, and Storm and Sanitary Analysis are trademarks of Autodesk,
 Inc. HydroComplete is an independent product, not affiliated with or endorsed by
 Autodesk.
+
+## See also
+
+Quick single-step checks that complement the add-in: the [culvert hydraulics calculator](https://pe-calc.com/tools/culvert.html) and the rest of the [free engineering calculators on pe-calc.com](https://pe-calc.com/).
