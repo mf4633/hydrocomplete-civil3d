@@ -16,11 +16,16 @@ namespace HydroComplete.Civil3D.Commands
     /// <summary>
     /// HC_STM_IMPORT — read a Hydraflow Storm Sewers <c>.stm</c> project.
     ///
-    /// Civil 3D cannot open these files, and Autodesk retired the Storm Sewers
-    /// extension, so a firm with a decade of Hydraflow projects has no route
-    /// into a modern drawing except retyping them. This command reads the file,
-    /// reports what it found, and writes a LandXML 1.2 file that Civil 3D's own
-    /// pipe network import will build a network from.
+    /// Civil 3D itself cannot open a .stm. Autodesk still ships the Hydraflow
+    /// Storm Sewers Extension, but it is a separate external Windows program
+    /// launched alongside Civil 3D, and what it will not do is put the network
+    /// into the drawing as pipe network objects. So a firm with a decade of
+    /// Hydraflow projects can still read them, and still cannot get them into a
+    /// drawing except by retyping.
+    ///
+    /// This command reads the file, reports what it found, and writes a
+    /// LandXML 1.2 file that Civil 3D's own pipe network import will build a
+    /// network from.
     ///
     /// It reads and writes files. It does not touch the drawing.
     ///

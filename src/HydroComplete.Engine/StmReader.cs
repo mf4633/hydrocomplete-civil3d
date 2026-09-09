@@ -90,9 +90,11 @@ namespace HydroComplete.Engine
     /// format — into the same records the LandXML importer produces, so the
     /// whole downstream path (drawing creation, analysis, reporting) is shared.
     ///
-    /// Civil 3D cannot open these files. A firm with a decade of Hydraflow
-    /// projects has no route into a modern drawing except retyping them, which
-    /// is the reason this reader exists.
+    /// Civil 3D cannot open these files. Autodesk's own Hydraflow Storm Sewers
+    /// Extension still can, but it is a separate external program and it will
+    /// not build a pipe network in the drawing, so a firm with a decade of
+    /// Hydraflow projects still has no route into a modern drawing except
+    /// retyping them. That is the reason this reader exists.
     ///
     /// The format's traps, each of which silently corrupts a run (all found by
     /// checking a real 2015 and 2012 export against the report Hydraflow

@@ -43,7 +43,9 @@ free desktop app is the better buy, and telling them so costs less than a
 refund.
 
 `HC_STM_IMPORT` is free for the same reason: nobody should have to pay to get
-their own decade of Hydraflow projects out of a format Autodesk retired.
+their own past projects into the drawing they are working in. Autodesk still
+ships the Hydraflow Storm Sewers Extension, so those files are still readable;
+what no Autodesk tool does is turn one into a Civil 3D pipe network.
 
 ## Path to paid
 
