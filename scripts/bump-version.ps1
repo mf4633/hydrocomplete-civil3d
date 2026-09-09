@@ -59,7 +59,7 @@ foreach ($target in $targets) {
         throw "Missing file: $($target.Path)"
     }
 
-    $text = Get-Content $target.Path -Raw
+    $text = Get-Content $target.Path -Raw -Encoding UTF8
     $newText = [regex]::Replace($text, $target.Pattern, $target.Replace)
     if ($newText -eq $text) {
         Write-Warning "No change for $($target.Label) (already $Version or pattern mismatch)"

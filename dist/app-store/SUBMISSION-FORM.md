@@ -18,7 +18,7 @@ HydroComplete for Civil 3D
 
 **Version** ⌨️ (must equal manifest `AppVersion` and csproj `<Version>`)
 ```
-1.7.2
+1.8.0
 ```
 
 **Category** ⌨️ — select **Civil Engineering** (nearest Autodesk taxonomy label if not exact)
@@ -56,10 +56,15 @@ WHAT IT DOES
 • Network schematic export — HC_NETWORK_DIAGRAM writes an HTML/SVG pipe-network diagram for review packages and submittals.
 • Live SSURGO soils — HC_SOIL queries USDA SSURGO by drawing geolocation with regional fallback; hydrologic soil group, K-factor, and BMP suitability hints.
 • Pro activation — Activate with email and beta token via online validation or offline stub; HC_LICENSE shows tier and last check (HC_ACTIVATE, HC_LICENSE).
+• Hydraflow Storm Sewers import — HC_STM_IMPORT reads a Hydraflow Storm Sewers .stm project, both the standalone format and the Civil 3D extension format, reports its pipes, structures, design storm, tailwater and inlets, and writes a LandXML file that Civil 3D's own pipe network import builds a network from. Free.
 • Ribbon integration — HydroComplete › Analysis tab exposes the same commands as the command line.
 
 WHY HYDROCOMPLETE
-The analysis stays attached to the model instead of drifting out of sync with the design. Geometry is read straight from Civil 3D objects (no export/re-key), every number carries the equation behind it, and results write back as MText labels on dedicated layers. Civil 3D ships Storm and Sanitary Analysis and it is capable; HydroComplete is not trying to replace a full hydraulic-modeling suite — it targets routine storm-sewer sizing, HGL checks, and defensible reporting where the friction is transcription and reviewability.
+The analysis stays attached to the model instead of drifting out of sync with the design. Geometry is read straight from Civil 3D objects (no export/re-key), every number carries the equation behind it, and results write back as MText labels on dedicated layers.
+
+Autodesk ships two hydraulics tools alongside Civil 3D, and HydroComplete replaces neither. Storm and Sanitary Analysis is a full hydraulic-modeling suite and HydroComplete is not one. Hydraflow Storm Sewers does storm sewer design and HGL well, but it is a separate external application: it does not read or write Civil 3D pipe network objects, so its results live outside the drawing and a finished Hydraflow project cannot become a network in the model. That gap is what this add-in fills. HydroComplete runs on the drawing's own pipe networks and catchments and writes back to them, and HC_STM_IMPORT turns an existing Hydraflow project into a Civil 3D pipe network.
+
+The engine has been independently compared line by line against Hydraflow Storm Sewers on two real projects — slopes, accumulated C·A, intensity, Rational flow, Manning capacity, which lines surcharge, which structure floods and the gradeline — with every remaining difference written down and traced to the method choice behind it, rather than smoothed over. That comparison is the publisher's own work; Autodesk has not reviewed or endorsed it.
 
 METHODS (public domain)
 Rational method · Kirpich & NRCS time of concentration · IDF intensity i = a/(t+b)^c · Manning circular/box/arch flow (full barrel + normal depth) · HEC-22 minor losses · FHWA HDS-5 culverts · SCS/NRCS runoff & unit hydrographs · Modified Puls detention · RUSLE/MUSLE. Every engine result carries a Steps trace (label, value, units, formula).
@@ -69,35 +74,19 @@ Learn more: hydrocomplete.com/civil3d
 
 ---
 
-## What's New / release notes ✅ (v1.7.2)
+## What's New / release notes ✅ (v1.8.0)
 
 ⚠️ Trim to the portal's char limit if it rejects the full block.
 
 ```
-HydroComplete for Civil 3D v1.7.2 — stormwater hydrology and hydraulics inside your Civil 3D drawing.
+HydroComplete for Civil 3D v1.8.0 - open your Hydraflow projects in the drawing.
 
-NEW IN v1.7.x
-• HC_DAG visual model builder (Civil 3D 2025/2026) — drag-and-drop stormwater DAG editor with 20 node types, undo/redo, templates, charts, and SVG export
-• HC_DAG_SAVE / HC_DAG_LOAD — persist models as <drawing>.hcdag beside the DWG
-• HC_LOSS — incremental loss method on SCS Type II design storms
-• HC_CONTINUOUS — multi-year daily continuous simulation with moisture-adjusted SCS CN
-• HC_WQ_DIAGRAM — BMP treatment-train SVG with per-pollutant removal labels
-• 52 HC_* commands registered for Civil 3D 2024, 2025, and 2026
+NEW IN v1.8.0
+- HC_STM_IMPORT reads a Hydraflow Storm Sewers .stm project, both the standalone format and the Civil 3D extension format, and writes a LandXML file that Civil 3D's own pipe network import builds a network from. It reports the pipes, structures, design storm, IDF curves, tailwater, junction losses and inlet data the file carries. Free.
+- The engine is now compared line by line against Hydraflow Storm Sewers on two real projects. Slopes, accumulated C*A, intensity, Rational flow, Manning capacity, which lines surcharge, which structure floods and all eight inlet captures match the numbers Hydraflow printed; the gradeline matches within 0.15 ft. Every remaining difference is traced to the method choice behind it and written down, not smoothed over.
+- 53 HC_* commands across Civil 3D 2024, 2025 and 2026.
 
-CORE CAPABILITIES
-• Manning pipe capacity, design overload checks, and normal-depth HGL with HEC-22 losses
-• Catchment Q routing through pipe networks for per-reach design flows
-• Live NOAA Atlas 14 IDF from drawing geolocation; 25 embedded US city presets offline
-• Formula-transparent HTML reports (KaTeX equations); Pro unlocks sealable PDF export
-• Network schematic export (HC_NETWORK_DIAGRAM), LandXML exchange, SSURGO soils lookup
-
-SUPPORTED PRODUCTS
-• Autodesk Civil 3D 2024 (R24.3), 2025 (R25.0), and 2026 (R25.1)
-• Windows 10/11 64-bit; auto-load bundle — no NETLOAD for end users
-
-PRICING
-• Free: core analysis and HTML reports
-• Pro ($199/year via hydrocomplete.com/civil3d): sealable PDF reports — activate with HC_ACTIVATE
+Earlier in 1.7.x: engine accuracy release with 30 audited findings fixed and regression tests; HC_DAG visual model builder; HC_LOSS incremental losses; HC_CONTINUOUS simulation; HC_WQ_DIAGRAM.
 ```
 
 ---
@@ -152,7 +141,7 @@ Civil 3D, AutoCAD, and Storm and Sanitary Analysis are trademarks of Autodesk, I
 
 | Item | Source | Notes |
 |---|---|---|
-| App bundle (zip) | `dist/HydroComplete-1.7.2.zip` | ⚠️ Built + **signed** on a Civil 3D box (`release.ps1` → `sign-release.ps1`); run `app-store-preflight.ps1 -RequireSigning` first (exit 0). |
+| App bundle (zip) | `dist/HydroComplete-1.8.0.zip` | ⚠️ Built + **signed** on a Civil 3D box (`release.ps1` → `sign-release.ps1`); run `app-store-preflight.ps1 -RequireSigning` first (exit 0). |
 | App icon / thumbnail | HydroComplete logo | Larger store thumbnail, distinct from the 96×96 `PackageIcon.png`. |
 | Screenshots (≥3, up to ~8) | per `SCREENSHOTS.md` | 1920×1080; captions from `SCREENSHOT_CAPTIONS.md`; scrub client data. |
 | Demo video (optional) | 60–90s | Link a YouTube/Vimeo URL; materially lifts conversion. |
