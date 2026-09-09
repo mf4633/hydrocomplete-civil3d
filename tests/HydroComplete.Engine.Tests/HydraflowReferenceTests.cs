@@ -63,13 +63,12 @@ namespace HydroComplete.Engine.Tests
             public double HglJunctionFt;
 
             /// <summary>
-            /// How far below Hydraflow this engine's continuously stepped
-            /// gradeline sits at this line, ft. Non-zero only above a structure
-            /// where Hydraflow FLOORED the HGL at the water surface implied by
-            /// the flow depth in the partly-full pipe below it, so its
-            /// gradeline jumps there and this engine's does not. Recorded
-            /// rather than tolerated: drift past it fails. See
-            /// VALIDATION-HYDRAFLOW.md, "Known gap: no flow-depth floor".
+            /// How far below Hydraflow this engine's grade line sits at this
+            /// line, ft. This was 0.36 on every Run 2 line above AI-8, because
+            /// the backwater pass stepped straight through a structure where
+            /// Hydraflow held the grade line up at the crown of the surcharged
+            /// pipe above it. HglProfileOptions.EnforceFlowDepthFloor closed
+            /// that, so every entry is now zero and stays that way.
             /// </summary>
             public double LowerThanHydraflowByFt;
 
@@ -121,9 +120,9 @@ namespace HydroComplete.Engine.Tests
             Lines = new[]
             {
                 new RefLine { PipeName = "Pipe - (9)", UpstreamStructure = "AI-8", Slope = 0.00496, Ca = 1.70, TcMin = 7.0, IntensityInHr = 6.98, QCfs = 11.90, CapacityCfs = 17.25, Surcharged = false, JunctionK = 0.5, HglDnFt = 757.62, HglJunctionFt = 758.16 },
-                new RefLine { PipeName = "Pipe - (8)", UpstreamStructure = "AI-7", Slope = 0.00496, Ca = 1.28, TcMin = 6.4, IntensityInHr = 7.19, QCfs =  9.20, CapacityCfs =  8.01, Surcharged = true,  JunctionK = 0.5, HglDnFt = 758.52, HglJunctionFt = 759.88 , LowerThanHydraflowByFt = 0.36 },
-                new RefLine { PipeName = "Pipe - (7)", UpstreamStructure = "AI-6", Slope = 0.00497, Ca = 0.86, TcMin = 5.6, IntensityInHr = 7.51, QCfs =  6.49, CapacityCfs =  8.02, Surcharged = false, JunctionK = 0.5, HglDnFt = 759.88, HglJunctionFt = 760.55 , LowerThanHydraflowByFt = 0.36 },
-                new RefLine { PipeName = "Pipe - (6)", UpstreamStructure = "AI-5", Slope = 0.00495, Ca = 0.48, TcMin = 5.0, IntensityInHr = 7.77, QCfs =  3.73, CapacityCfs =  2.71, Surcharged = true,  JunctionK = 1.0, HglDnFt = 760.55, HglJunctionFt = 762.53 , LowerThanHydraflowByFt = 0.36 },
+                new RefLine { PipeName = "Pipe - (8)", UpstreamStructure = "AI-7", Slope = 0.00496, Ca = 1.28, TcMin = 6.4, IntensityInHr = 7.19, QCfs =  9.20, CapacityCfs =  8.01, Surcharged = true,  JunctionK = 0.5, HglDnFt = 758.52, HglJunctionFt = 759.88 },
+                new RefLine { PipeName = "Pipe - (7)", UpstreamStructure = "AI-6", Slope = 0.00497, Ca = 0.86, TcMin = 5.6, IntensityInHr = 7.51, QCfs =  6.49, CapacityCfs =  8.02, Surcharged = false, JunctionK = 0.5, HglDnFt = 759.88, HglJunctionFt = 760.55 },
+                new RefLine { PipeName = "Pipe - (6)", UpstreamStructure = "AI-5", Slope = 0.00495, Ca = 0.48, TcMin = 5.0, IntensityInHr = 7.77, QCfs =  3.73, CapacityCfs =  2.71, Surcharged = true,  JunctionK = 1.0, HglDnFt = 760.55, HglJunctionFt = 762.53 },
             },
             Inlets = new[] { ("AI-8", 3.30), ("AI-7", 3.23), ("AI-6", 2.98), ("AI-5", 3.73) },
         };
@@ -355,9 +354,15 @@ namespace HydroComplete.Engine.Tests
         public void Backwater_gradeline_matches_the_hgl_computations(string runName)
         {
             // Fed Hydraflow's own flows and full-pipe hydraulics, so what is
-            // under test is the friction loss, the HEC-22 junction loss and the
-            // direction of the stepping, not the modelling choices that make
-            // the flows differ in the first place.
+            // under test is the friction loss, the HEC-22 junction loss, the
+            // direction of the stepping and the flow-depth floor, not the
+            // modelling choices that make the flows differ in the first place.
+            //
+            // Run 2 is the one that matters here. Its 24-inch outfall pipe runs
+            // partly full, so the grade line arriving at AI-8 is below the
+            // crown of the surcharged 18-inch pipe above it. Hydraflow holds it
+            // at that crown, 758.52. Stepping straight through instead gives
+            // 758.16 and carries the 0.36 ft error up the whole run.
             //
             // METHOD DIFFERENCE 3 is carried in RefLine.JunctionK: Hydraflow
             // charges K = 1.0 at the terminal inlet of a run, treating it as an
@@ -373,6 +378,12 @@ namespace HydroComplete.Engine.Tests
                 .Select(line =>
                 {
                     LandXmlPipeRecord pipe = Pipe(project, line.PipeName);
+
+                    // The inverts and the flow depth are what let the backwater
+                    // pass hold the grade line up at a structure. Without them
+                    // it steps straight through and comes out low.
+                    var normal = Manning.NormalDepth(Segment(pipe), line.QCfs);
+
                     return new NetworkReach
                     {
                         Name = line.PipeName,
@@ -384,6 +395,9 @@ namespace HydroComplete.Engine.Tests
                         JunctionLossK = line.JunctionK,
                         DiameterFt = pipe.DiameterFt,
                         FlowSurcharged = line.Surcharged,
+                        FlowDepthFt = normal.Surcharged ? pipe.DiameterFt : normal.DepthFt,
+                        InvertUpFt = pipe.StartInvertFt,
+                        InvertDnFt = pipe.EndInvertFt,
                     };
                 })
                 .ToList();

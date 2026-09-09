@@ -552,6 +552,13 @@ namespace HydroComplete.Engine
                 NetworkReach reach = ReachFactory.FromNormalDepth(
                     pipe.Segment, designQ, pipe.LengthFt, pipe.PipeName);
 
+                // Inverts let the backwater pass hold the grade line at or above
+                // the water actually standing in the pipe. Without them it steps
+                // straight through a structure and reports a grade line that is
+                // too low, which under-reports flooding.
+                reach.InvertUpFt = pipe.UpstreamInvertFt;
+                reach.InvertDnFt = pipe.DownstreamInvertFt;
+
                 if (includeJunctionLosses && i < orderedPipes.Count - 1)
                 {
                     NetworkAnalysisPipe next = orderedPipes[i + 1];

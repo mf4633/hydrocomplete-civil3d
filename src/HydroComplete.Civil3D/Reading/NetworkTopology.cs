@@ -268,7 +268,10 @@ namespace HydroComplete.Civil3D.Reading
         public static NetworkReach ToReach(ReadPipe rp, double designFlowCfs)
         {
             string name = string.IsNullOrEmpty(rp.PipeName) ? rp.PipeId.Handle.ToString() : rp.PipeName;
-            return ReachFactory.FromFullBarrel(rp.Segment, designFlowCfs, rp.LengthFt, name);
+            NetworkReach reach = ReachFactory.FromFullBarrel(rp.Segment, designFlowCfs, rp.LengthFt, name);
+            reach.InvertUpFt = rp.StartInvertFt;
+            reach.InvertDnFt = rp.EndInvertFt;
+            return reach;
         }
 
         /// <summary>
@@ -277,7 +280,10 @@ namespace HydroComplete.Civil3D.Reading
         public static NetworkReach ToReachNormalDepth(ReadPipe rp, double designFlowCfs)
         {
             string name = string.IsNullOrEmpty(rp.PipeName) ? rp.PipeId.Handle.ToString() : rp.PipeName;
-            return ReachFactory.FromNormalDepth(rp.Segment, designFlowCfs, rp.LengthFt, name);
+            NetworkReach reach = ReachFactory.FromNormalDepth(rp.Segment, designFlowCfs, rp.LengthFt, name);
+            reach.InvertUpFt = rp.StartInvertFt;
+            reach.InvertDnFt = rp.EndInvertFt;
+            return reach;
         }
     }
 }

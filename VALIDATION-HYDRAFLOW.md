@@ -94,32 +94,52 @@ reproduces this rather than papering over it.
 
 ## Two gaps this found in the engine
 
-Both are real, both are recorded in the test, and neither is fixed yet.
+One is fixed. The other is recorded and deliberately left alone.
 
-### Known gap: no flow-depth floor on the gradeline
+### Fixed: the gradeline had no flow-depth floor
 
-**What.** When a reach runs partly full, Hydraflow floors the HGL at its
-upstream structure at the water surface the flow depth in that pipe implies. Its
-gradeline jumps at that structure. `Hgl.SteadyBackwaterFromOutfall` steps the
-chain continuously and never floors, so it comes out lower.
+**What was wrong.** `Hgl.SteadyBackwaterFromOutfall` stepped the chain
+continuously and never held the gradeline up to the water already standing in
+the pipe. Arriving at a structure beneath the crown of a surcharged pipe above
+it, it carried the low number straight on up.
 
-**Where it shows.** Run 2's 24-inch outfall pipe runs partly full, so Hydraflow
-jumps from 758.16 to 758.52 at AI-8 and every structure above inherits the
-0.36 ft. Run 1's outfall pipe is surcharged, so the two agree there.
+**Where it showed.** Run 2's 24-inch outfall pipe runs partly full, so the
+gradeline reaches AI-8 at 758.16, below the 758.52 crown of the surcharged
+18-inch pipe above. Hydraflow holds it at 758.52. Every structure above
+inherited the 0.36 ft. Run 1's outfall pipe is surcharged, so the two agreed
+there and the fault stayed hidden.
 
-**Why it matters.** This engine errs **low** on the HGL, which is the
-unconservative direction. On a shallower system a 0.36 ft under-prediction is
-the difference between reporting a flooded structure and not reporting one.
+**Why it mattered.** The error is **low**, which is the unconservative
+direction: an under-predicted gradeline under-reports flooding. Run 1 shows how
+thin that margin is. Hydraflow called AI-4 flooded because its gradeline landed
+0.08 ft over a 759.00 rim. A 0.36 ft error is four times the number that decided
+it.
 
-**Why it is not fixed here.** The floor is `invert + flow depth` at the upstream
-node, and `NetworkReach` carries no invert elevation to floor against. Fixing it
-means either adding inverts to `NetworkReach` or moving the floor up into
-`NetworkAnalysisPipeline`, which has them. That is a deliberate change to a
-shipped gradeline, not something to fold into an importer.
+**The rule, derived from both reports.** The water surface at either end of a
+reach is at least `invert + depth`, where depth is the crown for a surcharged
+reach and the normal depth for one running partly full. Checked against all six
+reaches across the two runs, this floor binds in exactly the two places
+Hydraflow's own gradeline jumps and nowhere else.
 
-**How it is tracked.** `RefLine.LowerThanHydraflowByFt` records the 0.36 ft
-exactly. The test subtracts it and still holds the shape to 0.15 ft, so the gap
-cannot grow without failing.
+The one exception: it is never applied to the outfall reach's downstream end. In
+Run 1 that pipe is surcharged with a crown at 757.50 while the tailwater is
+757.37, and Hydraflow reports 757.37. A specified tailwater is a boundary
+condition, not a number to override.
+
+**The fix.** `NetworkReach` now carries optional `InvertUpFt` / `InvertDnFt`, and
+`HglProfileOptions.EnforceFlowDepthFloor` applies the rule. It is **on by
+default**, because a defect that only goes away when someone opts in is still
+shipping, but it does nothing unless the caller supplies inverts, so existing
+callers see byte-identical output. `ReachFactory` consumers get the inverts
+wired through `NetworkAnalysisPipeline` and the Civil 3D reader, so `HC_HGL`
+gets the corrected gradeline. Each raise is recorded in the calculation trace as
+`floor_ds` or `floor_us` with its reason, so a jump in the profile is explained
+rather than mysterious.
+
+**How it is held.** Every `RefLine.LowerThanHydraflowByFt` is now zero and the
+gradeline matches to 0.15 ft on both runs with no offset. `HglFlowDepthFloorTests`
+covers the crown floor, the outfall exemption, the on-by-default contract, and
+the guarantee that a reach without inverts is left exactly as it was.
 
 ### Known gap: sag inlet capacity takes a length, not a perimeter
 
@@ -144,7 +164,8 @@ The reference test forms the perimeter explicitly and notes why.
 dotnet test tests/HydroComplete.Engine.Tests --filter "FullyQualifiedName~HydraflowReferenceTests"
 ```
 
-19 tests, two runs each where the assertion is per-run.
+19 tests, two runs each where the assertion is per-run, plus
+`HglFlowDepthFloorTests` for the floor itself.
 
 The reader itself has its own suite, `StmReaderTests`, covering the ways the
 `.stm` format silently corrupts a run if read naively: two different signature

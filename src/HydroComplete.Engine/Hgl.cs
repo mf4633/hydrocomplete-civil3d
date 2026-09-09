@@ -260,27 +260,106 @@ namespace HydroComplete.Engine
             double hglDs = tailwaterHglFt;
             for (int idx = count - 1; idx >= 0; idx--)
             {
+                NetworkReach reach = reaches[idx];
+                bool isOutfallReach = idx == count - 1;
+                double floorRaiseDsFt = 0.0;
+                double floorRaiseUsFt = 0.0;
+
+                // The grade line arriving from downstream cannot be below the
+                // water already standing in THIS reach. Skipped at the outfall,
+                // where the tailwater is a given, not something to override.
+                if (options.EnforceFlowDepthFloor && !isOutfallReach)
+                {
+                    double? floorFt = FlowSurfaceElevationFt(reach, reach.InvertDnFt);
+                    if (floorFt.HasValue && floorFt.Value > hglDs)
+                    {
+                        floorRaiseDsFt = floorFt.Value - hglDs;
+                        hglDs = floorFt.Value;
+                    }
+                }
+
                 double hglUs = hglDs + hf[idx] + hm[idx];
+
+                if (options.EnforceFlowDepthFloor)
+                {
+                    double? floorFt = FlowSurfaceElevationFt(reach, reach.InvertUpFt);
+                    if (floorFt.HasValue && floorFt.Value > hglUs)
+                    {
+                        floorRaiseUsFt = floorFt.Value - hglUs;
+                        hglUs = floorFt.Value;
+                    }
+                }
+
                 HglProfilePoint point = points[idx];
 
                 point.HglFt = hglDs;
                 point.HglUpstreamFt = hglUs;
                 point.EglFt = hglDs + vhDown[idx];
-                point.DeltaEglFt = hf[idx] + hm[idx];
+                point.DeltaEglFt = hglUs - hglDs;
 
-                NetworkReach reach = reaches[idx];
                 if (!string.IsNullOrEmpty(reach.Name))
                     point.Steps.Add(new CalcStep("reach", idx, "-", reach.Name));
                 point.Steps.Add(new CalcStep("HGL_ds", hglDs, "ft", "tailwater / downstream node"));
+                if (floorRaiseDsFt > 0)
+                    point.Steps.Add(new CalcStep(
+                        "floor_ds", floorRaiseDsFt, "ft",
+                        reach.FlowSurcharged
+                            ? "raised to the crown: reach is surcharged"
+                            : "raised to normal depth in the reach"));
                 point.Steps.Add(new CalcStep("h_f", hf[idx], "ft", "friction over reach"));
                 if (hm[idx] > 0)
                     point.Steps.Add(new CalcStep("h_m", hm[idx], "ft", "HEC-22 minor losses"));
+                if (floorRaiseUsFt > 0)
+                    point.Steps.Add(new CalcStep(
+                        "floor_us", floorRaiseUsFt, "ft",
+                        reach.FlowSurcharged
+                            ? "raised to the crown: reach is surcharged"
+                            : "raised to normal depth in the reach"));
                 point.Steps.Add(new CalcStep("HGL_us", hglUs, "ft", "HGL_ds + h_f + h_m (backwater)"));
 
                 hglDs = hglUs; // upstream node of this reach is the downstream node of the next reach up
             }
 
             return new List<HglProfilePoint>(points);
+        }
+
+        /// <summary>
+        /// Water-surface elevation implied by the depth this reach is actually
+        /// flowing at, at one of its ends. Null when the reach does not carry
+        /// enough geometry to say, in which case no floor is applied.
+        ///
+        /// A surcharged pipe is full, so its water surface is the crown. A pipe
+        /// running partly full cannot have a water surface below its own normal
+        /// depth on a mild slope.
+        /// </summary>
+        private static double? FlowSurfaceElevationFt(NetworkReach reach, double? invertFt)
+        {
+            if (!invertFt.HasValue || !reach.DiameterFt.HasValue || reach.DiameterFt.Value <= 0.0)
+            {
+                return null;
+            }
+
+            double diameterFt = reach.DiameterFt.Value;
+            double depthFt;
+
+            if (reach.FlowSurcharged)
+            {
+                depthFt = diameterFt;
+            }
+            else if (reach.FlowDepthFt > 0.0)
+            {
+                depthFt = Math.Min(reach.FlowDepthFt, diameterFt);
+            }
+            else if (reach.RelativeDepth > 0.0)
+            {
+                depthFt = Math.Min(reach.RelativeDepth * diameterFt, diameterFt);
+            }
+            else
+            {
+                return null;
+            }
+
+            return invertFt.Value + depthFt;
         }
 
         private static double ComputeReachMinorLosses(

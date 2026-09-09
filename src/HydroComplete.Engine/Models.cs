@@ -200,6 +200,17 @@ namespace HydroComplete.Engine
         /// <summary>Inside diameter, ft. Set when reach geometry is derived from a pipe segment.</summary>
         public double? DiameterFt { get; set; }
 
+        /// <summary>
+        /// Invert elevation at the upstream end of this reach, ft. Optional.
+        /// Supplying it lets the backwater pass hold the grade line at or above
+        /// the water surface the pipe is actually flowing at; without it that
+        /// floor is skipped. See <see cref="HglProfileOptions.EnforceFlowDepthFloor"/>.
+        /// </summary>
+        public double? InvertUpFt { get; set; }
+
+        /// <summary>Invert elevation at the downstream end of this reach, ft. Optional.</summary>
+        public double? InvertDnFt { get; set; }
+
         /// <summary>Normal-depth relative depth d/D (1.0 when flow-surcharged).</summary>
         public double RelativeDepth { get; set; }
 
@@ -242,6 +253,25 @@ namespace HydroComplete.Engine
         /// or pre-set <see cref="NetworkReach.BendLossK"/>.
         /// </summary>
         public bool UseBendLoss { get; set; }
+
+        /// <summary>
+        /// Hold the grade line at or above the water surface implied by the depth
+        /// the pipe is actually flowing at: the crown of a surcharged reach, or
+        /// the normal depth of one running partly full.
+        ///
+        /// Without this a backwater pass stepped up from a low tailwater can
+        /// report a grade line BELOW the water already standing in the pipe,
+        /// which under-predicts the grade line at every structure above it. That
+        /// is the unconservative direction, because it under-reports flooding.
+        ///
+        /// On by default, but it does nothing unless the reach carries
+        /// <see cref="NetworkReach.InvertUpFt"/> / <see cref="NetworkReach.InvertDnFt"/>,
+        /// so callers that supply no inverts are unaffected.
+        ///
+        /// The floor is never applied to the outfall reach's downstream end: the
+        /// tailwater there is a boundary condition, not a computed value.
+        /// </summary>
+        public bool EnforceFlowDepthFloor { get; set; } = true;
 
         public double ManholeLossK { get; set; } = Hec22.DefaultManholeK;
         public double EntranceLossK { get; set; } = Hec22.DefaultEntranceK;
