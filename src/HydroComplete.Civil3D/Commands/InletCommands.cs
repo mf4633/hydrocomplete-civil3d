@@ -43,6 +43,7 @@ namespace HydroComplete.Civil3D.Commands
             double flowDepthFt = inletDialog.FlowDepthFt;
             double gutterSlope = inletDialog.GutterSlope;
             double curbOpeningHeightFt = inletDialog.CurbOpeningHeightFt;
+            double grateWidthFt = inletDialog.GrateWidthFt;
 
             var catchments = CatchmentReader.ReadAll(doc.Database, civilDoc);
             var pipes = PipeNetworkReader.ReadAll(doc.Database, civilDoc);
@@ -56,18 +57,21 @@ namespace HydroComplete.Civil3D.Commands
             }
 
             double capacity = InletCapacity.CapacityCfs(
-                inletType, grateLengthFt, flowDepthFt, gutterSlope, curbOpeningHeightFt);
+                inletType, grateLengthFt, flowDepthFt, gutterSlope, curbOpeningHeightFt, grateWidthFt);
             ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
                 "\n--- HydroComplete: HEC-22 {0} inlet check ({1} location(s)) ---",
                 InletTypeLabel(inletType), rows.Count));
-            WriteCapacitySummary(ed, inletType, grateLengthFt, flowDepthFt, gutterSlope, curbOpeningHeightFt, capacity);
+            WriteCapacitySummary(
+                ed, inletType, grateLengthFt, flowDepthFt, gutterSlope, curbOpeningHeightFt,
+                capacity, grateWidthFt);
             ed.WriteMessage("\n  Location              Structure           Q_des(cfs)  Q_cap(cfs)  PASS");
 
             int passCount = 0;
             foreach (InletRow row in rows)
             {
                 InletCapacity.InletCheck check = InletCapacity.CheckInlet(
-                    row.DesignQCfs, inletType, grateLengthFt, flowDepthFt, gutterSlope, curbOpeningHeightFt);
+                    row.DesignQCfs, inletType, grateLengthFt, flowDepthFt, gutterSlope,
+                    curbOpeningHeightFt, grateWidthFt);
                 if (check.Ok) passCount++;
 
                 string structure = string.IsNullOrWhiteSpace(row.Structure) ? "—" : row.Structure;
@@ -127,14 +131,31 @@ namespace HydroComplete.Civil3D.Commands
             double flowDepthFt,
             double gutterSlope,
             double curbOpeningHeightFt,
-            double capacity)
+            double capacity,
+            double grateWidthFt)
         {
             switch (inletType)
             {
                 case InletCapacity.InletType.Sag:
-                    ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
-                        "\n  Type=Sag  L={0:0.##} ft  d={1:0.###} ft  ->  Q_cap={2:0.00} cfs",
-                        lengthFt, flowDepthFt, capacity));
+                    if (grateWidthFt > 0.0)
+                    {
+                        ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                            "\n  Type=Sag  L={0:0.##} ft  W={1:0.##} ft  P={2:0.##} ft  d={3:0.###} ft" +
+                            "  ->  Q_cap={4:0.00} cfs",
+                            lengthFt,
+                            grateWidthFt,
+                            InletCapacity.SagGratePerimeterFt(lengthFt, grateWidthFt),
+                            flowDepthFt,
+                            capacity));
+                    }
+                    else
+                    {
+                        ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
+                            "\n  Type=Sag  L={0:0.##} ft  d={1:0.###} ft  ->  Q_cap={2:0.00} cfs" +
+                            "\n  No grate width given, so this is the weir form on the bare length:" +
+                            "\n  conservative, and about a third of a square grate's real capacity.",
+                            lengthFt, flowDepthFt, capacity));
+                    }
                     break;
                 case InletCapacity.InletType.CurbOpening:
                     ed.WriteMessage(string.Format(CultureInfo.InvariantCulture,
@@ -155,8 +176,10 @@ namespace HydroComplete.Civil3D.Commands
             {
                 case InletCapacity.InletType.Sag:
                     return string.Format(CultureInfo.InvariantCulture,
-                        "Formula: Q_cap = Cw*L*d^1.5, Cw={0:0.##} (HEC-22 Eq. 4-26 sag grate).",
-                        InletCapacity.SagGrateCw);
+                        "Formula: lesser of weir Q=Cw*P*d^1.5 (Cw={0:0.##}, P=2L+W, HEC-22 Eq. 4-26) " +
+                        "and orifice Q=Co*Ag*sqrt(2gd) (Co={1:0.##}, Eq. 4-27).",
+                        InletCapacity.SagGrateCw,
+                        InletCapacity.SagGrateOrificeCo);
                 case InletCapacity.InletType.CurbOpening:
                     return string.Format(CultureInfo.InvariantCulture,
                         "Formula: Q_cap = Cw*a*L*d^1.5*sqrt(S), Cw={0:0.#} (HEC-22 curb opening).",

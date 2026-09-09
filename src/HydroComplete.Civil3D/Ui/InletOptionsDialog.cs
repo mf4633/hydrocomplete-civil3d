@@ -10,6 +10,7 @@ namespace HydroComplete.Civil3D.Ui
     {
         private readonly ComboBox _typeCombo;
         private readonly TextBox _lengthBox;
+        private readonly TextBox _widthBox;
         private readonly TextBox _depthBox;
         private readonly TextBox _slopeBox;
         private readonly TextBox _curbHeightBox;
@@ -17,6 +18,14 @@ namespace HydroComplete.Civil3D.Ui
 
         public InletCapacity.InletType SelectedType { get; private set; } = InletCapacity.InletType.GrateOnGrade;
         public double GrateLengthFt { get; private set; } = 5.0;
+
+        /// <summary>
+        /// Grate width, ft. Sag inlets only, and zero means "not given". With a
+        /// width the check uses the real HEC-22 grate perimeter and the orifice
+        /// limit; without one it falls back to the weir form on the bare length,
+        /// which understates a square grate about threefold.
+        /// </summary>
+        public double GrateWidthFt { get; private set; }
         public double FlowDepthFt { get; private set; } = 0.15;
         public double GutterSlope { get; private set; } = 0.005;
         public double CurbOpeningHeightFt { get; private set; } = 0.5;
@@ -25,12 +34,12 @@ namespace HydroComplete.Civil3D.Ui
         {
             Title = "HydroComplete — HEC-22 Inlet";
             Width = 420;
-            Height = 360;
+            Height = 400;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             ResizeMode = ResizeMode.NoResize;
 
             var grid = new Grid { Margin = new Thickness(12) };
-            for (int i = 0; i < 8; i++) grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            for (int i = 0; i < 9; i++) grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
@@ -42,6 +51,7 @@ namespace HydroComplete.Civil3D.Ui
             });
 
             AddRow(grid, row++, "Length L (ft)", _lengthBox = MakeBox("5"));
+            AddRow(grid, row++, "Grate width W (ft, sag)", _widthBox = MakeBox("4"));
             AddRow(grid, row++, "Gutter depth d (ft)", _depthBox = MakeBox("0.15"));
             AddRow(grid, row++, "Gutter slope S", _slopeBox = MakeBox("0.005"));
             AddRow(grid, row++, "Curb opening height a (ft)", _curbHeightBox = MakeBox("0.5"));
@@ -65,7 +75,7 @@ namespace HydroComplete.Civil3D.Ui
             grid.Children.Add(buttons);
 
             _typeCombo.SelectionChanged += (_, _) => UpdatePreview();
-            foreach (TextBox box in new[] { _lengthBox, _depthBox, _slopeBox, _curbHeightBox })
+            foreach (TextBox box in new[] { _lengthBox, _widthBox, _depthBox, _slopeBox, _curbHeightBox })
                 box.TextChanged += (_, _) => UpdatePreview();
 
             Content = grid;
@@ -89,6 +99,16 @@ namespace HydroComplete.Civil3D.Ui
             FlowDepthFt = depth;
             GutterSlope = slope;
 
+            // Optional, and only meaningful in a sag. A blank or unreadable box
+            // leaves it zero, which keeps the old conservative behaviour rather
+            // than refusing to run.
+            GrateWidthFt =
+                SelectedType == InletCapacity.InletType.Sag
+                && TryParse(_widthBox.Text, out double width)
+                && width > 0
+                    ? width
+                    : 0.0;
+
             if (SelectedType == InletCapacity.InletType.CurbOpening)
             {
                 if (!TryParse(_curbHeightBox.Text, out double curb) || curb <= 0) return false;
@@ -110,9 +130,13 @@ namespace HydroComplete.Civil3D.Ui
                 _ => InletCapacity.InletType.GrateOnGrade,
             };
             double curb = TryParse(_curbHeightBox.Text, out double c) ? c : 0.5;
-            double q = InletCapacity.CapacityCfs(type, l, d, s, curb);
+            bool isSag = type == InletCapacity.InletType.Sag;
+            double w = isSag && TryParse(_widthBox.Text, out double wv) && wv > 0 ? wv : 0.0;
+
+            double q = InletCapacity.CapacityCfs(type, l, d, s, curb, w);
             _previewText.Text = $"Preview capacity: {q.ToString("0.00", CultureInfo.InvariantCulture)} cfs";
             _curbHeightBox.IsEnabled = type == InletCapacity.InletType.CurbOpening;
+            _widthBox.IsEnabled = isSag;
         }
 
         private static TextBox MakeBox(string text) => new TextBox { Text = text, Margin = new Thickness(0, 2, 0, 6) };

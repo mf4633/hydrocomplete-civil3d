@@ -74,7 +74,12 @@ namespace HydroComplete.Engine.Tests
             Assert.True(check.Ok);
             Assert.Equal(InletCapacity.InletType.Sag, check.InletType);
             Assert.Equal(expected, check.CapacityCfs, 4);
-            Assert.Contains(check.Steps, s => s.Label == "Q_cap" && s.Formula == "Cw*L*d^1.5");
+            // No grate width was given, so this falls back to the weir form on the
+            // bare length. The number is unchanged; the trace now says so instead
+            // of presenting it as the finished HEC-22 answer.
+            Assert.Contains(
+                check.Steps,
+                s => s.Label == "Q_cap" && s.Formula.StartsWith("Cw*L*d^1.5", System.StringComparison.Ordinal));
         }
 
         [Fact]

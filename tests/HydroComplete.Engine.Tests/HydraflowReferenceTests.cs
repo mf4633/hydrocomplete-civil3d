@@ -502,17 +502,17 @@ namespace HydroComplete.Engine.Tests
                     run.Name + " " + id + ": read as on-grade, Hydraflow has it in a sag");
 
                 // Hydraflow captures 100 % in a sag and reports the ponding it
-                // takes. HEC-22 Eq. 4-26 is Q = Cw * P * d^1.5 with P the grate
-                // perimeter less the curb side, so the depth needed to pass the
-                // local flow has to fit under the rim.
-                //
-                // NOTE: InletCapacity.SagCapacityCfs takes a LENGTH where
-                // HEC-22 wants that perimeter, so calling it with the grate
-                // length alone is about three times conservative on a 4 x 4
-                // grate. The perimeter is formed explicitly here. See
-                // VALIDATION-HYDRAFLOW.md.
-                double perimeter = (2.0 * inlet.GrateLengthFt) + inlet.GrateWidthFt;
-                double pondingFt = Math.Pow(local / (InletCapacity.SagGrateCw * perimeter), 2.0 / 3.0);
+                // takes, so the depth needed to pass the local flow has to fit
+                // under the rim. SagGrateCapacityCfs does the full HEC-22 form:
+                // the weir on the real grate perimeter and the orifice once the
+                // grate drowns, whichever is smaller.
+                double pondingFt = 0.005;
+                while (pondingFt < 5.0 &&
+                       InletCapacity.SagGrateCapacityCfs(
+                           inlet.GrateLengthFt, inlet.GrateWidthFt, pondingFt) < local)
+                {
+                    pondingFt += 0.005;
+                }
 
                 double available = project.Structures
                     .Where(s => s.Name == id)

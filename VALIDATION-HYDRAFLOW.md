@@ -94,7 +94,7 @@ reproduces this rather than papering over it.
 
 ## Two gaps this found in the engine
 
-One is fixed. The other is recorded and deliberately left alone.
+Both are fixed.
 
 ### Fixed: the gradeline had no flow-depth floor
 
@@ -141,22 +141,42 @@ gradeline matches to 0.15 ft on both runs with no offset. `HglFlowDepthFloorTest
 covers the crown floor, the outfall exemption, the on-by-default contract, and
 the guarantee that a reach without inverts is left exactly as it was.
 
-### Known gap: sag inlet capacity takes a length, not a perimeter
+### Fixed: sag inlet capacity took a length, and had no orifice branch
 
-`InletCapacity.SagCapacityCfs(grateLengthFt, flowDepthFt)` computes
-`Cw · L · d^1.5`. HEC-22 Eq. 4-26 is `Cw · P · d^1.5`, where P is the grate
-perimeter ignoring the side against the curb, so `2L + W` for a grate at a curb.
+Two faults, pointing opposite ways, which is the worst arrangement because they
+partly cancelled and the answer looked plausible.
 
-On the 4 ft × 4 ft grates in these files that is 4 ft where HEC-22 wants 12, so
-the function returns about a third of the capacity, and the ponding depth it
-implies is roughly twice what it should be. `Cw` itself is right at 3.27.
+**The perimeter.** `SagCapacityCfs` was fed the grate's LENGTH where HEC-22
+Eq. 4-26 wants its perimeter: `Cw · P · d^1.5`, with P ignoring the side against
+the curb, so `2L + W`. On the 4 ft × 4 ft grates in these files that is 4 ft
+where HEC-22 wants 12, a factor of three low. `Cw` itself was right at 3.27.
+That error is conservative and costs money, not safety.
 
-The direction is conservative: you would add inlets you do not need, not miss
-flooding. That makes it a cost error rather than a safety one, which is why it
-is documented rather than changed under a validation commit. Any change here
-moves every existing inlet check in the add-in.
+**The orifice.** There was no orifice branch at all. A grate drowns as the water
+deepens and then meters like an orifice, `Co · Ag · sqrt(2 g d)` with Co = 0.67.
+Weir flow grows as d^1.5 and orifice flow only as d^0.5, so past about 1.4 ft of
+ponding the weir form promises capacity the grate does not have. That error is
+**not** conservative, and it bites at exactly the ponding depth where a sag inlet
+stops being academic.
 
-The reference test forms the perimeter explicitly and notes why.
+**The fix.** `SagGrateCapacityCfs(length, width, depth)` takes the lesser of the
+two branches, which is the usual conservative reading of the band between them
+and is continuous, so a design does not jump at the boundary. `SagCapacityCfs`
+keeps its signature but its parameter is now named and documented as a
+perimeter, so callers passing a length get exactly the number they got before
+and the API stops lying about what it wants. `CapacityCfs` and `CheckInlet` take
+an optional grate width: given one they use the full form, without one they fall
+back to the old conservative answer and the trace says so in as many words.
+
+`HC_INLETS` now asks for the grate width, and the calculation trace carries the
+perimeter, both branches, and which one governed.
+
+On AI-4, which captures 3.19 cfs at 100 %, the ponding goes from 0.41 ft under
+the old formula to about 0.19 ft, against 2.07 ft of structure depth.
+
+This moves every inlet check that supplies a grate width, which is the point.
+Checks that do not supply one are untouched, so nothing changes underneath a
+user who has not been asked for the extra number yet.
 
 ## Running it
 
@@ -165,7 +185,8 @@ dotnet test tests/HydroComplete.Engine.Tests --filter "FullyQualifiedName~Hydraf
 ```
 
 19 tests, two runs each where the assertion is per-run, plus
-`HglFlowDepthFloorTests` for the floor itself.
+`HglFlowDepthFloorTests` for the grade-line floor and `SagInletCapacityTests`
+for the sag grate.
 
 The reader itself has its own suite, `StmReaderTests`, covering the ways the
 `.stm` format silently corrupts a run if read naively: two different signature
