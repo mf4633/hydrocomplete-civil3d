@@ -13,6 +13,7 @@ Status: **v1.7.2** — DAG editor panel (`HC_DAG`), KaTeX HTML reports, live SSU
 
 | Doc | For |
 |---|---|
+| [`VALIDATION-HYDRAFLOW.md`](VALIDATION-HYDRAFLOW.md) | The engine compared line by line against Autodesk Hydraflow Storm Sewers on two real projects — what matches, every difference explained, two known gaps recorded |
 | [`docs/USER-GUIDE.md`](docs/USER-GUIDE.md) | End users — install, activate, workflows by task, methods & references |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Engineers / technical diligence — engine + plugin + backend, licensing flow, build/CI |
 | [`docs/ONE-PAGER.md`](docs/ONE-PAGER.md) | The Autodesk conversation — problem, positioning, model, ask |
@@ -205,6 +206,9 @@ before the one-time install above.
 | `HC_REPORT_PDF` | Same report as PDF — **Pro** (requires license; use `HC_REPORT` for free HTML) |
 | `HC_RATIONAL` | Rational peak Q from catchments + NOAA Atlas 14 IDF preset (or custom a/b/c) |
 | `HC_ATLAS14` | List Atlas 14 IDF presets + live PFDS fetch info |
+| `HC_STM_IMPORT` | Read a Hydraflow Storm Sewers `.stm` project and write a LandXML Civil 3D can import — see [`VALIDATION-HYDRAFLOW.md`](VALIDATION-HYDRAFLOW.md) |
+| `HC_LANDXML` | Export the drawing's pipe networks to LandXML 1.2 |
+| `HC_LANDXML_IMPORT` | Read a LandXML network and compare it to the drawing |
 | `HC_ACTIVATE` | Activate Pro with email + beta token (`hc_live_*`) — online or offline stub |
 | `HC_LICENSE` | Show Free/Pro status, validation mode, last check, and license file path |
 
