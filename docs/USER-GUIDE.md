@@ -97,6 +97,23 @@ by target velocity / % full (Hydraflow-style). `HC_MULTIRP` gives per-pipe Q and
   watersheds → BMPs → outlet as a connected model; `HC_DAG_LOAD` / `HC_DAG_SAVE`.
 - `HC_NETWORK_DIAGRAM` — export an HTML/SVG network schematic.
 
+### 2.6a Open a Hydraflow Storm Sewers project (new in 1.8.0)
+
+You have a Hydraflow Storm Sewers `.stm` project and want the network in Civil 3D.
+
+1. `HC_STM_IMPORT`, then give the `.stm` file path. Both the standalone format and
+   the Civil 3D extension format are read.
+2. The command prints what the file carries: lines, structures and total length,
+   the design storm and its IDF equation, tailwater, junction losses and inlet data.
+   If the drawing already has a pipe network, it also says how many names match.
+3. Answer **Yes** to *Write a LandXML for Civil 3D to import?* and accept or change
+   the output path.
+4. In Civil 3D: **Insert** tab > **Import** > **LandXML** builds the pipe network from it.
+
+Hydrology and inlet data do not travel in LandXML. Re-enter the numbers the command
+printed, or run them through the `HC_` commands. HydroComplete is not affiliated
+with Autodesk; Hydraflow Storm Sewers is an Autodesk product.
+
 ### 2.7 Reports
 
 - `HC_REPORT` — **free** formula-transparent **HTML** report (Manning + steady HGL),
