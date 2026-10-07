@@ -29,6 +29,7 @@ using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.WaterQualityCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.ContinuousSimCommands))]
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.DiagramCommands))]
+[assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.StmCommands))]
 #if NET8_0_OR_GREATER
 [assembly: CommandClass(typeof(HydroComplete.Civil3D.Commands.DagPanelCommands))]
 #endif
