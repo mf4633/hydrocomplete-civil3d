@@ -1,10 +1,10 @@
-# Resubmitting after Autodesk's 2026-10-12 review (HydroComplete 1.9.0 + Field Kit 1.0.1)
+# Resubmitting after Autodesk's 2026-10-12 review (HydroComplete 1.9.0 + Field Kit 1.1.0)
 
 Review email: Sripathi (sripathi.acharya@autodesk.com), "Design and Make Marketplace : Civil 3D :
 Survey & Parcel Field Kit / HydroComplete", 2026-10-12, cc Prashant. Ticket 34878.
 Both apps went back to Draft on 10/12. Four findings, all addressed:
 
-| Finding | HydroComplete 1.9.0 | Survey & Parcel Field Kit 1.0.1 |
+| Finding | HydroComplete 1.9.0 | Survey & Parcel Field Kit 1.1.0 |
 |---|---|---|
 | Icon has text | Letter-like mark removed (store-icon-512.png, PackageIcon.png) | Repo icon already has no text; the portal still shows an older "C3D" icon, so upload the repo one |
 | Support Civil 3D 2027 | New net10 build compiled against Autodesk's 2027 API NuGet packages (AutoCAD.NET 26.0.0, Civil3D.NET 13.9.628); R26.0 entry in PackageContents.xml | Declared R24.2-R26.0 (AutoLISP + CUIX, no recompile) |
@@ -14,8 +14,8 @@ Both apps went back to Draft on 10/12. Four findings, all addressed:
 ## Artifacts
 
 - HydroComplete: `dist/HydroComplete-1.9.0-appstore.zip` (user guide + HydroComplete.bundle)
-- Field Kit: `~/Desktop/AI/C3D-AutoCAD/dist/HydroCompleteFieldKit_v1.0.1_bundle.zip`
-  SHA256 B8CD72AAD346933C2B88970A8A86C481CCDE2EA10B0BBF92C101BF901650AC8F
+- Field Kit: `~/Desktop/AI/C3D-AutoCAD/dist/HydroCompleteFieldKit_v1.1.0_bundle.zip`
+  SHA256 973BBED141F2CAA6E23C359F76FA20B10A37AD0EACEF20D6B9856EA3E338792F (1.1.0: portal already had 1.1, so 1.0.1 would have looked like a downgrade)
 - Field Kit icon: `~/Desktop/AI/C3D-AutoCAD/marketplace/HydroCompleteFieldKit.bundle/Resources/icon.png`
 - HydroComplete icon: `dist/app-store/store-icon-512.png`
 
@@ -41,3 +41,10 @@ Both apps went back to Draft on 10/12. Four findings, all addressed:
 5. Save, then click **Submit** on the app page (the orange banner says it stays in Draft until Submit is clicked).
 6. Same for Survey & Parcel Field Kit: name, icon.png, zip 1.0.1, version 1.0.1, compatibility 2023-2027, Submit.
 7. Reply to Sripathi's 10/12 email (reply all, keeps Prashant and the ticket): draft in REVIEW_REPLY_2026-11-02.md.
+
+## Done 2026-11-03 (Claude, via Chrome)
+
+Both apps edited and SUBMITTED; both show "Pending review" dated 2026-11-03.
+- HydroComplete: name, icon, 1.9.0 zip, version 1.9.0 + notes, Civil 3D 2024-2027 ticked, 2027 added to six text fields.
+- Field Kit: name, icon.png, 1.1.0 zip, version 1.1.0 + notes, Civil 3D 2023-2027 (2021/2022 unticked: bundle never declared them), stale "C3D Field Kit"/C3DFieldKit.bundle text fixed.
+- Reviewer reply: NOT sent yet.
