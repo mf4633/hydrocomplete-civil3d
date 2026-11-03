@@ -37,6 +37,17 @@
     <TargetFramework></TargetFramework>
   </PropertyGroup>
 
+  <!-- Civil 3D 2027 (R26.0) runs .NET 10 and is binary-breaking: plugins must be compiled
+       against the 2027 API. Built as a separate pass (scripts/build-net10.ps1):
+         dotnet build -p:BuildNet10=true
+       Compiles against Autodesk's official NuGet API packages (AutoCAD.NET 26.0.0 =
+       "AutoCAD 2027 .Net API", Civil3D.NET 13.9.628 = "Civil 3D 2027 .Net API"), so no local
+       Civil 3D 2027 install is needed to build. Needs the .NET 10 SDK. -->
+  <PropertyGroup Condition="'$(BuildNet10)' == 'true'">
+    <TargetFrameworks>net10.0-windows</TargetFrameworks>
+    <TargetFramework></TargetFramework>
+  </PropertyGroup>
+
   <!-- Per-target host install paths. AcadDir is a legacy alias for Net8AcadDir only. -->
   <PropertyGroup>
     <Net8AcadDir Condition="'$(Net8AcadDir)' == '' and '$(AcadDir)' != ''">$(AcadDir)</Net8AcadDir>
@@ -117,6 +128,22 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.14" />
   </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
+    <!-- compile-only 2027 API; never copy host assemblies into the bundle -->
+    <PackageReference Include="AutoCAD.NET" Version="26.0.0">
+      <IncludeAssets>compile;build</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Civil3D.NET" Version="13.9.628">
+      <IncludeAssets>compile;build</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="PDFsharp" Version="6.2.4" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.14" />
+  </ItemGroup>
+
   <!-- DAG panel (WebView2) is net8-only; Civil 3D 2024 net48 build excludes it -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
     <Compile Remove="DagHost\*.cs" />

@@ -1,4 +1,4 @@
-# HydroComplete for Civil 3D — User Guide
+# HydroComplete — User Guide (Civil 3D add-in)
 
 Run stormwater hydrology and hydraulics **straight from your Civil 3D drawing**,
 on public-domain methods, with every formula shown. This guide is task-oriented:
@@ -6,7 +6,7 @@ find the workflow you're doing and the commands that drive it. For the full
 command list, `HC_ABOUT` in Civil 3D or the reference table in the
 [README](../README.md).
 
-- **Supported:** Civil 3D 2024, 2025, 2026 (Windows 64-bit).
+- **Supported:** Civil 3D 2024, 2025, 2026, 2027 (Windows 64-bit).
 - **Tiers:** Free (core hydraulics + HTML reports) and Pro (sealable PDF; more over
   time). See [Licensing](#licensing).
 
@@ -19,7 +19,7 @@ start — no `NETLOAD`.
 
 1. **Quit Civil 3D completely** (no `acad.exe` in Task Manager).
 2. From the install folder, in PowerShell: `powershell -File .\install.ps1`
-3. Launch **Civil 3D 2024/2025/2026** from the Start menu (the full desktop app).
+3. Launch **Civil 3D 2024/2025/2026/2027** from the Start menu (the full desktop app).
 4. The command line shows: `HydroComplete for Civil 3D <version> loaded. Type HC_ABOUT for commands.`
 5. Verify any time: `powershell -File .\verify-install.ps1`
 
@@ -91,7 +91,7 @@ by target velocity / % full (Hydraflow-style). `HC_MULTIRP` gives per-pipe Q and
 - `HC_PUMP`, `HC_LOSS`, `HC_PROFILE` / `HC_PROFILE_DXF` — pumps, minor losses,
   profiles.
 
-### 2.6 Visual model builder (Civil 3D 2025/2026)
+### 2.6 Visual model builder (Civil 3D 2025/2026/2027)
 
 - `HC_DAG` — open the drag-and-drop node DAG editor (WebView2 panel) to assemble
   watersheds → BMPs → outlet as a connected model; `HC_DAG_LOAD` / `HC_DAG_SAVE`.

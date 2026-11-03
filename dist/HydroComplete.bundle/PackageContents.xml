@@ -3,9 +3,10 @@
   Civil 3D auto-load bundle. Modeled on ADSK-ProjectExplorer-2026.bundle.
   Series (internal release codes, not calendar year):
     Civil 3D 2021 = R24.0, 2022 = R24.1, 2023 = R24.2, 2024 = R24.3
-    Civil 3D 2025 = R25.0, 2026 = R25.1
+    Civil 3D 2025 = R25.0, 2026 = R25.1, 2027 = R26.0
   Civil 3D 2024 (R24.3) loads net48 DLLs from Contents/net48/.
-  Civil 3D 2025+ loads net8.0-windows DLLs from Contents/.
+  Civil 3D 2025-2026 load net8.0-windows DLLs from Contents/.
+  Civil 3D 2027 (.NET 10, binary-breaking) loads net10.0-windows DLLs from Contents/net10/.
 -->
 <ApplicationPackage SchemaVersion="1.0"
                     AppVersion="1.9.0"
@@ -218,6 +219,74 @@
       </Commands>
       <AssemblyMappings>
         <AssemblyMapping Name="HydroComplete.Engine" Path="./Contents/HydroComplete.Engine.dll" />
+      </AssemblyMappings>
+    </ComponentEntry>
+
+    <!-- Civil 3D 2027 (R26.0) - .NET 10 build from Contents/net10/ -->
+    <RuntimeRequirements OS="Win64" Platform="Civil3D" SeriesMin="R26.0" SeriesMax="R26.0" />
+    <ComponentEntry AppName="HYDROCOMPLETE"
+                    AppDescription="HydroComplete stormwater analysis"
+                    AppType=".NET"
+                    ModuleName="./Contents/net10/HydroComplete.Civil3D.dll"
+                    LoadOnAutoCADStartup="True"
+                    LoadOnRequest="True">
+      <Commands GroupName="HYDROCOMPLETE">
+        <Command Local="HC_ABOUT" Global="HC_ABOUT" />
+        <Command Local="HC_NETWORK" Global="HC_NETWORK" />
+        <Command Local="HC_PIPES" Global="HC_PIPES" />
+        <Command Local="HC_PIPES_WRITE" Global="HC_PIPES_WRITE" />
+        <Command Local="HC_CAPACITY" Global="HC_CAPACITY" />
+        <Command Local="HC_CAPACITY_WRITE" Global="HC_CAPACITY_WRITE" />
+        <Command Local="HC_SIZE" Global="HC_SIZE" />
+        <Command Local="HC_VALIDATE" Global="HC_VALIDATE" />
+        <Command Local="HC_ANALYZE" Global="HC_ANALYZE" />
+        <Command Local="HC_REVIEW" Global="HC_REVIEW" />
+        <Command Local="HC_SCS" Global="HC_SCS" />
+        <Command Local="HC_UNIT_HYDRO" Global="HC_UNIT_HYDRO" />
+        <Command Local="HC_SEDIMENT" Global="HC_SEDIMENT" />
+        <Command Local="HC_WQV" Global="HC_WQV" />
+        <Command Local="HC_DETENTION" Global="HC_DETENTION" />
+        <Command Local="HC_BMP_SIZE" Global="HC_BMP_SIZE" />
+        <Command Local="HC_WQ_TRAIN" Global="HC_WQ_TRAIN" />
+        <Command Local="HC_WQ_DIAGRAM" Global="HC_WQ_DIAGRAM" />
+        <Command Local="HC_SEDIMENT_BASIN" Global="HC_SEDIMENT_BASIN" />
+        <Command Local="HC_RATIONAL" Global="HC_RATIONAL" />
+        <Command Local="HC_MULTIRP" Global="HC_MULTIRP" />
+        <Command Local="HC_INLETS" Global="HC_INLETS" />
+        <Command Local="HC_HGL" Global="HC_HGL" />
+        <Command Local="HC_PREPOST" Global="HC_PREPOST" />
+        <Command Local="HC_OPTIMIZE" Global="HC_OPTIMIZE" />
+        <Command Local="HC_CULVERT" Global="HC_CULVERT" />
+        <Command Local="HC_LOSS" Global="HC_LOSS" />
+        <Command Local="HC_GVF" Global="HC_GVF" />
+        <Command Local="HC_PROFILE" Global="HC_PROFILE" />
+        <Command Local="HC_PROFILE_DXF" Global="HC_PROFILE_DXF" />
+        <Command Local="HC_TC" Global="HC_TC" />
+        <Command Local="HC_LANDXML" Global="HC_LANDXML" />
+        <Command Local="HC_LANDXML_IMPORT" Global="HC_LANDXML_IMPORT" />
+        <Command Local="HC_STM_IMPORT" Global="HC_STM_IMPORT" />
+        <Command Local="HC_NETWORK_EDIT" Global="HC_NETWORK_EDIT" />
+        <Command Local="HC_DAG" Global="HC_DAG" />
+        <Command Local="HC_DAG_LOAD" Global="HC_DAG_LOAD" />
+        <Command Local="HC_DAG_SAVE" Global="HC_DAG_SAVE" />
+        <Command Local="HC_NETWORK_DIAGRAM" Global="HC_NETWORK_DIAGRAM" />
+        <Command Local="HC_PUMP" Global="HC_PUMP" />
+        <Command Local="HC_COST" Global="HC_COST" />
+        <Command Local="HC_CONTINUOUS" Global="HC_CONTINUOUS" />
+        <Command Local="HC_BACKGROUND" Global="HC_BACKGROUND" />
+        <Command Local="HC_HYDROGRAPH" Global="HC_HYDROGRAPH" />
+        <Command Local="HC_ROUTE_HYDRO" Global="HC_ROUTE_HYDRO" />
+        <Command Local="HC_BIORETENTION" Global="HC_BIORETENTION" />
+        <Command Local="HC_WETLAND" Global="HC_WETLAND" />
+        <Command Local="HC_SOIL" Global="HC_SOIL" />
+        <Command Local="HC_REPORT" Global="HC_REPORT" />
+        <Command Local="HC_REPORT_PDF" Global="HC_REPORT_PDF" />
+        <Command Local="HC_ATLAS14" Global="HC_ATLAS14" />
+        <Command Local="HC_ACTIVATE" Global="HC_ACTIVATE" />
+        <Command Local="HC_LICENSE" Global="HC_LICENSE" />
+      </Commands>
+      <AssemblyMappings>
+        <AssemblyMapping Name="HydroComplete.Engine" Path="./Contents/net10/HydroComplete.Engine.dll" />
       </AssemblyMappings>
     </ComponentEntry>
   </Components>

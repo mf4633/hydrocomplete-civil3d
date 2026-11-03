@@ -1,6 +1,6 @@
 ﻿# Autodesk App Store — Listing Copy
 
-**Product:** HydroComplete for Civil 3D  
+**Product:** HydroComplete  
 **Version at submission:** 1.9.0
 **Last updated:** 2026-06-23
 
@@ -8,7 +8,9 @@
 
 ## Title
 
-**HydroComplete for Civil 3D**
+**HydroComplete**
+
+> 2026-11-02: "for Civil 3D" dropped from the app name at Autodesk's request (review 2026-10-12: the Autodesk product name can't be in the app name unless the app is in several product stores). Referential use in the description ("works in Civil 3D") is still fine.
 
 ---
 
@@ -275,8 +277,9 @@ All commands print formula-transparent `CalcStep` traces where applicable. Type 
 | **Autodesk Civil 3D 2024** | R24.3 | .NET Framework 4.8 (`net48`) |
 | **Autodesk Civil 3D 2025** | R25.0 | .NET 8 (`net8.0-windows`) |
 | **Autodesk Civil 3D 2026** | R25.1 | .NET 8 (`net8.0-windows`) |
+| **Autodesk Civil 3D 2027** | R26.0 | .NET 10 (`net10.0-windows`) |
 
-> **Note:** The portable engine targets `netstandard2.0` so the same hydraulics core ships across all three Civil 3D versions. Civil 3D 2024 loads `Contents/net48/` DLLs; 2025+ load `Contents/` net8 DLLs per `PackageContents.xml` `SeriesMin`/`SeriesMax`.
+> **Note:** Civil 3D 2024 loads `Contents/net48/`; 2025 and 2026 load `Contents/` (net8); 2027 loads `Contents/net10/`, a separate compile against the 2027 API because 2027 is binary-breaking. Selection is by `PackageContents.xml` `SeriesMin`/`SeriesMax`.
 
 ---
 
@@ -285,8 +288,8 @@ All commands print formula-transparent `CalcStep` traces where applicable. Type 
 | Requirement | Detail |
 |---|---|
 | **Operating system** | Windows 10 or Windows 11 (64-bit) |
-| **Host application** | Autodesk Civil 3D 2024, 2025, or 2026 (desktop application — not `accoreconsole` or plain AutoCAD) |
-| **.NET runtime** | .NET Framework 4.8 (Civil 3D 2024) or .NET 8 (Civil 3D 2025/2026 — included with host) |
+| **Host application** | Autodesk Civil 3D 2024, 2025, 2026 or 2027 (desktop application — not `accoreconsole` or plain AutoCAD) |
+| **.NET runtime** | .NET Framework 4.8 (Civil 3D 2024), .NET 8 (2025/2026) or .NET 10 (2027), all included with the host |
 | **Drawing content** | Civil 3D pipe network objects for `HC_PIPES` / `HC_HGL` / `HC_CAPACITY`; catchment objects for `HC_RATIONAL` with catchment-driven flows; `GEOGRAPHICLOCATION` for live Atlas 14 PFDS |
 | **Disk space** | &lt; 5 MB for the application bundle |
 | **Network** | Not required for core analysis (offline-capable). Live Atlas 14 PFDS and Pro license validation require internet when used. |
@@ -327,6 +330,22 @@ Civil 3D add-in, PDF report
 | **Product URL** | https://hydrocomplete.com/civil3d |
 | **Support email** | support@hydrocomplete.com |
 | **Privacy policy** | https://hydrocomplete.com/privacy.html |
+
+---
+
+## Release Notes (Publisher portal — v1.9.0)
+
+Paste into the **What's New** / release-notes field at upload.
+
+```
+HydroComplete v1.9.0 - Civil 3D 2027 support and updated components.
+
+NEW IN v1.9.0
+- Civil 3D 2027 support: a separate build compiled against the Civil 3D 2027 / AutoCAD 2027 .NET API (.NET 10), loaded automatically on 2027. Civil 3D 2024, 2025 and 2026 continue to load their own builds.
+- Updated third-party components to current patched releases: PDFsharp 6.2.4, WebView2 1.0.4314.35, Microsoft.Extensions.Logging.Abstractions 10.0.14, and the .NET Framework support libraries used on Civil 3D 2024 (System.Text.Json 10.0.14 and related). Unused components are no longer shipped.
+- App renamed to "HydroComplete" and the icon redrawn without text, per the Autodesk App Store guidelines.
+- No change to any calculation. 53 HC_* commands across Civil 3D 2024, 2025, 2026 and 2027.
+```
 
 ---
 

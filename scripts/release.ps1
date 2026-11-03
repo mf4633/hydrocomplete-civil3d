@@ -59,6 +59,10 @@ try {
     & (Join-Path $root 'scripts\build-net48.ps1') -Configuration Release
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+    Write-Host 'Building net10 target for Civil 3D 2027 (R26.0)...'
+    & (Join-Path $root 'scripts\build-net10.ps1') -Configuration Release
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
     $iconDest = Join-Path $contents 'PackageIcon.png'
     if (-not (Test-Path $iconDest)) {
         throw "PackageIcon.png missing in $contents - add a 96x96 PNG before release."
