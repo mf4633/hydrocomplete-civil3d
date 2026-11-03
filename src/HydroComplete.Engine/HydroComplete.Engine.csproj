@@ -13,7 +13,10 @@
     machine with no CAD installed.
   -->
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <!-- net8.0 asset is what the Civil 3D 2025/2026 build loads: it uses the in-box
+         System.Text.Json, so it never asks the .NET 8 host for a newer copy.
+         netstandard2.0 asset serves the net48 (Civil 3D 2024) build and the tests. -->
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
@@ -22,11 +25,11 @@
     <NoWarn>CS1591</NoWarn>
     <AssemblyName>HydroComplete.Engine</AssemblyName>
     <RootNamespace>HydroComplete.Engine</RootNamespace>
-    <Version>1.8.0</Version>
+    <Version>1.9.0</Version>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Text.Json" Version="10.0.14" />
   </ItemGroup>
 
   <ItemGroup>

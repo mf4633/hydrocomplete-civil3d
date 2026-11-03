@@ -31,15 +31,29 @@ try {
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
     $out = Join-Path $root 'src\HydroComplete.Civil3D\bin\Release\net8.0-windows'
-    $eng = Join-Path $root 'src\HydroComplete.Engine\bin\Release\netstandard2.0'
     New-Item -ItemType Directory -Force -Path $contents | Out-Null
 
-    Copy-Item (Join-Path $out 'HydroComplete.Civil3D.dll') $contents -Force
-    Copy-Item (Join-Path $eng 'HydroComplete.Engine.dll') $contents -Force
+    # Start clean so DLLs dropped from the allowlist don't linger from older builds.
+    Get-ChildItem $contents -Filter '*.dll' -File | Remove-Item -Force
+    $net48Dir = Join-Path $contents 'net48'
+    if (Test-Path $net48Dir) { Get-ChildItem $net48Dir -Filter '*.dll' -File | Remove-Item -Force }
 
-    Get-ChildItem $out -Filter '*.dll' |
-        Where-Object { $_.Name -notmatch '^HydroComplete\.' } |
-        Copy-Item -Destination $contents -Force
+    # Civil 3D 2025/2026 (.NET 8): ship only what the plugin loads. The engine comes from the
+    # add-in's own output folder, which holds its net8.0 asset (in-box System.Text.Json).
+    # Never ship copies of assemblies .NET 8 has in-box (System.Text.Json, DiagnosticSource,
+    # Asn1...), and leave out PDFsharp modules we don't use (BarCodes, Quality, Snippets,
+    # Cryptography + its Pkcs dependency). Autodesk's Black Duck scan reads every DLL shipped.
+    $net8Allow = @(
+        'HydroComplete.Civil3D.dll', 'HydroComplete.Engine.dll',
+        'PdfSharp.dll', 'PdfSharp.Shared.dll', 'PdfSharp.System.dll', 'PdfSharp.Charting.dll', 'PdfSharp.WPFonts.dll',
+        'Microsoft.Extensions.Logging.Abstractions.dll', 'Microsoft.Extensions.DependencyInjection.Abstractions.dll',
+        'Microsoft.Web.WebView2.Core.dll', 'Microsoft.Web.WebView2.WinForms.dll', 'Microsoft.Web.WebView2.Wpf.dll'
+    )
+    foreach ($name in $net8Allow) {
+        $src = Join-Path $out $name
+        if (-not (Test-Path $src)) { throw "Expected $name in $out" }
+        Copy-Item $src $contents -Force
+    }
 
     Write-Host 'Building net48 target for Civil 3D 2024 (R24.3)...'
     & (Join-Path $root 'scripts\build-net48.ps1') -Configuration Release
