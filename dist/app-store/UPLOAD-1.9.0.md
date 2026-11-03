@@ -47,4 +47,4 @@ Both apps went back to Draft on 10/12. Four findings, all addressed:
 Both apps edited and SUBMITTED; both show "Pending review" dated 2026-11-03.
 - HydroComplete: name, icon, 1.9.0 zip, version 1.9.0 + notes, Civil 3D 2024-2027 ticked, 2027 added to six text fields.
 - Field Kit: name, icon.png, 1.1.0 zip, version 1.1.0 + notes, Civil 3D 2023-2027 (2021/2022 unticked: bundle never declared them), stale "C3D Field Kit"/C3DFieldKit.bundle text fixed.
-- Reviewer reply: NOT sent yet.
+- Reviewer reply: SENT 2026-11-03 (reply-all to Sripathi + Prashant).
