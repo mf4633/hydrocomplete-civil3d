@@ -51,27 +51,18 @@ namespace HydroComplete.Civil3D
             {
                 var doc = AcadApp.DocumentManager?.MdiActiveDocument;
                 doc?.Editor.WriteMessage(
-                    $"\n{ProductName} for Civil 3D 1.9.0 loaded. Type HC_ABOUT for commands.\n");
+                    $"\n{ProductName} for Civil 3D 1.10.0 loaded. Type HC_ABOUT for commands.\n");
             }
             catch
             {
             }
 
-            // The ribbon may not exist yet at load time, or the ribbon subsystem
-            // may be entirely absent (e.g. AutoCAD core console / headless). Both
-            // are non-fatal â€” the HC_* commands still work without a ribbon.
-            try
-            {
-                Ribbon.RibbonBuilder.TryAddRibbon();
-            }
-            catch
-            {
-            }
+            // The ribbon comes from Contents/HydroComplete.cuix (loaded by the bundle),
+            // not from code: Autodesk review requires CUIX ribbon buttons with icons.
         }
 
         public void Terminate()
         {
-            Ribbon.RibbonBuilder.RemoveRibbon();
         }
     }
 }

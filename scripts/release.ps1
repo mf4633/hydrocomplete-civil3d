@@ -35,8 +35,10 @@ try {
 
     # Start clean so DLLs dropped from the allowlist don't linger from older builds.
     Get-ChildItem $contents -Filter '*.dll' -File | Remove-Item -Force
+    # Civil 3D 2024 (net48) was dropped in 1.10.0: remove any leftover net48 folder so its
+    # .NET Framework polyfill DLLs (Black Duck findings) can never ship again.
     $net48Dir = Join-Path $contents 'net48'
-    if (Test-Path $net48Dir) { Get-ChildItem $net48Dir -Filter '*.dll' -File | Remove-Item -Force }
+    if (Test-Path $net48Dir) { Remove-Item $net48Dir -Recurse -Force }
 
     # Civil 3D 2025/2026 (.NET 8): ship only what the plugin loads. The engine comes from the
     # add-in's own output folder, which holds its net8.0 asset (in-box System.Text.Json).
@@ -55,10 +57,6 @@ try {
         Copy-Item $src $contents -Force
     }
 
-    Write-Host 'Building net48 target for Civil 3D 2024 (R24.3)...'
-    & (Join-Path $root 'scripts\build-net48.ps1') -Configuration Release
-    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
     Write-Host 'Building net10 target for Civil 3D 2027 (R26.0)...'
     & (Join-Path $root 'scripts\build-net10.ps1') -Configuration Release
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -69,9 +67,12 @@ try {
     }
     Write-Host "Bundle contents updated at $contents"
 
-    if (-not (Test-Path (Join-Path $bundle 'PackageContents.xml'))) {
-        throw "PackageContents.xml missing in $bundle"
-    }
+    # Ribbon (CUIX with embedded icons), F1 help page and manifest, all from scripts/ribbon.json.
+    python (Join-Path $root 'scripts\build-icons.py'); if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'scripts\build-cuix.ps1')
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    python (Join-Path $root 'scripts\build-help.py'); if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    python (Join-Path $root 'scripts\gen-packagecontents.py') $Version; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
     $zipName = "HydroComplete-$Version.zip"
     $zipPath = Join-Path $dist $zipName
@@ -83,9 +84,22 @@ try {
     [System.IO.Compression.ZipFile]::CreateFromDirectory($bundle, $zipPath, [System.IO.Compression.CompressionLevel]::Optimal, $false)
 
     $hash = (Get-FileHash $zipPath -Algorithm SHA256).Hash
+    # Marketplace upload layout: user guide + HydroComplete.bundle/ at the zip root.
+    $stage = Join-Path $dist '_appstore_stage'
+    if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
+    New-Item -ItemType Directory -Force $stage | Out-Null
+    Copy-Item $bundle (Join-Path $stage 'HydroComplete.bundle') -Recurse
+    Copy-Item (Join-Path $root 'docs\USER-GUIDE.md') (Join-Path $stage 'HydroComplete-UserGuide.txt')
+    $storeZip = Join-Path $dist "HydroComplete-$Version-appstore.zip"
+    if (Test-Path $storeZip) { Remove-Item $storeZip -Force }
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($stage, $storeZip, [System.IO.Compression.CompressionLevel]::Optimal, $false)
+    Remove-Item $stage -Recurse -Force
+
     Write-Host ""
     Write-Host "Release artifact: $zipPath"
     Write-Host "SHA256: $hash"
+    Write-Host "Marketplace upload: $storeZip"
+    Write-Host "SHA256: $((Get-FileHash $storeZip -Algorithm SHA256).Hash)"
     exit 0
 }
 catch {

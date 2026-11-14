@@ -1,0 +1,297 @@
+[
+ {
+  "name": "Network",
+  "buttons": [
+   {
+    "cmd": "HC_NETWORK",
+    "label": "Network Summary",
+    "tip": "Per-network pipe count, length, invert/diameter range, and structure count."
+   },
+   {
+    "cmd": "HC_PIPES",
+    "label": "Pipe Capacity",
+    "tip": "Manning capacity of every pipe in the drawing's pipe networks."
+   },
+   {
+    "cmd": "HC_PIPES_WRITE",
+    "label": "Write Capacity",
+    "tip": "Label Qfull and Vfull on layer HC-CAPACITY."
+   },
+   {
+    "cmd": "HC_CAPACITY",
+    "label": "Design Capacity",
+    "tip": "Design Q vs Q_full check with d/D and surcharge flag."
+   },
+   {
+    "cmd": "HC_CAPACITY_WRITE",
+    "label": "Write Overload",
+    "tip": "Label overloaded pipes on layer HC-CAPACITY."
+   },
+   {
+    "cmd": "HC_SIZE",
+    "label": "Pipe Sizing",
+    "tip": "Recommend smallest standard pipe (12-72 in) for design Q."
+   },
+   {
+    "cmd": "HC_VALIDATE",
+    "label": "Validate Design",
+    "tip": "Design-criteria review: slope, capacity, velocity, cover, size progression, HGL."
+   },
+   {
+    "cmd": "HC_NETWORK_EDIT",
+    "label": "Network Edit",
+    "tip": "Edit per-pipe Q and Manning n overrides (saved per drawing)."
+   },
+   {
+    "cmd": "HC_NETWORK_DIAGRAM",
+    "label": "Network Diagram",
+    "tip": "Export HTML/SVG pipe network schematic from plan topology."
+   },
+   {
+    "cmd": "HC_MULTIRP",
+    "label": "Multi-RP Capacity",
+    "tip": "Per-pipe Q and d/D for 2/10/25/100-yr return periods."
+   }
+  ]
+ },
+ {
+  "name": "Hydrology",
+  "buttons": [
+   {
+    "cmd": "HC_RATIONAL",
+    "label": "Rational Q",
+    "tip": "Rational peak flow from catchments + Atlas 14 IDF."
+   },
+   {
+    "cmd": "HC_ATLAS14",
+    "label": "Atlas 14 IDF",
+    "tip": "List NOAA Atlas 14 IDF presets by city."
+   },
+   {
+    "cmd": "HC_TC",
+    "label": "TR-55 Tc",
+    "tip": "TR-55 segmented time-of-concentration worksheet."
+   },
+   {
+    "cmd": "HC_SCS",
+    "label": "SCS Runoff",
+    "tip": "SCS curve-number runoff from catchments."
+   },
+   {
+    "cmd": "HC_UNIT_HYDRO",
+    "label": "Unit Hydro",
+    "tip": "SCS synthetic unit hydrograph ordinate table."
+   },
+   {
+    "cmd": "HC_HYDROGRAPH",
+    "label": "Hydrograph",
+    "tip": "Design storm hydrograph from CN, depth, and UH method."
+   },
+   {
+    "cmd": "HC_ROUTE_HYDRO",
+    "label": "Route Hydro",
+    "tip": "Route catchment hydrographs through the pipe network with junction superposition."
+   },
+   {
+    "cmd": "HC_LOSS",
+    "label": "Loss Method",
+    "tip": "Green-Ampt / Horton / CN incremental loss on a SCS Type II storm."
+   },
+   {
+    "cmd": "HC_CONTINUOUS",
+    "label": "Continuous Sim",
+    "tip": "Multi-year continuous simulation with Hargreaves ET and pollutant loads."
+   },
+   {
+    "cmd": "HC_SOIL",
+    "label": "Soil Lookup",
+    "tip": "Live SSURGO soil lookup by drawing geo or map unit name."
+   }
+  ]
+ },
+ {
+  "name": "Stormwater",
+  "buttons": [
+   {
+    "cmd": "HC_DETENTION",
+    "label": "Detention Routing",
+    "tip": "Modified Puls pond routing with SCS UH inflow and orifice/weir outlets."
+   },
+   {
+    "cmd": "HC_BMP_SIZE",
+    "label": "BMP Size",
+    "tip": "WQV-based BMP sizing (bioretention, pond, filter, swale)."
+   },
+   {
+    "cmd": "HC_WQ_TRAIN",
+    "label": "WQ Train",
+    "tip": "Sequential BMP treatment train with EMC pollutant loads."
+   },
+   {
+    "cmd": "HC_WQV",
+    "label": "Water Quality Vol",
+    "tip": "Water quality volume from state WQ storm."
+   },
+   {
+    "cmd": "HC_WQ_DIAGRAM",
+    "label": "WQ Diagram",
+    "tip": "HTML/SVG BMP treatment-train node diagram with removal labels."
+   },
+   {
+    "cmd": "HC_PREPOST",
+    "label": "Pre/Post Peaks",
+    "tip": "Pre/post-development peak flow comparison across state storm suite."
+   },
+   {
+    "cmd": "HC_OPTIMIZE",
+    "label": "BMP Optimize",
+    "tip": "Top 3 lowest-cost BMP treatment trains meeting state removal targets."
+   },
+   {
+    "cmd": "HC_SEDIMENT",
+    "label": "Sediment RUSLE",
+    "tip": "RUSLE soil loss from catchment slopes."
+   },
+   {
+    "cmd": "HC_SEDIMENT_BASIN",
+    "label": "Sediment Basin",
+    "tip": "NCDEQ sediment basin sizing from peak Q and RUSLE yield."
+   },
+   {
+    "cmd": "HC_BIORETENTION",
+    "label": "Bioretention",
+    "tip": "Bioretention routing with underdrain/outlet."
+   },
+   {
+    "cmd": "HC_WETLAND",
+    "label": "Wetland Routing",
+    "tip": "Wetland detention routing."
+   }
+  ]
+ },
+ {
+  "name": "Hydraulics",
+  "buttons": [
+   {
+    "cmd": "HC_HGL",
+    "label": "HGL Profile",
+    "tip": "Steady HGL profile polyline on HC-HGL-PROFILE and labels on HC-HGL."
+   },
+   {
+    "cmd": "HC_GVF",
+    "label": "GVF Profile",
+    "tip": "Gradually varied flow water surface profile (Standard Step, trapezoidal channel)."
+   },
+   {
+    "cmd": "HC_CULVERT",
+    "label": "Culvert HW",
+    "tip": "FHWA HDS-5 culvert headwater from pipe or manual geometry."
+   },
+   {
+    "cmd": "HC_PROFILE",
+    "label": "Chainage Profile",
+    "tip": "Invert, crown, and optional HGL vs chainage on HC-PROFILE-* layers."
+   },
+   {
+    "cmd": "HC_PROFILE_DXF",
+    "label": "Profile DXF",
+    "tip": "Export invert, crown, and optional HGL profile to DXF."
+   },
+   {
+    "cmd": "HC_INLETS",
+    "label": "Inlet Check",
+    "tip": "HEC-22 inlet check: grate, sag, or curb opening (modal dialog)."
+   },
+   {
+    "cmd": "HC_PUMP",
+    "label": "Pump Station",
+    "tip": "Pump duty-point check: system head vs pump curve."
+   }
+  ]
+ },
+ {
+  "name": "Analysis",
+  "buttons": [
+   {
+    "cmd": "HC_ANALYZE",
+    "label": "Full Analysis",
+    "tip": "Full-network analysis: hydrology, routing, capacity, HGL, sediment, WQV, compliance."
+   },
+   {
+    "cmd": "HC_REVIEW",
+    "label": "Design Review",
+    "tip": "Design review plus state regulatory compliance (TSS, WQV, peaks, erosion)."
+   },
+   {
+    "cmd": "HC_REPORT",
+    "label": "HTML Report",
+    "tip": "Export formula-transparent Manning + HGL HTML report."
+   },
+   {
+    "cmd": "HC_REPORT_PDF",
+    "label": "PDF Report",
+    "tip": "Export formula-transparent Manning + HGL PDF report (Pro)."
+   }
+  ]
+ },
+ {
+  "name": "Model Builder",
+  "buttons": [
+   {
+    "cmd": "HC_DAG",
+    "label": "Open DAG",
+    "tip": "Visual model builder — drag-and-drop node DAG editor (WebView2 panel)."
+   },
+   {
+    "cmd": "HC_DAG_SAVE",
+    "label": "Save DAG",
+    "tip": "Save the current DAG to a .hcdag file alongside the drawing."
+   },
+   {
+    "cmd": "HC_DAG_LOAD",
+    "label": "Load DAG",
+    "tip": "Load a .hcdag file and open it in the DAG editor."
+   }
+  ]
+ },
+ {
+  "name": "Tools",
+  "buttons": [
+   {
+    "cmd": "HC_LANDXML",
+    "label": "LandXML Export",
+    "tip": "Export pipe network to LandXML 1.2."
+   },
+   {
+    "cmd": "HC_LANDXML_IMPORT",
+    "label": "LandXML Import",
+    "tip": "Import LandXML 1.2 and compare to drawing."
+   },
+   {
+    "cmd": "HC_BACKGROUND",
+    "label": "Background Map",
+    "tip": "Attach georeferenced raster image on HC-BACKGROUND."
+   },
+   {
+    "cmd": "HC_COST",
+    "label": "Pipe Cost",
+    "tip": "Roll up pipe costs from diameter catalog ($/LF)."
+   },
+   {
+    "cmd": "HC_ACTIVATE",
+    "label": "Activate Pro",
+    "tip": "Activate Pro with email and hc_live_ beta token."
+   },
+   {
+    "cmd": "HC_LICENSE",
+    "label": "License",
+    "tip": "Show Free/Pro status and activation info."
+   },
+   {
+    "cmd": "HC_ABOUT",
+    "label": "About",
+    "tip": "List HydroComplete commands."
+   }
+  ]
+ }
+]

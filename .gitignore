@@ -8,3 +8,6 @@ dist/HydroComplete-*.zip
 .vs/
 
 _wip/
+dist/HydroComplete.bundle/Contents/HydroComplete.cuix
+dist/HydroComplete.bundle/Help/
+packaging/icons-sheet.png

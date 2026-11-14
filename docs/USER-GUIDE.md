@@ -4,9 +4,9 @@ Run stormwater hydrology and hydraulics **straight from your Civil 3D drawing**,
 on public-domain methods, with every formula shown. This guide is task-oriented:
 find the workflow you're doing and the commands that drive it. For the full
 command list, `HC_ABOUT` in Civil 3D or the reference table in the
-[README](../README.md).
+command reference at the end of this guide.
 
-- **Supported:** Civil 3D 2024, 2025, 2026, 2027 (Windows 64-bit).
+- **Supported:** Civil 3D 2025, 2026 and 2027 (Windows 64-bit).
 - **Tiers:** Free (core hydraulics + HTML reports) and Pro (sealable PDF; more over
   time). See [Licensing](#licensing).
 
@@ -14,22 +14,23 @@ command list, `HC_ABOUT` in Civil 3D or the reference table in the
 
 ## 1. Install & first run
 
-Auto-load is a one-time install; after that the plugin loads on every Civil 3D
-start — no `NETLOAD`.
+Install from the Autodesk Design and Make Marketplace (or, for a manual install,
+copy `HydroComplete.bundle` to `%APPDATA%\Autodesk\ApplicationPlugins`). After that
+the plugin loads on every Civil 3D start, with no `NETLOAD`.
 
-1. **Quit Civil 3D completely** (no `acad.exe` in Task Manager).
-2. From the install folder, in PowerShell: `powershell -File .\install.ps1`
-3. Launch **Civil 3D 2024/2025/2026/2027** from the Start menu (the full desktop app).
-4. The command line shows: `HydroComplete for Civil 3D <version> loaded. Type HC_ABOUT for commands.`
-5. Verify any time: `powershell -File .\verify-install.ps1`
+1. **Quit Civil 3D completely** (no `acad.exe` in Task Manager) and run the installer.
+2. Launch **Civil 3D 2025, 2026 or 2027** from the Start menu (the full desktop app).
+3. The command line shows: `HydroComplete for Civil 3D <version> loaded. Type HC_ABOUT for commands.`
 
-The **HydroComplete › Analysis** ribbon tab exposes every command in seven panels
-(Network, Hydrology, Stormwater, Hydraulics, Analysis, Model Builder, Tools). You
-can type any `HC_` command at the command line instead.
+The **HydroComplete** ribbon tab exposes every command in thirteen panels
+(Pipes, Network, Rainfall, Runoff, Detention, Water Quality, Sediment, Hydraulics,
+Structures, Analysis, Model Builder, Data, HydroComplete). Press **F1** on any
+HydroComplete ribbon button to open this guide. You can also type any `HC_`
+command at the command line.
 
 > If commands are unknown after restart, the bundle must be at
-> `%APPDATA%\Autodesk\ApplicationPlugins\HydroComplete.bundle\`. Re-run
-> `install.ps1` with Civil 3D closed. `NETLOAD` is only a dev fallback.
+> `%APPDATA%\Autodesk\ApplicationPlugins\HydroComplete.bundle\`. Reinstall with
+> Civil 3D closed.
 
 ---
 
@@ -164,7 +165,7 @@ All methods are public-domain and cited so results are defensible in review.
 
 | Symptom | Fix |
 |---|---|
-| Commands unknown after restart | Re-run `install.ps1` with Civil 3D fully closed; verify bundle path under `ApplicationPlugins`. |
+| Commands unknown after restart | Reinstall with Civil 3D fully closed; verify the bundle path under `ApplicationPlugins`. |
 | "No catchments found" in `HC_RATIONAL` | The drawing has no catchment objects; add them or enter area manually. |
 | Reports not where expected | If Documents is redirected (OneDrive), they land under the redirected `Documents\HydroComplete\`. |
 | `HC_REPORT_PDF` says Pro | Activate with `HC_ACTIVATE`, or use free `HC_REPORT` (HTML). |

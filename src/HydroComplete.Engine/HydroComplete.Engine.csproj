@@ -25,7 +25,7 @@
     <NoWarn>CS1591</NoWarn>
     <AssemblyName>HydroComplete.Engine</AssemblyName>
     <RootNamespace>HydroComplete.Engine</RootNamespace>
-    <Version>1.9.0</Version>
+    <Version>1.10.0</Version>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
